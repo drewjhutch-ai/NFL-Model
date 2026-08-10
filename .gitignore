@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Data caches
+.cache/
+data_cache/
+*.parquet
+*.csv.gz
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Paid scheme feed drops (kept local, never committed)
+data/providers/dropbox/
+scheme_data/
