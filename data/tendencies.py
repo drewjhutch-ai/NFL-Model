@@ -180,3 +180,53 @@ def blitz_label(blitz_rate: float) -> str:
     if blitz_rate >= 0.20:
         return "Average"
     return "Low blitz / coverage-heavy"
+
+
+def _tier(rank) -> str | None:
+    """Bucket a 1-32 rank into strong / mid / weak (1 = best)."""
+    if rank is None or pd.isna(rank):
+        return None
+    r = int(rank)
+    if r <= 8:
+        return "strong"
+    if r >= 25:
+        return "weak"
+    return "mid"
+
+
+def unit_summary(pass_rank, rush_rank, defense: bool = False) -> str:
+    """Plain-language 'where they're strong / where they struggle'.
+
+    Offense reads like "Strong pass · weak run"; defense like "Soft vs run".
+    Only notable units (top-8 / bottom-8) are called out; otherwise "Balanced".
+    """
+    tp, tr = _tier(pass_rank), _tier(rush_rank)
+    if tp is None and tr is None:
+        return "—"
+    parts = []
+    if defense:
+        if tp == "strong": parts.append("stout vs pass")
+        elif tp == "weak": parts.append("soft vs pass")
+        if tr == "strong": parts.append("stout vs run")
+        elif tr == "weak": parts.append("soft vs run")
+    else:
+        if tp == "strong": parts.append("strong pass")
+        elif tp == "weak": parts.append("weak pass")
+        if tr == "strong": parts.append("strong run")
+        elif tr == "weak": parts.append("weak run")
+    if not parts:
+        return "Balanced"
+    text = " · ".join(parts)
+    return text[0].upper() + text[1:]
+
+
+def coverage_label(zone_rate) -> str:
+    """Man/zone identity from a defense's blended zone rate."""
+    if zone_rate is None or pd.isna(zone_rate):
+        return "—"
+    z = float(zone_rate)
+    if z >= 0.60:
+        return f"Zone-heavy ({z * 100:.0f}%)"
+    if z <= 0.45:
+        return f"Man-heavy ({(1 - z) * 100:.0f}%)"
+    return f"Balanced ({z * 100:.0f}% zone)"
