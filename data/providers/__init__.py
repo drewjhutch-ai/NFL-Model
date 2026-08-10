@@ -30,15 +30,18 @@ __all__ = [
 ]
 
 
-def get_provider() -> SchemeDataProvider:
+def get_provider(pff_buffer: bytes | None = None) -> SchemeDataProvider:
     """The active (blended) scheme provider.
+
+    ``pff_buffer``: optional raw CSV bytes from a browser upload, used as the
+    PFF source (so hosted apps don't need a file on disk).
 
     Order matters only for display; trust weights (config.SCHEME_SOURCE_TRUST)
     decide influence in the blend. Add/remove sources here.
     """
     return CompositeSchemeProvider(
         providers=[
-            PFFCoverageProvider(),
+            PFFCoverageProvider(buffer=pff_buffer),
             SumerSportsProvider(),
             StatRankingsProvider(),
         ]
@@ -46,9 +49,12 @@ def get_provider() -> SchemeDataProvider:
 
 
 @st.cache_data(ttl=60 * 60, show_spinner="Blending coverage sources…")
-def load_coverage(season: int) -> pd.DataFrame | None:
-    """Cached blended coverage frame, or ``None`` if no source has data."""
-    provider = get_provider()
+def load_coverage(season: int, pff_bytes: bytes | None = None) -> pd.DataFrame | None:
+    """Cached blended coverage frame, or ``None`` if no source has data.
+
+    Cached on (season, pff_bytes) so uploading a PFF export re-blends correctly.
+    """
+    provider = get_provider(pff_buffer=pff_bytes)
     if not provider.is_available():
         return None
     try:

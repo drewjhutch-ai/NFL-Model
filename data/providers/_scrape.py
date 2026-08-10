@@ -20,6 +20,7 @@ from __future__ import annotations
 import glob
 import io
 import os
+import shutil
 from typing import Callable
 
 import pandas as pd
@@ -47,30 +48,55 @@ def fetch_tables(url: str, timeout: int = 20) -> list[pd.DataFrame]:
 
 
 # --- rendered fallback -------------------------------------------------------
-def _launch_chromium(pw):
-    """Launch headless Chromium, falling back to a pre-provisioned browser.
+def _system_chromium() -> str | None:
+    """Locate a system-installed Chromium/Chrome (e.g. apt's on Streamlit Cloud)."""
+    env = os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or os.environ.get("CHROMIUM_PATH")
+    if env and os.path.exists(env):
+        return env
+    for name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable"):
+        found = shutil.which(name)
+        if found:
+            return found
+    for path in ("/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"):
+        if os.path.exists(path):
+            return path
+    return None
 
-    On a normal machine ``launch()`` just works after ``playwright install``.
-    In managed/cloud environments the browser lives at a fixed path that the
-    pip package may not know about, so we glob PLAYWRIGHT_BROWSERS_PATH for it.
+
+def _launch_chromium(pw):
+    """Launch headless Chromium across local, cloud, and managed environments.
+
+    Order: (1) Playwright's own browser (local, after ``playwright install``);
+    (2) a system Chromium from apt (Streamlit Cloud via packages.txt);
+    (3) a pre-provisioned browser under PLAYWRIGHT_BROWSERS_PATH (sandboxes).
     """
+    # Sandbox headless-shell can be flaky; prefer full chromium there via the glob.
     try:
         return pw.chromium.launch(headless=True)
     except Exception:
-        base = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "")
-        patterns = [
-            "chromium-*/chrome-linux/chrome",
-            "chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium",
-            "chromium-*/chrome-win/chrome.exe",
-            "chromium_headless_shell-*/chrome-linux/headless_shell",
-        ]
-        for pat in patterns:
-            for exe in glob.glob(os.path.join(base, pat)):
-                try:
-                    return pw.chromium.launch(headless=True, executable_path=exe)
-                except Exception:
-                    continue
-        raise
+        pass
+
+    system = _system_chromium()
+    if system:
+        try:
+            return pw.chromium.launch(headless=True, executable_path=system)
+        except Exception:
+            pass
+
+    base = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "")
+    patterns = [
+        "chromium-*/chrome-linux/chrome",
+        "chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+        "chromium-*/chrome-win/chrome.exe",
+        "chromium_headless_shell-*/chrome-linux/headless_shell",
+    ]
+    for pat in patterns:
+        for exe in glob.glob(os.path.join(base, pat)):
+            try:
+                return pw.chromium.launch(headless=True, executable_path=exe)
+            except Exception:
+                continue
+    raise RuntimeError("No usable Chromium found for the rendered-page fallback.")
 
 
 def fetch_tables_rendered(url: str, timeout_ms: int = 30000) -> list[pd.DataFrame]:

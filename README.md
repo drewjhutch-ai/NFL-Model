@@ -82,7 +82,13 @@ python scripts/test_providers.py
 
 It prints what each source returned and the blended consensus.
 
-## Run it
+## Host it (no terminal) — recommended
+
+Deploy free to Streamlit Community Cloud and just visit a URL. Step-by-step:
+**[DEPLOY.md](DEPLOY.md)**. The repo is already configured for it
+(`requirements.txt`, `packages.txt` for Chromium, in-app PFF upload).
+
+## Run it locally instead
 
 ```bash
 pip install -r requirements.txt

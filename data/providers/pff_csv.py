@@ -1,8 +1,11 @@
 """PFF coverage provider via manual CSV export.
 
 PFF ELITE/+ has the best coverage-scheme charting but no individual API, so the
-workflow is: export the team coverage table from PFF's web tool to CSV, drop it
-at ``scheme_data/pff_coverage_<season>.csv``, and this provider ingests it.
+workflow is: export the team coverage table from PFF's web tool to CSV, then
+either
+
+  * drop it at ``scheme_data/pff_coverage_<season>.csv`` (local runs), or
+  * upload it through the app's sidebar uploader (hosted / Streamlit Cloud).
 
 It's forgiving about column names -- it looks for a team column and any columns
 mentioning "zone"/"man", so most PFF exports work without renaming. Rates may be
@@ -10,6 +13,7 @@ percentages (73.2) or fractions (0.732); both are handled.
 """
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 import pandas as pd
@@ -27,32 +31,41 @@ class PFFCoverageProvider(SchemeDataProvider):
     name = "PFF (CSV export)"
     trust = 1.0
 
+    def __init__(self, buffer: bytes | None = None):
+        """``buffer``: raw CSV bytes (e.g. from a browser upload). If given, it's
+        used instead of any file on disk -- the path that works on hosted apps."""
+        self._buffer = buffer
+
     def _path(self, season: int) -> Path:
         return _DATA_DIR / f"pff_coverage_{season}.csv"
 
     def is_available(self) -> bool:
+        if self._buffer is not None:
+            return True
         return _DATA_DIR.exists() and any(_DATA_DIR.glob("pff_coverage_*.csv"))
 
-    def coverage_tendencies(self, season: int) -> pd.DataFrame:
+    def _read_raw(self, season: int) -> pd.DataFrame:
+        if self._buffer is not None:
+            return pd.read_csv(io.BytesIO(self._buffer))
         path = self._path(season)
         if not path.exists():
-            # Fall back to the newest available PFF export so an off-by-one
-            # season doesn't hide data you've already dropped in.
             candidates = sorted(_DATA_DIR.glob("pff_coverage_*.csv")) if _DATA_DIR.exists() else []
             if not candidates:
                 raise SchemeUnavailable(
-                    f"No PFF export at {path}. Export the team coverage table from "
-                    "PFF and save it there (columns like team, zone%, man%)."
+                    f"No PFF export at {path} and none uploaded. Export the team "
+                    "coverage table from PFF (columns like team, zone%, man%)."
                 )
             path = candidates[-1]
+        return pd.read_csv(path)
 
-        raw = pd.read_csv(path)
+    def coverage_tendencies(self, season: int) -> pd.DataFrame:
+        raw = self._read_raw(season)
         team_col = _scrape.find_col(raw, "team") or raw.columns[0]
         zone_col = _scrape.find_col(raw, "zone")
         man_col = _scrape.find_col(raw, "man")
         if zone_col is None and man_col is None:
             raise SchemeUnavailable(
-                f"{self.name}: {path.name} has no zone/man column. "
+                f"{self.name}: upload/file has no zone/man column. "
                 f"Columns found: {list(raw.columns)}"
             )
         data = {"team": raw[team_col].map(normalize_team)}

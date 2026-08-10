@@ -43,6 +43,27 @@ def sidebar(live: bool) -> None:
     if st.sidebar.button("🔄 Refresh data"):
         st.cache_data.clear()
         st.rerun()
+
+    st.sidebar.divider()
+    st.sidebar.markdown("### 🔒 Coverage (zone/man)")
+    st.sidebar.caption(
+        "Free sources (SumerSports, StatRankings) load automatically. "
+        "Optionally add PFF for gold-standard charting:"
+    )
+    up = st.sidebar.file_uploader(
+        "Upload PFF coverage CSV", type=["csv"], key="pff_upload",
+        help="Export the team coverage table from PFF (ELITE/+) and upload it here. "
+             "Optional — the free sources work without it.",
+    )
+    if up is not None:
+        st.session_state["pff_bytes"] = up.getvalue()
+    if st.session_state.get("pff_bytes"):
+        col_a, col_b = st.sidebar.columns([3, 1])
+        col_a.success("PFF export loaded ✓")
+        if col_b.button("Clear", key="pff_clear"):
+            st.session_state.pop("pff_bytes", None)
+            st.rerun()
+
     st.sidebar.divider()
     st.sidebar.caption(
         "Data: nflverse + FTN charting (free). Coverage scheme: blended from "

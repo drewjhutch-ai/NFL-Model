@@ -108,8 +108,9 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
     teams = sorted(set(off.index) | set(deff.index))
     team = st.selectbox("Team", teams, index=0)
 
-    # Coverage scheme — blended across all connected sources.
-    scheme_df = load_coverage(config.CURRENT_SEASON)
+    # Coverage scheme — blended across all connected sources. An uploaded PFF
+    # export (sidebar) is threaded in so it joins the blend on hosted apps.
+    scheme_df = load_coverage(config.CURRENT_SEASON, st.session_state.get("pff_bytes"))
     scheme_row = None
     if scheme_df is not None and team in scheme_df.index:
         scheme_row = scheme_df.loc[team]
