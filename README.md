@@ -37,17 +37,39 @@ Tune both in `config.py`.
 |------|--------|------|
 | Play-by-play, EPA, success, pass/rush splits, PROE | nflverse (`nfl_data_py`) | Free |
 | Blitz rate, box count, play-action | FTN charting (`nfl_data_py`, 2022+) | Free |
-| **Zone/man coverage scheme** | **Paid feed (pluggable)** | Paid |
+| **Zone/man coverage scheme** | **Blended: PFF + SumerSports + StatRankings** | Free + optional PFF |
 
-True coverage-scheme splits aren't available for free. The app talks to a single
-`SchemeDataProvider` interface (`data/providers/`), so a paid feed drops in
-without touching the rest of the app. Until then:
+### Coverage scheme is *blended*, not single-source
 
-- Drop a CSV at `scheme_data/coverage_<season>.csv` (columns:
-  `team, zone_rate, man_rate, snaps`) — e.g. a manual export from a paid tool —
-  and coverage lights up immediately.
-- Or implement a new provider (copy `data/providers/manual_csv.py`) against your
-  chosen API and point `data/providers/get_provider()` at it.
+True coverage-scheme splits aren't in the free play-by-play data, so instead of
+trusting one feed the app pulls from several and fuses them:
+
+| Source | Access | Trust weight |
+|--------|--------|-------------|
+| **PFF** (ELITE/+) | Manual CSV export → `scheme_data/pff_coverage_<season>.csv` | 1.0 |
+| **SumerSports** | Free web scrape | 0.85 |
+| **StatRankings** | Free web scrape | 0.75 |
+
+The `CompositeSchemeProvider` (`data/providers/composite.py`):
+
+1. Pulls every source that's available (a source failing never breaks the rest).
+2. Normalizes teams to canonical abbreviations (`data/teams.py`).
+3. Blends per team with a **trust-weighted average** — PFF leads, the free
+   sources back it up, so no single source can skew a number.
+4. Scores **agreement**: if the sources cluster tightly → *High* confidence; if
+   they diverge → *Low*. Shown in the UI, with a per-team source breakdown, so
+   the blend is transparent rather than a black box.
+
+Tune trust weights and confidence thresholds in `config.py`
+(`SCHEME_SOURCE_TRUST`, `SCHEME_AGREE_*`).
+
+**PFF is free-ish and optional:** you don't need it to start (the two free
+scrapers cover zone/man on their own). Add a PFF export when you want its
+gold-standard charting to anchor the blend.
+
+**Verify the scrapers locally:** the build sandbox can't reach the stats sites,
+so run `python scripts/test_providers.py` on your machine to confirm the live
+pages parse (and see the headless-browser fallback if a site is JS-rendered).
 
 ## Run it
 

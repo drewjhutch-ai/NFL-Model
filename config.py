@@ -49,3 +49,19 @@ BLITZ_MIN_EXTRA_RUSHERS = 1
 # --- Explosive plays ---------------------------------------------------------
 EXPLOSIVE_PASS_YARDS = 15
 EXPLOSIVE_RUSH_YARDS = 10
+
+
+# --- Coverage-scheme sources (zone/man) --------------------------------------
+# We blend multiple sources into one consensus. Trust weights say how much each
+# source counts toward the blend. PFF is the charting gold standard, so it leads;
+# the free sources are excellent for tendency-level man/zone and back it up.
+# Keys must match each provider's ``key`` attribute.
+SCHEME_SOURCE_TRUST = {
+    "pff": 1.0,          # PFF ELITE/+ CSV export (manual drop)
+    "sumersports": 0.85,  # SumerSports (free)
+    "statrankings": 0.75,  # StatRankings (free)
+}
+
+# Confidence buckets from how far apart the sources are on zone rate (in points).
+SCHEME_AGREE_HIGH = 0.04   # within 4 pts across sources -> High confidence
+SCHEME_AGREE_MED = 0.08    # within 8 pts -> Medium; wider -> Low

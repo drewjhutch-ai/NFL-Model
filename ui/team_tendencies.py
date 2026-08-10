@@ -4,9 +4,30 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+import config
 from data import tendencies
-from data.providers import SchemeUnavailable, get_provider
+from data.providers import load_coverage
 from ui.components import fmt, rank_badge_html
+
+
+def _per_source_expander(scheme_row) -> None:
+    """Show each source's zone/man behind the blended consensus."""
+    rows = []
+    for label in scheme_row.index:
+        if label.startswith("zone_"):
+            key = label[len("zone_"):]
+            rows.append({
+                "Source": key,
+                "Zone": fmt(scheme_row.get(f"zone_{key}"), "pct"),
+                "Man": fmt(scheme_row.get(f"man_{key}"), "pct"),
+            })
+    if not rows:
+        return
+    with st.expander("How the sources compare"):
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        spread = scheme_row.get("zone_spread")
+        if pd.notna(spread):
+            st.caption(f"Sources disagree by {fmt(spread, 'pct')} on zone rate.")
 
 
 def _profile_columns(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
@@ -59,12 +80,20 @@ def _profile_columns(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
                 st.caption("**Blitz tendency:** FTN charting not loaded for these seasons.")
 
             if scheme_row is not None:
+                conf = scheme_row.get("confidence", "—")
+                srcs = scheme_row.get("sources", "")
                 st.caption(
-                    f"**Coverage:** zone {fmt(scheme_row['zone_rate'], 'pct')} · "
-                    f"man {fmt(scheme_row['man_rate'], 'pct')}"
+                    f"**Coverage (blended):** zone {fmt(scheme_row['zone_rate'], 'pct')} · "
+                    f"man {fmt(scheme_row['man_rate'], 'pct')}  ·  "
+                    f"confidence **{conf}**"
+                    + (f"  ·  _{srcs}_" if srcs else "")
                 )
+                _per_source_expander(scheme_row)
             else:
-                st.caption("**Coverage (zone/man):** _awaiting paid scheme feed_ 🔒")
+                st.caption(
+                    "**Coverage (zone/man):** _no source connected yet_ 🔒  \n"
+                    "Add a PFF export to `scheme_data/` or enable the free scrapers."
+                )
         else:
             st.info("No defensive data for this team yet.")
 
@@ -79,18 +108,11 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
     teams = sorted(set(off.index) | set(deff.index))
     team = st.selectbox("Team", teams, index=0)
 
-    # Coverage scheme (paid) — optional.
+    # Coverage scheme — blended across all connected sources.
+    scheme_df = load_coverage(config.CURRENT_SEASON)
     scheme_row = None
-    provider = get_provider()
-    scheme_df = None
-    if provider.is_available():
-        try:
-            import config
-            scheme_df = provider.coverage_tendencies(config.CURRENT_SEASON)
-            if team in scheme_df.index:
-                scheme_row = scheme_df.loc[team]
-        except SchemeUnavailable:
-            scheme_df = None
+    if scheme_df is not None and team in scheme_df.index:
+        scheme_row = scheme_df.loc[team]
 
     _profile_columns(off, deff, blitz, team, scheme_row)
 
@@ -116,7 +138,19 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
             st.dataframe(blitz.sort_values("blitz_rate", ascending=False),
                          width='stretch')
         if scheme_df is not None:
-            st.markdown("#### Coverage scheme (paid feed)")
-            st.dataframe(scheme_df, width='stretch')
+            st.markdown("#### Coverage scheme (blended)")
+            show = ["zone_rate", "man_rate", "confidence", "n_sources", "sources"]
+            show = [c for c in show if c in scheme_df.columns]
+            st.dataframe(
+                scheme_df[show].sort_values("zone_rate", ascending=False),
+                width="stretch",
+            )
+            st.caption(
+                "Zone/man are trust-weighted blends of every connected source. "
+                "**Confidence** reflects how tightly the sources agree."
+            )
         else:
-            st.caption("🔒 Zone/man coverage rates appear here once your paid scheme feed is connected.")
+            st.caption(
+                "🔒 Zone/man coverage appears here once a source is connected — "
+                "drop a PFF export in `scheme_data/` or enable the free scrapers."
+            )

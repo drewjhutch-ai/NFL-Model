@@ -44,7 +44,10 @@ def sidebar(live: bool) -> None:
         st.cache_data.clear()
         st.rerun()
     st.sidebar.divider()
-    st.sidebar.caption("Data: nflverse (free) + FTN charting. Coverage scheme: paid feed (pluggable).")
+    st.sidebar.caption(
+        "Data: nflverse + FTN charting (free). Coverage scheme: blended from "
+        "PFF + SumerSports + StatRankings."
+    )
 
 
 def main() -> None:
