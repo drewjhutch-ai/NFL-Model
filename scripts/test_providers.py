@@ -6,8 +6,14 @@ Run this on your own machine (the build sandbox can't reach the stats sites):
     python scripts/test_providers.py
 
 It pings each source, prints what came back, and shows the blended consensus.
-If a free scraper prints "no table found", that site likely renders its tables
-with JavaScript -- see the note at the bottom for the headless-browser fallback.
+
+The scrapers try a fast HTTP fetch first and automatically fall back to a real
+headless browser for JavaScript-rendered pages. That fallback needs Playwright:
+
+    pip install -r requirements.txt      # includes playwright
+    playwright install chromium          # one-time browser download (~150 MB)
+
+If you see a "Playwright isn't installed" message, run those two commands.
 """
 import sys
 from pathlib import Path
@@ -56,15 +62,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-# --- If a free scraper finds no table (JavaScript-rendered page) --------------
-# Chromium + Playwright are the fallback. Sketch:
-#
-#   from playwright.sync_api import sync_playwright
-#   with sync_playwright() as pw:
-#       b = pw.chromium.launch()
-#       page = b.new_page()
-#       page.goto(URL, wait_until="networkidle")
-#       html = page.content()
-#       tables = pd.read_html(html)
-#
-# Drop that into the provider's fetch path in place of requests.get.
+# The requests -> headless-browser fallback is built into data/providers/_scrape.py
+# (extract_table). You don't need to wire anything up; just make sure Playwright
+# is installed (see the module docstring above) if a site is JavaScript-rendered.

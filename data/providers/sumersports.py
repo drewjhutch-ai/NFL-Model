@@ -3,9 +3,9 @@
 Pulls team man/zone coverage tendencies from the public defensive team stats:
     https://sumersports.com/teams/defensive/
 
-⚠️  Structure inferred, not verified from the build sandbox. SumerSports may
-    render its tables client-side (React); if ``fetch_tables`` finds nothing,
-    the page needs the headless-browser fallback noted in scripts/test_providers.py.
+Uses the fast HTTP path first and auto-falls back to a headless browser if the
+page renders its tables with JavaScript (SumerSports is a React site, so the
+fallback is the likely path). Columns are matched by keyword.
 """
 from __future__ import annotations
 
@@ -19,6 +19,21 @@ from .base import SchemeDataProvider, SchemeUnavailable
 _URL = "https://sumersports.com/teams/defensive/"
 
 
+def _matcher(tbl: pd.DataFrame) -> pd.DataFrame | None:
+    team_col = _scrape.find_col(tbl, "team") or _scrape.find_col(tbl, "defense")
+    zone_col = _scrape.find_col(tbl, "zone")
+    man_col = _scrape.find_col(tbl, "man")
+    if team_col is None or (zone_col is None and man_col is None):
+        return None
+    data = {"team": tbl[team_col].map(normalize_team)}
+    if zone_col is not None:
+        data["zone_rate"] = _scrape.to_rate(tbl[zone_col])
+    if man_col is not None:
+        data["man_rate"] = _scrape.to_rate(tbl[man_col])
+    out = pd.DataFrame(data).dropna(subset=["team"])
+    return out.set_index("team") if not out.empty else None
+
+
 class SumerSportsProvider(SchemeDataProvider):
     key = "sumersports"
     name = "SumerSports"
@@ -29,24 +44,7 @@ class SumerSportsProvider(SchemeDataProvider):
 
     def coverage_tendencies(self, season: int) -> pd.DataFrame:
         try:
-            tables = _scrape.fetch_tables(_URL)
+            df = _scrape.extract_table(_URL, _matcher)
         except Exception as exc:  # noqa: BLE001
-            raise SchemeUnavailable(f"{self.name} fetch failed: {exc}") from exc
-
-        for tbl in tables:
-            team_col = _scrape.find_col(tbl, "team") or _scrape.find_col(tbl, "defense")
-            zone_col = _scrape.find_col(tbl, "zone")
-            man_col = _scrape.find_col(tbl, "man")
-            if team_col is not None and (zone_col is not None or man_col is not None):
-                data = {"team": tbl[team_col].map(normalize_team)}
-                if zone_col is not None:
-                    data["zone_rate"] = _scrape.to_rate(tbl[zone_col])
-                if man_col is not None:
-                    data["man_rate"] = _scrape.to_rate(tbl[man_col])
-                df = pd.DataFrame(data).dropna(subset=["team"]).set_index("team")
-                return self.validate(df)
-
-        raise SchemeUnavailable(
-            f"{self.name}: no coverage table found at {_URL} "
-            "(likely JavaScript-rendered — see scripts/test_providers.py)."
-        )
+            raise SchemeUnavailable(f"{self.name} pull failed: {exc}") from exc
+        return self.validate(df)

@@ -67,20 +67,37 @@ Tune trust weights and confidence thresholds in `config.py`
 scrapers cover zone/man on their own). Add a PFF export when you want its
 gold-standard charting to anchor the blend.
 
-**Verify the scrapers locally:** the build sandbox can't reach the stats sites,
-so run `python scripts/test_providers.py` on your machine to confirm the live
-pages parse (and see the headless-browser fallback if a site is JS-rendered).
+**The scrapers self-heal for JavaScript pages.** Each free scraper first tries a
+fast HTTP fetch; if a site builds its tables with JavaScript (SumerSports likely
+does), it automatically falls back to driving a real headless browser
+(Playwright/Chromium) and reads the rendered page. You don't configure anything —
+just make sure Playwright is set up (below) so the fallback is available.
+
+**Verify the scrapers locally** (the build sandbox can't reach the stats sites,
+so this is the real test):
+
+```bash
+python scripts/test_providers.py
+```
+
+It prints what each source returned and the blended consensus.
 
 ## Run it
 
 ```bash
 pip install -r requirements.txt
+playwright install chromium   # one-time; enables the JS-page scraper fallback
 streamlit run app.py
 ```
 
 First load pulls data from nflverse over the network and caches it for an hour.
 Use the sidebar **Refresh data** button to force a re-pull (e.g. after a new
 week during the season).
+
+> The `playwright install chromium` step downloads a headless browser (~150 MB)
+> used only when a free stats site renders its tables with JavaScript. If you
+> skip it, everything else still works and the scrapers simply fall back to
+> "unavailable" for any JS-only site.
 
 ## Layout
 

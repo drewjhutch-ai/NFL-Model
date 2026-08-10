@@ -5,4 +5,6 @@ nfl_data_py>=0.3.2
 plotly>=5.20
 requests>=2.31
 lxml>=5.0
-beautifulsoup4>=4.12
+# Optional: only needed if a free stats site renders its tables with JavaScript.
+# After installing, run once:  playwright install chromium
+playwright>=1.44
