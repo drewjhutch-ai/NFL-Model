@@ -1,27 +1,27 @@
-"""The 'Matchups' tab: put one team's offense against another's defense and
-surface where the edges are, so you can make an informed pick.
+"""The 'Matchups' tab: the week's games, auto-loaded, each broken down into the
+unit and positional edges that actually drive picks.
 
-Edge logic is deliberately simple and transparent (rank differentials). It's a
-decision aid, not a black box -- you still make the call.
+Two layers of edge, both transparent (rank differentials, no black box):
+  * Unit edges  — pass / rush / explosive / overall (offense rank vs the defense
+    unit it faces).
+  * Positional edges — does a team feature a position (e.g. pass-catching RBs)
+    that the opponent struggles to cover?
 """
 from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
 
+import config
+from data import loaders, positional, tendencies
 from ui.components import fmt, ordinal
 
 
+# --- unit edges --------------------------------------------------------------
 def _edge(off_rank, def_rank) -> tuple[str, float]:
-    """Compare an offense unit rank vs the defense unit rank it faces.
-
-    Both are 1..32 where 1 = best. The offense has an edge when it's strong
-    (low rank) against a weak defense (high rank). Returns (label, magnitude).
-    """
     if pd.isna(off_rank) or pd.isna(def_rank):
         return "—", 0.0
-    # Defense rank flipped so a bad defense (32) becomes a big positive for offense.
-    magnitude = (32 - int(def_rank)) - (int(off_rank) - 1)  # roughly -31..+31
+    magnitude = (32 - int(def_rank)) - (int(off_rank) - 1)
     if magnitude >= 12:
         return "🟢 Strong offense edge", magnitude
     if magnitude >= 5:
@@ -34,70 +34,100 @@ def _edge(off_rank, def_rank) -> tuple[str, float]:
 
 
 def _unit_row(name, off_team, off_rank, def_team, def_rank) -> dict:
-    label, mag = _edge(off_rank, def_rank)
+    label, _ = _edge(off_rank, def_rank)
     return {
         "Matchup": name,
-        f"{off_team} O (rank)": ordinal(off_rank),
-        f"{def_team} D (rank)": ordinal(def_rank),
+        f"{off_team} O": ordinal(off_rank),
+        f"{def_team} D": ordinal(def_rank),
         "Edge": label,
-        "_mag": mag,
     }
 
 
-def _one_direction(off: pd.DataFrame, deff: pd.DataFrame, o_team: str, d_team: str) -> None:
-    st.markdown(f"##### {o_team} offense vs. {d_team} defense")
+def _direction(off, deff, blitz, dvp, usage, o_team, d_team) -> None:
+    st.markdown(f"##### {o_team} offense → {d_team} defense")
     if o_team not in off.index or d_team not in deff.index:
-        st.info("Not enough data for this side of the matchup.")
+        st.info("Not enough data for this side.")
         return
-    o = off.loc[o_team]
-    d = deff.loc[d_team]
-    rows = [
+    o, d = off.loc[o_team], deff.loc[d_team]
+
+    st.caption("Unit edges (rank 1 = best)")
+    unit = pd.DataFrame([
         _unit_row("Passing", o_team, o["pass_epa_rank"], d_team, d["pass_epa_rank"]),
         _unit_row("Rushing", o_team, o["rush_epa_rank"], d_team, d["rush_epa_rank"]),
         _unit_row("Explosive", o_team, o["explosive_rate_rank"], d_team, d["explosive_rate_rank"]),
         _unit_row("Overall", o_team, o["epa_play_rank"], d_team, d["epa_play_rank"]),
-    ]
-    df = pd.DataFrame(rows).drop(columns="_mag")
-    st.dataframe(df, width='stretch', hide_index=True)
+    ])
+    st.dataframe(unit, width="stretch", hide_index=True)
+
+    # positional edges (RB / WR / TE weapons vs coverage soft spots)
+    pos_tbl = positional.matchup_table(o_team, d_team, usage, dvp)
+    if not pos_tbl.empty:
+        st.caption("Positional edges (who they feature vs. what the D allows)")
+        st.dataframe(pos_tbl.drop(columns=[c for c in ["_mag"] if c in pos_tbl.columns]),
+                     width="stretch", hide_index=True)
+
+    if not blitz.empty and d_team in blitz.index:
+        b = blitz.loc[d_team]
+        st.caption(f"{d_team} blitz: {tendencies.blitz_label(b['blitz_rate'])} "
+                   f"({fmt(b['blitz_rate'], 'pct')})")
 
 
-def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
-    st.subheader("Matchup Comparison")
+def _breakdown(away, home, off, deff, blitz, dvp, usage) -> None:
+    if away == home:
+        st.info("Pick two different teams.")
+        return
+    st.markdown(f"### {away} @ {home}")
+    left, right = st.columns(2)
+    with left:
+        _direction(off, deff, blitz, dvp, usage, away, home)
+    with right:
+        _direction(off, deff, blitz, dvp, usage, home, away)
+    st.caption(
+        "🟢 = offense edge, 🔴 = defense edge, 🟡 = even. Positional edges flag "
+        "when a featured weapon (top-12 usage) meets a soft coverage (bottom-12). "
+        "A decision aid — the pick is yours."
+    )
+
+
+def _custom(off, deff, blitz, dvp, usage, teams) -> None:
+    c1, c2 = st.columns(2)
+    with c1:
+        away = st.selectbox("Away / Team A", teams, index=0, key="mu_away")
+    with c2:
+        home = st.selectbox("Home / Team B", teams, index=1 if len(teams) > 1 else 0, key="mu_home")
+    _breakdown(away, home, off, deff, blitz, dvp, usage)
+
+
+def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
+           schedule: pd.DataFrame, dvp: dict, usage: pd.DataFrame) -> None:
+    st.subheader("Matchups of the Week")
     if off.empty or deff.empty:
         st.warning("Need offensive and defensive data to compare matchups.")
         return
 
     teams = sorted(set(off.index) | set(deff.index))
-    c1, c2 = st.columns(2)
-    with c1:
-        away = st.selectbox("Team A", teams, index=0, key="mu_away")
-    with c2:
-        default_b = 1 if len(teams) > 1 else 0
-        home = st.selectbox("Team B", teams, index=default_b, key="mu_home")
+    season = config.CURRENT_SEASON
+    have_sched = (schedule is not None and not schedule.empty
+                  and (schedule["season"] == season).any())
 
-    if away == home:
-        st.info("Pick two different teams.")
-        return
+    if have_sched:
+        s = schedule[schedule["season"] == season]
+        weeks = sorted(int(w) for w in s["week"].unique())
+        default_wk = loaders.current_week(schedule, season) or weeks[0]
+        idx = weeks.index(default_wk) if default_wk in weeks else 0
+        wk = st.selectbox(f"Week ({season})", weeks, index=idx)
+        games = s[s["week"] == wk].sort_values("gameday" if "gameday" in s.columns else "week")
 
-    left, right = st.columns(2)
-    with left:
-        _one_direction(off, deff, away, home)
-        if not blitz.empty and home in blitz.index:
-            from data import tendencies
-            b = blitz.loc[home]
-            st.caption(f"{home} D blitz: {tendencies.blitz_label(b['blitz_rate'])} "
-                       f"({fmt(b['blitz_rate'], 'pct')})")
-    with right:
-        _one_direction(off, deff, home, away)
-        if not blitz.empty and away in blitz.index:
-            from data import tendencies
-            b = blitz.loc[away]
-            st.caption(f"{away} D blitz: {tendencies.blitz_label(b['blitz_rate'])} "
-                       f"({fmt(b['blitz_rate'], 'pct')})")
+        labels = [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]
+        if not labels:
+            st.info("No games listed for this week.")
+            return
+        pick = st.selectbox("Game", labels)
+        row = games.iloc[labels.index(pick)]
+        _breakdown(row["away_team"], row["home_team"], off, deff, blitz, dvp, usage)
 
-    st.divider()
-    st.caption(
-        "Edges are rank differentials (1 = best, 32 = worst). A strong offense "
-        "unit facing a weak defense unit lights up green. This is a decision aid "
-        "— the pick is yours."
-    )
+        with st.expander("Or build a custom matchup (any two teams)"):
+            _custom(off, deff, blitz, dvp, usage, teams)
+    else:
+        st.info("Schedule not loaded — pick any two teams to compare.")
+        _custom(off, deff, blitz, dvp, usage, teams)

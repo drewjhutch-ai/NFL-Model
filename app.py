@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import loaders, tendencies
+from data import loaders, positional, tendencies
 from ui import matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -24,7 +24,12 @@ def build_frames():
     deff = tendencies.compute_defense(pbp_w)
     blitz = tendencies.compute_blitz(pbp_w, ftn)
     live = loaders.has_current_season_data(pbp_w)
-    return off, deff, blitz, live
+
+    schedule = loaders.load_schedule()
+    posmap = loaders.position_map()
+    dvp = positional.defense_vs_position(pbp_w, posmap)
+    usage = positional.offense_usage(pbp_w, posmap)
+    return off, deff, blitz, live, schedule, dvp, usage
 
 
 def sidebar(live: bool) -> None:
@@ -73,7 +78,7 @@ def sidebar(live: bool) -> None:
 
 def main() -> None:
     try:
-        off, deff, blitz, live = build_frames()
+        off, deff, blitz, live, schedule, dvp, usage = build_frames()
     except Exception as exc:  # noqa: BLE001
         st.error("Couldn't load NFL data. Are you online? See console for details.")
         st.exception(exc)
@@ -87,7 +92,7 @@ def main() -> None:
     with tab_data:
         team_tendencies.render(off, deff, blitz)
     with tab_matchups:
-        matchups.render(off, deff, blitz)
+        matchups.render(off, deff, blitz, schedule, dvp, usage)
     with tab_picks:
         picks.render()
 

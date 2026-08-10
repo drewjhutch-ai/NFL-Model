@@ -14,8 +14,11 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
   (EPA/play, pass & rush EPA, success rates, explosive rate), play-style lean
   (neutral pass rate / PROE), blitz tendency (from FTN charting), and league
   tables you can sort.
-- **⚔️ Matchups** — pick any two teams and see where the edges are
-  (offense unit rank vs. the defense unit it faces), both directions.
+- **⚔️ Matchups** — the week's games auto-load from the schedule; each game
+  breaks down into **unit edges** (pass/rush/explosive/overall) *and*
+  **positional edges** — does a team feature a weapon (e.g. pass-catching RBs)
+  that the opponent struggles to cover (RB/WR/TE target share vs. EPA/target
+  allowed)? Custom any-two-teams comparison still available.
 - **🎯 Picks of the Week** — placeholder; next milestone.
 
 ## The data philosophy: current season drives everything

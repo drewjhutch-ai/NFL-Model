@@ -40,6 +40,9 @@ _PBP_COLUMNS = [
     "touchdown",
     "first_down",
     "penalty",
+    "complete_pass",
+    "receiver_player_id",
+    "rusher_player_id",
 ]
 
 _FTN_COLUMNS = [
@@ -117,12 +120,60 @@ def load_team_desc() -> pd.DataFrame:
         return pd.DataFrame()
 
 
+# nflverse's schedule file, served from a host our environments can reach
+# (nfl_data_py's default URL is blocked by some proxies).
+_SCHEDULE_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading schedule…")
 def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
-    """Game schedule / results for the requested seasons."""
+    """Game schedule / results for the requested seasons (incl. future games)."""
+    try:
+        df = pd.read_csv(_SCHEDULE_URL)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[loaders] schedule unavailable: {exc}")
+        return pd.DataFrame()
+    df = df[df["season"].isin(list(seasons))].copy()
+    keep = [c for c in ["game_id", "season", "week", "gameday", "weekday",
+                        "away_team", "home_team", "result", "away_score",
+                        "home_score"] if c in df.columns]
+    return df[keep]
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading rosters…")
+def load_rosters(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Player rosters (for player_id -> position mapping)."""
     import nfl_data_py as nfl
 
-    return _safe_import(nfl.import_schedules, list(seasons))
+    df = _safe_import(nfl.import_seasonal_rosters, list(seasons))
+    if df.empty:
+        return df
+    keep = [c for c in ["season", "player_id", "position", "player_name",
+                        "team", "depth_chart_position"] if c in df.columns]
+    return df[keep].copy()
+
+
+def position_map(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> dict[str, str]:
+    """player_id -> position, current season overriding the prior."""
+    rosters = load_rosters(seasons)
+    if rosters.empty or "player_id" not in rosters.columns:
+        return {}
+    rosters = rosters.sort_values("season")  # current last -> wins on dedupe
+    return dict(zip(rosters["player_id"], rosters["position"]))
+
+
+def current_week(schedule: pd.DataFrame, season: int) -> int | None:
+    """The week to show by default: earliest with an unplayed game, else last."""
+    if schedule.empty:
+        return None
+    s = schedule[schedule["season"] == season]
+    if s.empty:
+        return None
+    if "result" in s.columns:
+        unplayed = s[s["result"].isna()]
+        if not unplayed.empty:
+            return int(unplayed["week"].min())
+    return int(s["week"].max())
 
 
 def add_recency_weight(df: pd.DataFrame) -> pd.DataFrame:
