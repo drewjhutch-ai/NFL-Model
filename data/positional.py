@@ -91,6 +91,58 @@ def offense_usage(pbp_weighted: pd.DataFrame, posmap: dict[str, str]) -> pd.Data
     return df
 
 
+def wr_tiers(pbp_weighted: pd.DataFrame, posmap: dict[str, str]
+             ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
+    """WR1/WR2/WR3 tiers by usage, plus what each defense allows by WR tier.
+
+    Returns (offense_by_tier, defense_by_tier):
+      * offense_by_tier: per team, WR1/2/3 target share (of all targets) & EPA/tgt.
+      * defense_by_tier: {1|2|3 -> DataFrame(defteam, epa_per_tgt, def_rank)}, so
+        you can ask 'which defenses get torched by opposing WR3s / slot guys?'.
+    """
+    pp = _targets(pbp_weighted, posmap)
+    if pp.empty:
+        return pd.DataFrame(), {}
+    team_total = pp.groupby("posteam")["w"].sum()
+
+    wr = pp[pp["pos"] == "WR"].copy()
+    if wr.empty:
+        return pd.DataFrame(), {}
+    # rank receivers within their own team by weighted targets -> tier
+    per_rec = wr.groupby(["posteam", "receiver_player_id"])["w"].sum().reset_index()
+    per_rec["rk"] = per_rec.groupby("posteam")["w"].rank(ascending=False, method="first")
+    tier_map = {rid: (int(rk) if rk <= 3 else 4)
+                for rid, rk in zip(per_rec["receiver_player_id"], per_rec["rk"])}
+    wr["tier"] = wr["receiver_player_id"].map(tier_map)
+
+    # offense: share of the whole passing game each WR tier commands
+    off_rows = []
+    for team, g in wr.groupby("posteam"):
+        total = float(team_total.get(team, np.nan))
+        row = {"team": team}
+        for tier in (1, 2, 3):
+            gt = g[g["tier"] == tier]
+            row[f"WR{tier}_share"] = float(gt["w"].sum() / total) if total else np.nan
+            row[f"WR{tier}_epa_tgt"] = _wmean(gt, "epa") if not gt.empty else np.nan
+        off_rows.append(row)
+    off_df = pd.DataFrame(off_rows).set_index("team")
+
+    # defense: EPA/target allowed to each WR tier, ranked (1 = stingiest)
+    dvt: dict[str, pd.DataFrame] = {}
+    for tier in (1, 2, 3):
+        sub = wr[wr["tier"] == tier]
+        rows = []
+        for team, g in sub.groupby("defteam"):
+            rows.append({"team": team, "epa_per_tgt": _wmean(g, "epa"),
+                         "yards_per_tgt": _wmean(g, "yards_gained"),
+                         "targets": float(g["w"].sum())})
+        d = pd.DataFrame(rows).set_index("team")
+        if not d.empty:
+            d["def_rank"] = d["epa_per_tgt"].rank(ascending=True, method="min").astype("Int64")
+        dvt[tier] = d
+    return off_df, dvt
+
+
 def _edge(share_rank, def_rank) -> tuple[str, int]:
     """Cross offense usage rank vs defense stinginess rank (both 1 = extreme)."""
     if pd.isna(share_rank) or pd.isna(def_rank):
@@ -149,6 +201,34 @@ def matchup_table(off_team: str, def_team: str, usage: pd.DataFrame,
                                    if allows_rank else "—"),
             "Edge": label,
             "_mag": mag,
+        })
+    return pd.DataFrame(rows)
+
+
+def wr_tier_matchup(off_team: str, def_team: str, wr_off: pd.DataFrame,
+                    wr_def: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """WR1/WR2/WR3 usage for off_team vs what def_team allows to each tier."""
+    if wr_off.empty or not wr_def or off_team not in wr_off.index:
+        return pd.DataFrame()
+    u = wr_off.loc[off_team]
+    rows = []
+    for tier in (1, 2, 3):
+        share = u.get(f"WR{tier}_share")
+        dfp = wr_def.get(tier)
+        if dfp is None or def_team not in dfp.index:
+            def_rank = pd.NA
+        else:
+            def_rank = dfp.loc[def_team, "def_rank"]
+        # featured if a big share of the offense; soft if def bottom-12 vs tier
+        share_rank = wr_off[f"WR{tier}_share"].rank(ascending=False, method="min").get(off_team)
+        label, mag = _edge(share_rank, def_rank)
+        allows_rank = (33 - int(def_rank)) if pd.notna(def_rank) else None
+        rows.append({
+            "WR tier": f"WR{tier}",
+            f"{off_team} share": f"{share * 100:.0f}%" if pd.notna(share) else "—",
+            f"{def_team} allows": (f"{allows_rank}{_ord_suffix(allows_rank)}-most EPA/tgt"
+                                   if allows_rank else "—"),
+            "Edge": label,
         })
     return pd.DataFrame(rows)
 

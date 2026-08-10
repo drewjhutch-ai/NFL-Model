@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import loaders, positional, tendencies
+from data import loaders, positional, pressure, rushing, tendencies
 from ui.components import fmt, ordinal
 
 
@@ -43,7 +43,8 @@ def _unit_row(name, off_team, off_rank, def_team, def_rank) -> dict:
     }
 
 
-def _direction(off, deff, blitz, dvp, usage, o_team, d_team) -> None:
+def _direction(off, deff, blitz, extras, o_team, d_team) -> None:
+    dvp, usage = extras["dvp"], extras["usage"]
     st.markdown(f"##### {o_team} offense → {d_team} defense")
     if o_team not in off.index or d_team not in deff.index:
         st.info("Not enough data for this side.")
@@ -66,22 +67,50 @@ def _direction(off, deff, blitz, dvp, usage, o_team, d_team) -> None:
         st.dataframe(pos_tbl.drop(columns=[c for c in ["_mag"] if c in pos_tbl.columns]),
                      width="stretch", hide_index=True)
 
+    # WR1/2/3 tier detail
+    wr_tbl = positional.wr_tier_matchup(o_team, d_team, extras["wr_off"], extras["wr_def"])
+    if not wr_tbl.empty:
+        with st.expander("WR1 / WR2 / WR3 detail"):
+            st.dataframe(wr_tbl, width="stretch", hide_index=True)
+
+    # QB mobility vs pass rush
+    qb, prs = extras["qb"], extras["pressure"]
+    bits = []
+    if not qb.empty and o_team in qb.index:
+        q = qb.loc[o_team]
+        bits.append(f"**{o_team} QB:** {pressure.qb_label(q['qb_rush_rate'])} "
+                    f"({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
+    if not prs.empty and d_team in prs.index:
+        p = prs.loc[d_team]
+        bits.append(f"**{d_team} rush:** {pressure.pressure_label(p['pressure_rate_rank'])} "
+                    f"({fmt(p['pressure_rate'], 'pct')} pressure, {ordinal(p['pressure_rate_rank'])})")
+    if bits:
+        st.caption("  ·  ".join(bits))
+
+    # RB rushing playstyle vs run defense
+    rush = extras["rush"]
+    if not rush.empty and o_team in rush.index:
+        r = rush.loc[o_team]
+        run_d = f"vs {d_team} run D {ordinal(d['rush_epa_rank'])}"
+        st.caption(f"**{o_team} ground game:** {rushing.rushing_label(r.get('ryoe_rank'))} "
+                   f"({r.get('ryoe_per_att', float('nan')):+.2f} yds over expected/att)  ·  {run_d}")
+
     if not blitz.empty and d_team in blitz.index:
         b = blitz.loc[d_team]
         st.caption(f"{d_team} blitz: {tendencies.blitz_label(b['blitz_rate'])} "
                    f"({fmt(b['blitz_rate'], 'pct')})")
 
 
-def _breakdown(away, home, off, deff, blitz, dvp, usage) -> None:
+def _breakdown(away, home, off, deff, blitz, extras) -> None:
     if away == home:
         st.info("Pick two different teams.")
         return
     st.markdown(f"### {away} @ {home}")
     left, right = st.columns(2)
     with left:
-        _direction(off, deff, blitz, dvp, usage, away, home)
+        _direction(off, deff, blitz, extras, away, home)
     with right:
-        _direction(off, deff, blitz, dvp, usage, home, away)
+        _direction(off, deff, blitz, extras, home, away)
     st.caption(
         "🟢 = offense edge, 🔴 = defense edge, 🟡 = even. Positional edges flag "
         "when a featured weapon (top-12 usage) meets a soft coverage (bottom-12). "
@@ -89,17 +118,17 @@ def _breakdown(away, home, off, deff, blitz, dvp, usage) -> None:
     )
 
 
-def _custom(off, deff, blitz, dvp, usage, teams) -> None:
+def _custom(off, deff, blitz, extras, teams) -> None:
     c1, c2 = st.columns(2)
     with c1:
         away = st.selectbox("Away / Team A", teams, index=0, key="mu_away")
     with c2:
         home = st.selectbox("Home / Team B", teams, index=1 if len(teams) > 1 else 0, key="mu_home")
-    _breakdown(away, home, off, deff, blitz, dvp, usage)
+    _breakdown(away, home, off, deff, blitz, extras)
 
 
 def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
-           schedule: pd.DataFrame, dvp: dict, usage: pd.DataFrame) -> None:
+           schedule: pd.DataFrame, extras: dict) -> None:
     st.subheader("Matchups of the Week")
     if off.empty or deff.empty:
         st.warning("Need offensive and defensive data to compare matchups.")
@@ -124,10 +153,10 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
             return
         pick = st.selectbox("Game", labels)
         row = games.iloc[labels.index(pick)]
-        _breakdown(row["away_team"], row["home_team"], off, deff, blitz, dvp, usage)
+        _breakdown(row["away_team"], row["home_team"], off, deff, blitz, extras)
 
         with st.expander("Or build a custom matchup (any two teams)"):
-            _custom(off, deff, blitz, dvp, usage, teams)
+            _custom(off, deff, blitz, extras, teams)
     else:
         st.info("Schedule not loaded — pick any two teams to compare.")
-        _custom(off, deff, blitz, dvp, usage, teams)
+        _custom(off, deff, blitz, extras, teams)

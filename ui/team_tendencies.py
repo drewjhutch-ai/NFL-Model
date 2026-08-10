@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import tendencies
+from data import pressure, rushing, tendencies
 from data.providers import load_coverage
 from ui.components import fmt, rank_badge_html
 
@@ -31,7 +31,7 @@ def _per_source_expander(scheme_row) -> None:
 
 
 def _profile_columns(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
-                     team: str, scheme_row) -> None:
+                     team: str, scheme_row, extras: dict) -> None:
     ocol, dcol = st.columns(2)
 
     with ocol:
@@ -53,6 +53,16 @@ def _profile_columns(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
                 f"neutral pass rate {fmt(o['neutral_pass_rate'], 'pct')}  ·  "
                 f"PROE {fmt(o['proe'], 'num1') if pd.notna(o['proe']) else '—'}"
             )
+            qb = extras.get("qb")
+            if qb is not None and not qb.empty and team in qb.index:
+                q = qb.loc[team]
+                st.caption(f"**QB:** {pressure.qb_label(q['qb_rush_rate'])} "
+                           f"({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
+            rush = extras.get("rush")
+            if rush is not None and not rush.empty and team in rush.index:
+                r = rush.loc[team]
+                st.caption(f"**Ground game:** {rushing.rushing_label(r.get('ryoe_rank'))} "
+                           f"({r.get('ryoe_per_att', float('nan')):+.2f} yds over expected/att)")
         else:
             st.info("No offensive data for this team yet.")
 
@@ -69,7 +79,14 @@ def _profile_columns(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
                 + rank_badge_html("Explosive allowed", fmt(d["explosive_rate"], "pct"), d["explosive_rate_rank"]),
                 unsafe_allow_html=True,
             )
-            # blitz + coverage scheme
+            # pass rush + blitz + coverage scheme
+            prs = extras.get("pressure")
+            if prs is not None and not prs.empty and team in prs.index:
+                p = prs.loc[team]
+                st.caption(
+                    f"**Pass rush:** {pressure.pressure_label(p['pressure_rate_rank'])}  ·  "
+                    f"pressure {fmt(p['pressure_rate'], 'pct')} · sacks {fmt(p['sack_rate'], 'pct')}"
+                )
             if not blitz.empty and team in blitz.index:
                 b = blitz.loc[team]
                 st.caption(
@@ -198,7 +215,9 @@ def _defense_table(deff: pd.DataFrame, scheme_df: pd.DataFrame | None) -> None:
     )
 
 
-def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
+def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
+           extras: dict | None = None) -> None:
+    extras = extras or {}
     st.subheader("Team Data & Tendencies")
 
     if off.empty and deff.empty:
@@ -215,7 +234,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame) -> None:
     if scheme_df is not None and team in scheme_df.index:
         scheme_row = scheme_df.loc[team]
 
-    _profile_columns(off, deff, blitz, team, scheme_row)
+    _profile_columns(off, deff, blitz, team, scheme_row, extras)
 
     st.divider()
     st.markdown("### League tables")

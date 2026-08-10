@@ -12,14 +12,15 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
 
 - **📊 Team Data** — per-team offense & defense profiles with 1–32 ranks
   (EPA/play, pass & rush EPA, success rates, explosive rate), play-style lean
-  (neutral pass rate / PROE), blitz tendency (from FTN charting), and league
-  tables you can sort.
+  (neutral pass rate / PROE), **QB mobility**, **ground-game efficiency (RYOE)**,
+  **pass-rush pressure & sack rates**, blitz tendency (FTN), and league tables.
 - **⚔️ Matchups** — the week's games auto-load from the schedule; each game
   breaks down into **unit edges** (pass/rush/explosive/overall) *and*
   **positional edges** — does a team feature a weapon (e.g. pass-catching RBs)
   that the opponent struggles to cover (RB/WR/TE target share vs. EPA/target
   allowed)? Custom any-two-teams comparison still available.
-- **🎯 Picks of the Week** — placeholder; next milestone.
+- **🎯 Picks of the Week** — auto-surfaced model leans (the week's biggest unit
+  + positional mismatches, ranked) plus a personal pick log you can export to CSV.
 
 ## The data philosophy: current season drives everything
 

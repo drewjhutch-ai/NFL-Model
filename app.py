@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import loaders, positional, tendencies
+from data import loaders, positional, pressure, rushing, tendencies
 from ui import matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -27,9 +27,17 @@ def build_frames():
 
     schedule = loaders.load_schedule()
     posmap = loaders.position_map()
-    dvp = positional.defense_vs_position(pbp_w, posmap)
-    usage = positional.offense_usage(pbp_w, posmap)
-    return off, deff, blitz, live, schedule, dvp, usage
+    wr_off, wr_def = positional.wr_tiers(pbp_w, posmap)
+    extras = {
+        "dvp": positional.defense_vs_position(pbp_w, posmap),
+        "usage": positional.offense_usage(pbp_w, posmap),
+        "wr_off": wr_off,
+        "wr_def": wr_def,
+        "qb": pressure.qb_profiles(pbp_w, posmap),
+        "pressure": pressure.defense_pressure(pbp_w),
+        "rush": rushing.team_rushing_profile(loaders.load_ngs_rushing()),
+    }
+    return off, deff, blitz, live, schedule, extras
 
 
 def sidebar(live: bool) -> None:
@@ -78,7 +86,7 @@ def sidebar(live: bool) -> None:
 
 def main() -> None:
     try:
-        off, deff, blitz, live, schedule, dvp, usage = build_frames()
+        off, deff, blitz, live, schedule, extras = build_frames()
     except Exception as exc:  # noqa: BLE001
         st.error("Couldn't load NFL data. Are you online? See console for details.")
         st.exception(exc)
@@ -90,11 +98,11 @@ def main() -> None:
         ["📊 Team Data", "⚔️ Matchups", "🎯 Picks of the Week"]
     )
     with tab_data:
-        team_tendencies.render(off, deff, blitz)
+        team_tendencies.render(off, deff, blitz, extras)
     with tab_matchups:
-        matchups.render(off, deff, blitz, schedule, dvp, usage)
+        matchups.render(off, deff, blitz, schedule, extras)
     with tab_picks:
-        picks.render()
+        picks.render(off, deff, schedule, extras)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,9 @@ _PBP_COLUMNS = [
     "complete_pass",
     "receiver_player_id",
     "rusher_player_id",
+    "sack",
+    "qb_hit",
+    "qb_scramble",
 ]
 
 _FTN_COLUMNS = [
@@ -138,6 +141,32 @@ def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
                         "away_team", "home_team", "result", "away_score",
                         "home_score"] if c in df.columns]
     return df[keep]
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading rushing tracking…")
+def load_ngs_rushing(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Next Gen Stats rushing (season totals, week==0) for RB playstyle."""
+    import nfl_data_py as nfl
+
+    frames = []
+    for year in seasons:
+        try:
+            frames.append(nfl.import_ngs_data(stat_type="rushing", years=[year]))
+        except Exception as exc:  # noqa: BLE001
+            print(f"[loaders] NGS rushing unavailable for {year}: {exc}")
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    if df.empty:
+        return df
+    if "week" in df.columns:
+        df = df[df["week"] == 0]  # season cumulative rows
+    keep = [c for c in ["season", "team_abbr", "player_gsis_id", "player_position",
+                        "rush_attempts", "efficiency", "rush_yards_over_expected",
+                        "rush_yards_over_expected_per_att",
+                        "percent_attempts_gte_eight_defenders", "avg_time_to_los"]
+            if c in df.columns]
+    return df[keep].copy()
 
 
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading rosters…")
