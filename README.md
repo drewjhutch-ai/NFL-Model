@@ -10,10 +10,13 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
 
 **Foundation (v1)** — built and working:
 
-- **📊 Team Data** — per-team offense & defense profiles with 1–32 ranks
-  (EPA/play, pass & rush EPA, success rates, explosive rate), play-style lean
-  (neutral pass rate / PROE), **QB mobility**, **ground-game efficiency (RYOE)**,
-  **pass-rush pressure & sack rates**, blitz tendency (FTN), and league tables.
+- **📊 Team Data** — a visual per-team scouting profile: **percentile charts**
+  for offense & defense, an analytical **Run/Pass identity** (neutral rate +
+  PROE + percentile), split **Strengths vs Struggles** (broad headline + the
+  ultra-specific chink), plus notes for QB mobility, ground-game RYOE, pass rush,
+  blitz %, coverage (zone/man), and **blitz vulnerability**.
+- **📋 League** — sortable league-wide tables (offense / defense / blitz-scheme),
+  percent-formatted with plain-language columns and tooltips.
 - **⚔️ Matchups** — the week's games auto-load from the schedule; each game
   breaks down into **unit edges** (pass/rush/explosive/overall) *and*
   **positional edges** — does a team feature a weapon (e.g. pass-catching RBs)

@@ -8,7 +8,7 @@ import streamlit as st
 
 import config
 from data import loaders, positional, pressure, rushing, tendencies
-from ui import matchups, picks, team_tendencies
+from ui import league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
 
@@ -35,6 +35,8 @@ def build_frames():
         "wr_def": wr_def,
         "qb": pressure.qb_profiles(pbp_w, posmap),
         "pressure": pressure.defense_pressure(pbp_w),
+        "protection": pressure.offense_protection(pbp_w),
+        "ovb": pressure.offense_vs_blitz(pbp_w, ftn),
         "rush": rushing.team_rushing_profile(loaders.load_ngs_rushing()),
     }
     return off, deff, blitz, live, schedule, extras
@@ -94,11 +96,13 @@ def main() -> None:
 
     sidebar(live)
 
-    tab_data, tab_matchups, tab_picks = st.tabs(
-        ["📊 Team Data", "⚔️ Matchups", "🎯 Picks of the Week"]
+    tab_data, tab_league, tab_matchups, tab_picks = st.tabs(
+        ["📊 Team Data", "📋 League", "⚔️ Matchups", "🎯 Picks of the Week"]
     )
     with tab_data:
         team_tendencies.render(off, deff, blitz, extras)
+    with tab_league:
+        league.render(off, deff, blitz, extras)
     with tab_matchups:
         matchups.render(off, deff, blitz, schedule, extras)
     with tab_picks:
