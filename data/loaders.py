@@ -34,6 +34,8 @@ _PBP_COLUMNS = [
     "air_yards",
     "cpoe",
     "down",
+    "ydstogo",
+    "yardline_100",
     "wp",
     "half_seconds_remaining",
     "pass_oe",

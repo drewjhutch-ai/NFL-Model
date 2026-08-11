@@ -94,6 +94,57 @@ def percentile_chart(rows: list[tuple], title: str = ""):
     return fig
 
 
+def edge_bar_chart(edges: list[dict], title: str = ""):
+    """Diverging horizontal bars of matchup edges (green = offense, red = defense).
+
+    ``edges`` = list of {label, mag} with mag roughly -31..+31. Sorted so the
+    biggest offense edge is on top.
+    """
+    import plotly.graph_objects as go
+
+    rows = sorted(edges, key=lambda e: e["mag"])  # plotly draws bottom->top
+    labels = [e["label"] for e in rows]
+    mags = [e["mag"] for e in rows]
+    colors = ["#2ecc71" if m > 3 else ("#e74c3c" if m < -3 else "#9aa0a6") for m in mags]
+    texts = [("+" if m > 0 else "") + f"{m:.0f}" for m in mags]
+
+    fig = go.Figure(go.Bar(
+        x=mags, y=labels, orientation="h", marker=dict(color=colors),
+        text=texts, textposition="outside", cliponaxis=False, hoverinfo="skip",
+    ))
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=14)),
+        xaxis=dict(range=[-34, 34], title="◄ defense edge   ·   offense edge ►",
+                   showgrid=True, gridcolor="rgba(128,128,128,0.15)", zeroline=False),
+        yaxis=dict(autorange="reversed"),
+        height=max(180, 40 * len(rows) + 60),
+        margin=dict(l=10, r=10, t=40, b=32),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False, bargap=0.3,
+    )
+    fig.add_vline(x=0, line_color="rgba(128,128,128,0.6)")
+    return fig
+
+
+def edge_meter_html(away: str, home: str, away_net: float, home_net: float) -> str:
+    """A centered meter showing which side's attack has the bigger edge."""
+    diff = home_net - away_net           # >0 favors home
+    pos = max(0, min(100, 50 + diff * 2.2))  # map to 0-100, clamp
+    fav = home if diff > 0 else away
+    return f"""
+    <div style="margin:4px 0 2px;">
+      <div style="position:relative;height:16px;border-radius:8px;
+                  background:linear-gradient(90deg,#e74c3c,#444,#2ecc71);opacity:.85;">
+        <div style="position:absolute;left:calc({pos}% - 7px);top:-4px;width:14px;height:24px;
+                    background:#fff;border-radius:3px;border:2px solid #111;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#bbb;margin-top:2px;">
+        <span>◄ {away}</span><span><b>lean: {fav}</b></span><span>{home} ►</span>
+      </div>
+    </div>
+    """
+
+
 def sw_card_html(title: str, items: list[str], kind: str = "strength") -> str:
     """A tinted callout card for Strengths (green) or Struggles (red)."""
     tint = "rgba(46,204,113,0.12)" if kind == "strength" else "rgba(231,76,60,0.12)"

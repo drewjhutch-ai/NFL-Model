@@ -29,7 +29,7 @@ def _auto_leans(off, deff, schedule, extras) -> None:
     wk = st.selectbox(f"Week ({season})", weeks, index=idx, key="picks_week")
     games = s[s["week"] == wk]
 
-    leans = edges.week_leans(games, off, deff, extras["dvp"], extras["usage"])
+    leans = edges.week_leans(games, off, deff, extras)
     if leans.empty:
         st.info("No standout edges for this week yet (early-season / offseason data).")
         return

@@ -17,11 +17,12 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
   blitz %, coverage (zone/man), and **blitz vulnerability**.
 - **📋 League** — sortable league-wide tables (offense / defense / blitz-scheme),
   percent-formatted with plain-language columns and tooltips.
-- **⚔️ Matchups** — the week's games auto-load from the schedule; each game
-  breaks down into **unit edges** (pass/rush/explosive/overall) *and*
-  **positional edges** — does a team feature a weapon (e.g. pass-catching RBs)
-  that the opponent struggles to cover (RB/WR/TE target share vs. EPA/target
-  allowed)? Custom any-two-teams comparison still available.
+- **⚔️ Matchups** — the week's games auto-load; each is a pro head-to-head: a
+  branded banner, a headline **verdict** (edge meter + who's favored + the single
+  biggest mismatch), a diverging **"where's the edge" chart** per direction
+  (passing, rushing, explosive, **3rd down**, **red zone**, RB/WR/TE receiving),
+  positional tables, WR1/2/3 detail, and scouting notes (QB vs pressure, ground
+  vs run D, situational, blitz). Custom any-two-teams comparison included.
 - **🎯 Picks of the Week** — auto-surfaced model leans (the week's biggest unit
   + positional mismatches, ranked) plus a personal pick log you can export to CSV.
 

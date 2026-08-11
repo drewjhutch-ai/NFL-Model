@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import loaders, positional, pressure, rushing, tendencies
+from data import loaders, positional, pressure, rushing, situational, tendencies
 from ui import league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -38,6 +38,8 @@ def build_frames():
         "protection": pressure.offense_protection(pbp_w),
         "ovb": pressure.offense_vs_blitz(pbp_w, ftn),
         "rush": rushing.team_rushing_profile(loaders.load_ngs_rushing()),
+        "off_sit": situational.offense_situational(pbp_w),
+        "def_sit": situational.defense_situational(pbp_w),
     }
     return off, deff, blitz, live, schedule, extras
 
