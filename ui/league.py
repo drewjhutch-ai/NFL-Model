@@ -36,7 +36,8 @@ def _glossary() -> None:
 
 def _offense_table(off: pd.DataFrame) -> None:
     d = off.copy()
-    d["Run/Pass lean"] = d["neutral_pass_rate"].map(tendencies.style_label)
+    d["Run/Pass lean"] = d["style"] if "style" in d.columns else \
+        d["neutral_pass_rate"].map(tendencies.style_label)
     d["Strength / struggle"] = [
         tendencies.unit_summary(r.pass_epa_rank, r.rush_epa_rank) for r in d.itertuples()
     ]

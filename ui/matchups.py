@@ -10,8 +10,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import (edges, injuries, loaders, positional, pressure, rushing,
-                  tendencies)
+from data import edges, injuries, loaders, positional, pressure, rushing
 from ui.components import edge_bar_chart, edge_meter_html, fmt, ordinal
 
 
@@ -94,7 +93,7 @@ def _notes(o_team, d_team, off, deff, blitz, extras) -> None:
     if qb is not None and not qb.empty and o_team in qb.index and \
        prs is not None and not prs.empty and d_team in prs.index:
         q, p = qb.loc[o_team], prs.loc[d_team]
-        st.caption(f"**QB vs rush:** {pressure.qb_label(q['qb_rush_rate'])} "
+        st.caption(f"**QB vs rush:** {q.get('qb_style', '—')} "
                    f"({fmt(q['qb_rush_rate'], 'pct')}) vs {pressure.pressure_label(p['pressure_rate_rank'])} "
                    f"({fmt(p['pressure_rate'], 'pct')} pressure)")
     rush = extras.get("rush")
@@ -119,7 +118,7 @@ def _notes(o_team, d_team, off, deff, blitz, extras) -> None:
     if not blitz.empty and d_team in blitz.index:
         b = blitz.loc[d_team]
         st.caption(f"**{d_team} blitz:** {fmt(b['blitz_rate'], 'pct')} "
-                   f"({tendencies.blitz_label(b['blitz_rate'])})")
+                   f"({b.get('blitz_tendency', '—')})")
 
 
 def _injuries_row(away, home, extras) -> None:

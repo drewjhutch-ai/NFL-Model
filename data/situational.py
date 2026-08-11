@@ -21,8 +21,13 @@ def _situational(pbp_weighted: pd.DataFrame, team_col: str, best_high: bool) -> 
     if pbp_weighted.empty or team_col not in pbp_weighted.columns:
         return pd.DataFrame()
     df = pbp_weighted[pbp_weighted[team_col].notna()].copy()
-    third = df[df.get("down") == 3]
-    rz = df[df.get("yardline_100", 100) <= 20]
+    empty = df.iloc[0:0]
+    third = df[df["down"] == 3] if "down" in df.columns else empty
+    rz = df[df["yardline_100"] <= 20] if "yardline_100" in df.columns else empty
+
+    def _flag(g, col):
+        s = g[col].fillna(0).astype(float) if col in g.columns else pd.Series(0.0, index=g.index)
+        return g.assign(_x=s)
 
     rows = []
     for team in sorted(df[team_col].unique()):
@@ -30,11 +35,9 @@ def _situational(pbp_weighted: pd.DataFrame, team_col: str, best_high: bool) -> 
         gz = rz[rz[team_col] == team]
         rows.append({
             "team": team,
-            "third_conv": _wmean(gt.assign(_c=gt.get("first_down", 0).fillna(0).astype(float)), "_c")
-            if not gt.empty else np.nan,
+            "third_conv": _wmean(_flag(gt, "first_down"), "_x") if not gt.empty else np.nan,
             "third_epa": _wmean(gt, "epa") if not gt.empty else np.nan,
-            "rz_td_rate": _wmean(gz.assign(_t=gz.get("touchdown", 0).fillna(0).astype(float)), "_t")
-            if not gz.empty else np.nan,
+            "rz_td_rate": _wmean(_flag(gz, "touchdown"), "_x") if not gz.empty else np.nan,
             "rz_epa": _wmean(gz, "epa") if not gz.empty else np.nan,
         })
     m = pd.DataFrame(rows).set_index("team")

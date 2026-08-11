@@ -10,6 +10,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from data import labels
+
 
 def _ordinal(n) -> str:
     if n is None or pd.isna(n):
@@ -96,30 +98,17 @@ def pass_identity(team: str, off: pd.DataFrame) -> dict:
     series = off["neutral_pass_rate"].dropna()
     npr_pct = float((series < npr).mean() * 100) if pd.notna(npr) and len(series) else np.nan
 
+    # Relative label: where this team sits in the league's pass-rate distribution,
+    # so it recalibrates as the NFL trends run- or pass-heavier.
+    base = labels.band_from_pct(npr_pct, labels.STYLE_BANDS) if pd.notna(npr_pct) else "—"
     return {
         "neutral_pass_rate": npr,
         "proe": proe,
         "pass_rate": pass_rate,
         "npr_pct": npr_pct,
-        "base": _base_label(npr),
+        "base": base,
         "tendency": _proe_label(proe),
     }
-
-
-def _base_label(npr) -> str:
-    if npr is None or pd.isna(npr):
-        return "—"
-    if npr >= 0.60:
-        return "Very pass-heavy"
-    if npr >= 0.555:
-        return "Pass-leaning"
-    if npr >= 0.52:
-        return "Balanced (slight pass)"
-    if npr >= 0.48:
-        return "Balanced"
-    if npr >= 0.44:
-        return "Run-leaning"
-    return "Very run-heavy"
 
 
 def _proe_label(proe) -> str:

@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import loaders, pressure, profiles, rushing, tendencies
+from data import loaders, pressure, profiles, rushing
 from data.providers import load_coverage
 from ui.components import (facet_html, fmt, gauge_bar_html, injury_card_html,
                            ordinal, percentile_chart, sw_card_html)
@@ -64,8 +64,8 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
     qb = extras.get("qb")
     qlab = "—"
     if qb is not None and not qb.empty and team in qb.index:
-        qlab = pressure.qb_label(qb.loc[team, "qb_rush_rate"])
-    k4.metric("QB style", qlab, help="Mobility from scramble + designed-run rate")
+        qlab = qb.loc[team].get("qb_style", "—")
+    k4.metric("QB style", qlab, help="Mobility from scramble + designed-run rate (league-relative)")
 
 
 def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
@@ -96,7 +96,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             qb = extras.get("qb")
             if qb is not None and not qb.empty and team in qb.index:
                 q = qb.loc[team]
-                st.caption(f"**QB:** {pressure.qb_label(q['qb_rush_rate'])} "
+                st.caption(f"**QB:** {q.get('qb_style', '—')} "
                            f"({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
             rush = extras.get("rush")
             if rush is not None and not rush.empty and team in rush.index:
@@ -107,7 +107,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             if ovb is not None and not ovb.empty and team in ovb.index:
                 b = ovb.loc[team]
                 st.caption(
-                    f"**vs Blitz:** {pressure.blitz_resilience_label(b['blitz_delta'])} — "
+                    f"**vs Blitz:** {b.get('resilience', '—')} — "
                     f"{fmt(b['epa_vs_blitz'], 'epa')} EPA blitzed vs "
                     f"{fmt(b['epa_no_blitz'], 'epa')} not"
                 )
@@ -144,7 +144,7 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             if not blitz.empty and team in blitz.index:
                 b = blitz.loc[team]
                 st.caption(f"**Blitz:** {fmt(b['blitz_rate'], 'pct')} of dropbacks "
-                           f"({tendencies.blitz_label(b['blitz_rate'])})")
+                           f"({b.get('blitz_tendency', '—')})")
             else:
                 st.caption("**Blitz:** FTN charting not loaded for these seasons.")
             if scheme_row is not None:

@@ -12,6 +12,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from data import labels
+
 
 def _wmean(g: pd.DataFrame, value: str) -> float:
     v, w = g[value], g["w"]
@@ -45,6 +47,7 @@ def qb_profiles(pbp_weighted: pd.DataFrame, posmap: dict[str, str]) -> pd.DataFr
     m = pd.DataFrame(rows).set_index("team")
     if not m.empty:
         m["qb_rush_rate_rank"] = m["qb_rush_rate"].rank(ascending=False, method="min").astype("Int64")
+        m["qb_style"] = labels.band_series(m["qb_rush_rate"], labels.QB_BANDS)
     return m
 
 
@@ -123,6 +126,7 @@ def offense_vs_blitz(pbp_weighted: pd.DataFrame, ftn: pd.DataFrame) -> pd.DataFr
     m = pd.DataFrame(rows).set_index("team")
     if not m.empty:
         m["vs_blitz_rank"] = m["epa_vs_blitz"].rank(ascending=False, method="min").astype("Int64")
+        m["resilience"] = labels.band_series(m["blitz_delta"], labels.RESILIENCE_BANDS)
     return m
 
 

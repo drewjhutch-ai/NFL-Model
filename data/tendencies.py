@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 import config
+from data import labels
 
 
 # --- weighted helpers --------------------------------------------------------
@@ -94,6 +95,7 @@ def compute_offense(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
     m["pass_sr_rank"] = _rank(m["pass_sr"], best_high=True)
     m["rush_sr_rank"] = _rank(m["rush_sr"], best_high=True)
     m["explosive_rate_rank"] = _rank(m["explosive_rate"], best_high=True)
+    m["style"] = labels.band_series(m["neutral_pass_rate"], labels.STYLE_BANDS)
     return m.sort_values("epa_play", ascending=False)
 
 
@@ -151,6 +153,7 @@ def compute_blitz(pbp_weighted: pd.DataFrame, ftn: pd.DataFrame) -> pd.DataFrame
     m = pd.DataFrame(rows).set_index("team")
     if not m.empty:
         m["blitz_rate_rank"] = _rank(m["blitz_rate"], best_high=True)  # rank 1 = blitziest
+        m["blitz_tendency"] = labels.band_series(m["blitz_rate"], labels.BLITZ_BANDS)
     return m
 
 
