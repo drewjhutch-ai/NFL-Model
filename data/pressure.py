@@ -73,6 +73,72 @@ def defense_pressure(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
     return m
 
 
+def offense_protection(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
+    """Per-offense pass protection: sack/pressure rate allowed (rank 1 = best)."""
+    if pbp_weighted.empty or "qb_dropback" not in pbp_weighted.columns:
+        return pd.DataFrame()
+    db = pbp_weighted[pbp_weighted["qb_dropback"] == 1].copy()
+    if db.empty:
+        return pd.DataFrame()
+    db["_sack"] = (db.get("sack", 0) == 1).astype(float)
+    db["_pressure"] = ((db.get("sack", 0) == 1) | (db.get("qb_hit", 0) == 1)).astype(float)
+    rows = []
+    for team, g in db.groupby("posteam"):
+        rows.append({"team": team, "sack_allowed_rate": _wmean(g, "_sack"),
+                     "pressure_allowed_rate": _wmean(g, "_pressure")})
+    m = pd.DataFrame(rows).set_index("team")
+    if not m.empty:
+        m["protection_rank"] = m["sack_allowed_rate"].rank(ascending=True, method="min").astype("Int64")
+    return m
+
+
+def offense_vs_blitz(pbp_weighted: pd.DataFrame, ftn: pd.DataFrame) -> pd.DataFrame:
+    """How each offense performs when blitzed vs not (FTN charting, 2022+).
+
+    ``epa_vs_blitz`` ranked (1 = best against the blitz); ``blitz_delta`` < 0
+    means the offense is *worse* when blitzed — i.e. a blitz-vulnerable unit.
+    """
+    if ftn.empty or pbp_weighted.empty or "n_blitzers" not in ftn.columns:
+        return pd.DataFrame()
+    f = ftn.rename(columns={"nflverse_game_id": "game_id", "nflverse_play_id": "play_id"})
+    cols = [c for c in ["game_id", "play_id", "posteam", "qb_dropback", "epa", "w"]
+            if c in pbp_weighted.columns]
+    merged = pbp_weighted[cols].merge(f[["game_id", "play_id", "n_blitzers"]],
+                                      on=["game_id", "play_id"], how="inner")
+    if "qb_dropback" in merged.columns:
+        merged = merged[merged["qb_dropback"] == 1]
+    merged = merged[merged["posteam"].notna() & merged["n_blitzers"].notna()]
+    if merged.empty:
+        return pd.DataFrame()
+    merged["_blitz"] = (merged["n_blitzers"] >= 1)
+    rows = []
+    for team, g in merged.groupby("posteam"):
+        blitzed = g[g["_blitz"]]
+        clean = g[~g["_blitz"]]
+        evb = _wmean(blitzed, "epa") if not blitzed.empty else np.nan
+        enb = _wmean(clean, "epa") if not clean.empty else np.nan
+        rows.append({"team": team, "epa_vs_blitz": evb, "epa_no_blitz": enb,
+                     "blitz_delta": (evb - enb) if pd.notna(evb) and pd.notna(enb) else np.nan,
+                     "blitz_faced_rate": _wmean(g.assign(_b=g["_blitz"].astype(float)), "_b")})
+    m = pd.DataFrame(rows).set_index("team")
+    if not m.empty:
+        m["vs_blitz_rank"] = m["epa_vs_blitz"].rank(ascending=False, method="min").astype("Int64")
+    return m
+
+
+def blitz_resilience_label(delta) -> str:
+    """Does the offense hold up against the blitz?"""
+    if delta is None or pd.isna(delta):
+        return "—"
+    if delta >= 0.05:
+        return "Thrives vs blitz"
+    if delta >= -0.05:
+        return "Handles blitz fine"
+    if delta >= -0.15:
+        return "Dips vs blitz"
+    return "Struggles vs blitz"
+
+
 def qb_label(rush_rate: float) -> str:
     if rush_rate is None or np.isnan(rush_rate):
         return "—"
