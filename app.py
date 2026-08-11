@@ -7,7 +7,8 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import loaders, positional, pressure, rushing, situational, tendencies
+from data import (injuries, loaders, positional, pressure, rushing, situational,
+                  tendencies)
 from ui import league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -41,6 +42,11 @@ def build_frames():
         "off_sit": situational.offense_situational(pbp_w),
         "def_sit": situational.defense_situational(pbp_w),
     }
+    inj_map, inj_week = injuries.build(
+        loaders.load_injuries(), loaders.load_snaps(), loaders.load_rosters(),
+        config.CURRENT_SEASON)
+    extras["injuries"] = inj_map
+    extras["injury_week"] = inj_week
     return off, deff, blitz, live, schedule, extras
 
 

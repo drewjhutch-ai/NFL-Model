@@ -10,7 +10,8 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import edges, loaders, positional, pressure, rushing, tendencies
+from data import (edges, injuries, loaders, positional, pressure, rushing,
+                  tendencies)
 from ui.components import edge_bar_chart, edge_meter_html, fmt, ordinal
 
 
@@ -121,11 +122,27 @@ def _notes(o_team, d_team, off, deff, blitz, extras) -> None:
                    f"({tendencies.blitz_label(b['blitz_rate'])})")
 
 
+def _injuries_row(away, home, extras) -> None:
+    imap = extras.get("injuries", {})
+    wk = extras.get("injury_week")
+    if wk is None:
+        st.caption("🩺 Injury reports appear here once the season starts.")
+        return
+    c1, c2 = st.columns(2)
+    ai, hi = imap.get(away, []), imap.get(home, [])
+    c1.markdown(f"**{away}** 🩺 {injuries.summary_line(ai)}")
+    c2.markdown(f"**{home}** 🩺 {injuries.summary_line(hi)}")
+    if any(p["status"] == "Out" for p in ai + hi):
+        outs = [f"{p['name']} ({away if p in ai else home})" for p in ai + hi if p["status"] == "Out"]
+        st.warning("🔴 **Ruled out:** " + " · ".join(outs))
+
+
 def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     if away == home:
         st.info("Pick two different teams.")
         return
     _banner(away, home, game_row)
+    _injuries_row(away, home, extras)
     _verdict(away, home, off, deff, extras)
     st.divider()
     st.markdown("### ⚔️ Attack breakdowns")

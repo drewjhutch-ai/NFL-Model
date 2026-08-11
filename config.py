@@ -51,6 +51,12 @@ EXPLOSIVE_PASS_YARDS = 15
 EXPLOSIVE_RUSH_YARDS = 10
 
 
+# --- Injuries ----------------------------------------------------------------
+# A player counts as a "major" injury if they play at least this share of their
+# unit's snaps (offense or defense). Captures starters + heavy rotation pieces.
+INJURY_SNAP_THRESHOLD = 0.25
+
+
 # --- Coverage-scheme sources (zone/man) --------------------------------------
 # We blend multiple sources into one consensus. Trust weights say how much each
 # source counts toward the blend. PFF is the charting gold standard, so it leads;

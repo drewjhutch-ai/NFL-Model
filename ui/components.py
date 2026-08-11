@@ -164,6 +164,33 @@ def facet_html(f: dict) -> str:
     return f"<b>{f['unit']}</b> — {f['detail']} ({ordinal(f['rank'])})"
 
 
+_INJ_ICON = {"Out": "🔴", "Doubtful": "🟠", "Questionable": "🟡"}
+
+
+def injury_card_html(items: list[dict], week=None, has_report: bool = True) -> str:
+    """Amber/red injury card, green when healthy, gray in the offseason."""
+    title = "🩺 Injury report" + (f" · Wk {week}" if week else "")
+    if not has_report:
+        return ("<div style='background:rgba(128,128,128,0.10);border-left:4px solid "
+                "#888;border-radius:8px;padding:8px 12px;'><b>🩺 Injury report</b><br>"
+                "<span style='opacity:.8;font-size:0.88rem;'>Updates weekly once the "
+                "season starts (no report in the offseason).</span></div>")
+    if not items:
+        return (f"<div style='background:rgba(46,204,113,0.10);border-left:4px solid "
+                f"#2ecc71;border-radius:8px;padding:8px 12px;'><b>{title}</b><br>"
+                f"<span style='opacity:.85;'>✅ No major injuries reported.</span></div>")
+    lis = ""
+    for p in items:
+        ic = _INJ_ICON.get(p["status"], "•")
+        inj = f" — {p['injury']}" if p.get("injury") else ""
+        lis += (f"<li style='margin:2px 0;'>{ic} <b>{p['name']}</b> "
+                f"<span style='opacity:.7;'>({p['pos']}, {p['side']})</span> · "
+                f"{p['status']}{inj} · {p['pct'] * 100:.0f}% snaps</li>")
+    return (f"<div style='background:rgba(231,76,60,0.10);border-left:4px solid "
+            f"#e74c3c;border-radius:8px;padding:8px 12px;'><b>{title}</b>"
+            f"<ul style='margin:4px 0 0;padding-left:18px;'>{lis}</ul></div>")
+
+
 def gauge_bar_html(value_pct: float, label_left: str = "Run", label_right: str = "Pass") -> str:
     """A run↔pass spectrum bar with a marker at value_pct (0-100)."""
     v = 0 if value_pct is None or pd.isna(value_pct) else max(0, min(100, value_pct))

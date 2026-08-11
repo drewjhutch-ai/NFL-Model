@@ -201,8 +201,35 @@ def load_rosters(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFra
     df = _safe_import(nfl.import_seasonal_rosters, list(seasons))
     if df.empty:
         return df
-    keep = [c for c in ["season", "player_id", "position", "player_name",
+    keep = [c for c in ["season", "player_id", "pfr_id", "position", "player_name",
                         "team", "depth_chart_position"] if c in df.columns]
+    return df[keep].copy()
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading injury reports…")
+def load_injuries(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Weekly injury reports (game status per player)."""
+    import nfl_data_py as nfl
+
+    df = _safe_import(nfl.import_injuries, list(seasons))
+    if df.empty:
+        return df
+    keep = [c for c in ["season", "week", "team", "gsis_id", "full_name",
+                        "position", "report_status", "report_primary_injury"]
+            if c in df.columns]
+    return df[keep].copy()
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading snap counts…")
+def load_snaps(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Per-game snap counts / shares (for gauging who actually plays)."""
+    import nfl_data_py as nfl
+
+    df = _safe_import(nfl.import_snap_counts, list(seasons))
+    if df.empty:
+        return df
+    keep = [c for c in ["season", "week", "player", "pfr_player_id", "position",
+                        "team", "offense_pct", "defense_pct"] if c in df.columns]
     return df[keep].copy()
 
 

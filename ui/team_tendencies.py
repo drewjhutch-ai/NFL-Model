@@ -13,8 +13,8 @@ import streamlit as st
 import config
 from data import loaders, pressure, profiles, rushing, tendencies
 from data.providers import load_coverage
-from ui.components import (facet_html, fmt, gauge_bar_html, ordinal,
-                           percentile_chart, sw_card_html)
+from ui.components import (facet_html, fmt, gauge_bar_html, injury_card_html,
+                           ordinal, percentile_chart, sw_card_html)
 
 
 def _per_source_expander(scheme_row) -> None:
@@ -176,6 +176,11 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
         scheme_row = scheme_df.loc[team]
 
     _header(team, off, deff, extras)
+    st.markdown(
+        injury_card_html(extras.get("injuries", {}).get(team, []),
+                         extras.get("injury_week"),
+                         has_report=extras.get("injury_week") is not None),
+        unsafe_allow_html=True)
     st.divider()
     if team in off.index:
         _offense_section(off, team, extras)
