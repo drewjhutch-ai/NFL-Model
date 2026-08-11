@@ -111,16 +111,38 @@ def load_ftn(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     return df[keep].copy()
 
 
-@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading team metadata…")
-def load_team_desc() -> pd.DataFrame:
-    """Team abbreviations, names, colors, logos."""
-    import nfl_data_py as nfl
+_TEAM_META_URL = ("https://raw.githubusercontent.com/nflverse/nflfastR-data/"
+                  "master/teams_colors_logos.csv")
 
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading team branding…")
+def load_team_desc() -> pd.DataFrame:
+    """Team abbreviations, names, colors, and logos (from a reachable mirror)."""
     try:
-        return nfl.import_team_desc()
+        return pd.read_csv(_TEAM_META_URL)
     except Exception as exc:  # noqa: BLE001
-        print(f"[loaders] team desc unavailable: {exc}")
+        print(f"[loaders] team meta unavailable: {exc}")
         return pd.DataFrame()
+
+
+@st.cache_data(ttl=_CACHE_TTL)
+def team_meta() -> dict[str, dict]:
+    """abbr -> {name, color, color2, logo} for headers and accents."""
+    df = load_team_desc()
+    if df.empty:
+        return {}
+    out = {}
+    for _, r in df.iterrows():
+        abbr = r.get("team_abbr")
+        if not isinstance(abbr, str):
+            continue
+        out[abbr] = {
+            "name": r.get("team_name", abbr),
+            "color": r.get("team_color", "#1f77b4"),
+            "color2": r.get("team_color2", "#333333"),
+            "logo": r.get("team_logo_espn") or r.get("team_logo_wikipedia", ""),
+        }
+    return out
 
 
 # nflverse's schedule file, served from a host our environments can reach

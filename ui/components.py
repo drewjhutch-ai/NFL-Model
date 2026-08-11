@@ -81,14 +81,36 @@ def percentile_chart(rows: list[tuple], title: str = ""):
     fig.update_layout(
         title=dict(text=title, font=dict(size=15)),
         xaxis=dict(range=[0, 118], title="percentile (100 = best in NFL)",
-                   showgrid=True, gridcolor="rgba(128,128,128,0.15)", zeroline=False),
+                   showgrid=True, gridcolor="rgba(128,128,128,0.15)", zeroline=False,
+                   tickvals=[0, 25, 50, 75, 100]),
         yaxis=dict(autorange="reversed"),
         height=max(180, 46 * len(rows) + 70),
         margin=dict(l=10, r=10, t=42, b=32),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False, bargap=0.35,
     )
+    # league-average reference
+    fig.add_vline(x=50, line_dash="dot", line_color="rgba(128,128,128,0.5)")
     return fig
+
+
+def sw_card_html(title: str, items: list[str], kind: str = "strength") -> str:
+    """A tinted callout card for Strengths (green) or Struggles (red)."""
+    tint = "rgba(46,204,113,0.12)" if kind == "strength" else "rgba(231,76,60,0.12)"
+    edge = "#2ecc71" if kind == "strength" else "#e74c3c"
+    if items:
+        lis = "".join(f"<li style='margin:3px 0;'>{it}</li>" for it in items)
+        body = f"<ul style='margin:0;padding-left:18px;'>{lis}</ul>"
+    else:
+        body = "<div style='opacity:.6;font-size:0.85rem;'>Nothing notable.</div>"
+    return (f"<div style='background:{tint};border-left:4px solid {edge};"
+            f"border-radius:8px;padding:8px 12px;height:100%;'>"
+            f"<div style='font-weight:700;margin-bottom:4px;'>{title}</div>{body}</div>")
+
+
+def facet_html(f: dict) -> str:
+    """'<b>Coverage</b> — covering pass-catching RBs (30th)'."""
+    return f"<b>{f['unit']}</b> — {f['detail']} ({ordinal(f['rank'])})"
 
 
 def gauge_bar_html(value_pct: float, label_left: str = "Run", label_right: str = "Pass") -> str:
