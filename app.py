@@ -9,7 +9,7 @@ import streamlit as st
 import config
 from data import (injuries, loaders, positional, pressure, rushing, situational,
                   tendencies)
-from ui import league, matchups, picks, team_tendencies
+from ui import betting, league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
 
@@ -104,8 +104,8 @@ def main() -> None:
 
     sidebar(live)
 
-    tab_data, tab_league, tab_matchups, tab_picks = st.tabs(
-        ["📊 Team Data", "📋 League", "⚔️ Matchups", "🎯 Picks of the Week"]
+    tab_data, tab_league, tab_matchups, tab_betting, tab_picks = st.tabs(
+        ["📊 Team Data", "📋 League", "⚔️ Matchups", "💰 Betting", "🎯 Picks of the Week"]
     )
     with tab_data:
         team_tendencies.render(off, deff, blitz, extras)
@@ -113,6 +113,8 @@ def main() -> None:
         league.render(off, deff, blitz, extras)
     with tab_matchups:
         matchups.render(off, deff, blitz, schedule, extras)
+    with tab_betting:
+        betting.render(off, deff, schedule, extras)
     with tab_picks:
         picks.render(off, deff, schedule, extras)
 

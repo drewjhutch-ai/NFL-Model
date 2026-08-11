@@ -163,7 +163,11 @@ def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
     df = df[df["season"].isin(list(seasons))].copy()
     keep = [c for c in ["game_id", "season", "week", "gameday", "weekday",
                         "away_team", "home_team", "result", "away_score",
-                        "home_score"] if c in df.columns]
+                        "home_score", "spread_line", "total_line",
+                        "away_moneyline", "home_moneyline", "away_spread_odds",
+                        "home_spread_odds", "over_odds", "under_odds",
+                        "away_rest", "home_rest", "div_game", "roof",
+                        "surface", "temp", "wind"] if c in df.columns]
     return df[keep]
 
 

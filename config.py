@@ -77,6 +77,17 @@ EDGE_WEIGHTS = {
 DEFAULT_EDGE_WEIGHT = 1.0
 
 
+# --- Betting model -----------------------------------------------------------
+# Translate our efficiency data into a projected point spread, to compare with
+# the market. These are sensible defaults meant to be *calibrated* by the
+# results/learning loop over time — not gospel.
+HOME_FIELD_ADVANTAGE = 1.8      # points; modern NFL home edge has shrunk to ~1.5-2
+PLAYS_PER_TEAM = 63             # to scale EPA/play into a game-level margin
+WINPROB_SLOPE = 0.146          # logistic slope: margin (pts) -> win probability
+VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
+VALUE_PROB = 0.05              # flag moneyline value when our edge >= this
+
+
 # --- Injuries ----------------------------------------------------------------
 # A player counts as a "major" injury if they play at least this share of their
 # unit's snaps (offense or defense). Captures starters + heavy rotation pieces.
