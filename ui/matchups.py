@@ -48,15 +48,28 @@ def _verdict(away, home, off, deff, extras) -> None:
 
     st.markdown(edge_meter_html(away, home, a_net, h_net), unsafe_allow_html=True)
     k1, k2, k3 = st.columns(3)
-    k1.metric(f"{away} attack", f"{a_net:+.0f}", help="Mean facet edge, away offense vs home defense")
-    k2.metric(f"{home} attack", f"{h_net:+.0f}", help="Mean facet edge, home offense vs away defense")
-    k3.metric("Projected lean", fav, f"+{abs(diff):.0f}" if diff else None, help="Bigger overall attack edge")
+    k1.metric(f"{away} attack", f"{a_net:+.1f}", help="Importance-weighted attack edge, away offense vs home defense")
+    k2.metric(f"{home} attack", f"{h_net:+.1f}", help="Importance-weighted attack edge, home offense vs away defense")
+    k3.metric("Projected lean", fav, f"+{abs(diff):.1f}" if diff else None, help="Bigger weighted attack edge")
+
+    # QB is the highest-weighted facet — surface it explicitly.
+    qa = next((e for e in ae if e["label"] == "QB / Passing"), None)
+    qh = next((e for e in he if e["label"] == "QB / Passing"), None)
+    if qa or qh:
+        bits = []
+        if qa:
+            bits.append(f"{away} {'+' if qa['mag'] >= 0 else ''}{qa['mag']:.0f}")
+        if qh:
+            bits.append(f"{home} {'+' if qh['mag'] >= 0 else ''}{qh['mag']:.0f}")
+        st.caption("🎯 **QB / Passing edge (highest weight ×%.1f):** %s"
+                   % (qa["weight"] if qa else qh["weight"], " · ".join(bits)))
 
     allx = [(away, e) for e in ae] + [(home, e) for e in he]
     if allx:
-        team, big = max(allx, key=lambda x: x[1]["mag"])
-        if big["mag"] >= 8:
-            st.success(f"🔑 **Biggest edge:** {team} — {big['label']} · {big['detail']}")
+        team, big = max(allx, key=lambda x: x[1]["impact"])
+        if big["impact"] >= 10:
+            st.success(f"🔑 **Biggest edge:** {team} — {big['label']} · {big['detail']} "
+                       f"(edge {big['mag']:+.0f} × weight {big['weight']:g})")
         else:
             st.info("🟡 No lopsided edges — a close, balanced matchup on paper.")
 
@@ -150,7 +163,9 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
         _direction(away, home, off, deff, blitz, extras)
     with ra:
         _direction(home, away, off, deff, blitz, extras)
-    st.caption("🟢 offense edge · 🔴 defense edge · scale ≈ −31…+31 (rank differential). "
+    st.caption("🟢 offense edge · 🔴 defense edge. Bar **length** = raw edge; bar "
+               "**thickness** = how much that facet decides NFL games (QB/passing "
+               "weighted highest, RB receiving lowest). Ordered by weighted impact. "
                "A decision aid — the pick is yours.")
 
 

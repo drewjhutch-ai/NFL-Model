@@ -26,6 +26,27 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
 - **🎯 Picks of the Week** — auto-surfaced model leans (the week's biggest unit
   + positional mismatches, ranked) plus a personal pick log you can export to CSV.
 
+## Edges are weighted by what actually decides NFL games
+
+Matchup facets are **not** treated as equal. Each is weighted by its real
+predictive value in the modern NFL (grounded in public analytics — passing/QB
+EPA and pressure are the sticky, predictive signals; rushing EPA and red-zone
+TD% are weak/regression-prone; RB receiving is a small slice):
+
+| Facet | Weight | Facet | Weight |
+|-------|:------:|-------|:------:|
+| QB / Passing | 2.4 | 3rd down | 0.9 |
+| Pass rush | 1.4 | Red zone | 0.7 |
+| Coverage scheme* | 1.3 | Rushing | 0.6 |
+| Explosive | 1.3 | TE receiving | 0.6 |
+| WR receiving | 1.1 | RB receiving | 0.35 |
+
+\* activates when PFF offense-vs-coverage data is uploaded (a zone-beating
+offense vs a zone-heavy defense then earns a weighted edge). Weights live in
+`config.EDGE_WEIGHTS`. On the matchup chart, bar **length** = raw edge, bar
+**thickness** = weight, ordered by **impact** (edge × weight) — so QB/passing
+dominates and RB receiving stays small even on a big raw edge.
+
 ## The data philosophy: current season drives everything
 
 The NFL moves fast, so last season is basically old news. Every ranking and

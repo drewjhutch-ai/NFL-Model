@@ -74,6 +74,7 @@ def _team_metrics(pbp: pd.DataFrame, team_col: str) -> pd.DataFrame:
                 "rush_epa": _wmean(gr, "epa"),
                 "pass_sr": _wmean(gp, "success"),
                 "rush_sr": _wmean(gr, "success"),
+                "cpoe": _wmean(gp, "cpoe") if "cpoe" in gp.columns else np.nan,
                 "explosive_rate": _wmean(g.assign(_e=g["is_explosive"].astype(float)), "_e"),
                 "pass_rate": _wmean(g.assign(_p=(g["pass"] == 1).astype(float)), "_p"),
                 "neutral_pass_rate": _wmean(gn.assign(_p=(gn["pass"] == 1).astype(float)), "_p")
@@ -96,6 +97,12 @@ def compute_offense(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
     m["rush_sr_rank"] = _rank(m["rush_sr"], best_high=True)
     m["explosive_rate_rank"] = _rank(m["explosive_rate"], best_high=True)
     m["style"] = labels.band_series(m["neutral_pass_rate"], labels.STYLE_BANDS)
+    # QB / passing composite: dropback efficiency (EPA) blended with accuracy
+    # over expected (CPOE). This is the single most predictive offensive signal.
+    epa_pct = m["pass_epa"].rank(pct=True)
+    cpoe_pct = m["cpoe"].rank(pct=True) if m["cpoe"].notna().any() else epa_pct
+    m["qb_score"] = 0.7 * epa_pct + 0.3 * cpoe_pct
+    m["qb_rank"] = _rank(m["qb_score"], best_high=True)
     return m.sort_values("epa_play", ascending=False)
 
 

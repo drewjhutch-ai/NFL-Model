@@ -51,6 +51,32 @@ EXPLOSIVE_PASS_YARDS = 15
 EXPLOSIVE_RUSH_YARDS = 10
 
 
+# --- Matchup edge weights ----------------------------------------------------
+# Not all facets decide games equally. These multipliers weight each facet's
+# edge by how much it actually drives NFL outcomes, grounded in public analytics:
+#   * Passing/QB efficiency (EPA, CPOE) is by far the most predictive & stable
+#     signal — QB play is the deciding factor.
+#   * Pass rush / pressure is a sticky, high-value signal.
+#   * Rushing EPA has "virtually negligible" year-over-year correlation → low.
+#   * Red-zone TD% and (to a lesser extent) 3rd down are regression-prone → modest.
+#   * RB receiving is a real but small slice of the game — far below WR value.
+# Refs: SumerSports "sticky stats", nflfastR/EPA research, ESPN win-rate metrics.
+# Tune freely; 1.0 = league-average importance.
+EDGE_WEIGHTS = {
+    "QB / Passing": 2.4,
+    "Pass rush": 1.4,
+    "Explosive": 1.3,
+    "WR receiving": 1.1,
+    "3rd down": 0.9,
+    "Coverage scheme": 1.3,   # activates when PFF offense-vs-coverage data exists
+    "Red zone": 0.7,
+    "Rushing": 0.6,
+    "TE receiving": 0.6,
+    "RB receiving": 0.35,
+}
+DEFAULT_EDGE_WEIGHT = 1.0
+
+
 # --- Injuries ----------------------------------------------------------------
 # A player counts as a "major" injury if they play at least this share of their
 # unit's snaps (offense or defense). Captures starters + heavy rotation pieces.

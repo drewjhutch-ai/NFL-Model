@@ -95,32 +95,39 @@ def percentile_chart(rows: list[tuple], title: str = ""):
 
 
 def edge_bar_chart(edges: list[dict], title: str = ""):
-    """Diverging horizontal bars of matchup edges (green = offense, red = defense).
+    """Diverging matchup-edge bars, weighted by each facet's NFL importance.
 
-    ``edges`` = list of {label, mag} with mag roughly -31..+31. Sorted so the
-    biggest offense edge is on top.
+    ``edges`` = list of {label, mag, weight, impact}. Bar **length** = the raw
+    matchup edge (rank differential, +offense/-defense); bar **thickness** = the
+    facet's importance weight; ordered by **impact** (edge × weight). So a big
+    edge in a low-value facet (e.g. RB receiving) shows as a long *thin* bar,
+    while QB/passing dominates — exactly how the modern NFL values them.
     """
     import plotly.graph_objects as go
 
-    rows = sorted(edges, key=lambda e: e["mag"])  # plotly draws bottom->top
-    labels = [e["label"] for e in rows]
+    rows = sorted(edges, key=lambda e: e.get("impact", 0), reverse=True)
+    ws = [e.get("weight", 1.0) for e in rows]
+    lo, hi = (min(ws), max(ws)) if ws else (1.0, 1.0)
+    widths = [(0.4 + 0.5 * (w - lo) / (hi - lo)) if hi > lo else 0.6 for w in ws]
+
+    labels = [f"{e['label']}  ×{e.get('weight', 1):g}" for e in rows]
     mags = [e["mag"] for e in rows]
     colors = ["#2ecc71" if m > 3 else ("#e74c3c" if m < -3 else "#9aa0a6") for m in mags]
     texts = [("+" if m > 0 else "") + f"{m:.0f}" for m in mags]
 
     fig = go.Figure(go.Bar(
-        x=mags, y=labels, orientation="h", marker=dict(color=colors),
+        x=mags, y=labels, orientation="h", width=widths, marker=dict(color=colors),
         text=texts, textposition="outside", cliponaxis=False, hoverinfo="skip",
     ))
     fig.update_layout(
         title=dict(text=title, font=dict(size=14)),
-        xaxis=dict(range=[-34, 34], title="◄ defense edge   ·   offense edge ►",
+        xaxis=dict(range=[-34, 34], title="◄ defense edge   ·   offense edge ►   (thickness = importance)",
                    showgrid=True, gridcolor="rgba(128,128,128,0.15)", zeroline=False),
         yaxis=dict(autorange="reversed"),
-        height=max(180, 40 * len(rows) + 60),
-        margin=dict(l=10, r=10, t=40, b=32),
+        height=max(190, 42 * len(rows) + 66),
+        margin=dict(l=10, r=10, t=40, b=34),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        showlegend=False, bargap=0.3,
+        showlegend=False,
     )
     fig.add_vline(x=0, line_color="rgba(128,128,128,0.6)")
     return fig
