@@ -17,20 +17,21 @@ comparisons — with true zone/man coverage ready to plug in from a paid feed.
   blitz %, coverage (zone/man), and **blitz vulnerability**.
 - **📋 League** — sortable league-wide tables (offense / defense / blitz-scheme),
   percent-formatted with plain-language columns and tooltips.
-- **⚔️ Matchups** — the week's games auto-load; each is a pro head-to-head: a
-  branded banner, a headline **verdict** (edge meter + who's favored + the single
-  biggest mismatch), a diverging **"where's the edge" chart** per direction
-  (passing, rushing, explosive, **3rd down**, **red zone**, RB/WR/TE receiving),
-  positional tables, WR1/2/3 detail, and scouting notes (QB vs pressure, ground
-  vs run D, situational, blitz). Custom any-two-teams comparison included.
+- **⚔️ Matchups** — layered pro head-to-head: projected **lean + confidence
+  stars**, a **Monte Carlo simulation** (win % / cover % / over % / projected
+  score / margin distribution), the weighted **"where's the edge" chart**, and
+  drill-downs for **trenches** (O-line vs D-line), WR1/2/3, situational, and
+  environment (weather/rest/**bye & short-week spots**), with layered scouting notes.
+- **🧍 Players** — per-game usage and **matchup-adjusted prop projections**
+  (pass/rush/rec) vs the opponent's defense-by-position.
 - **💰 Betting** — our model vs. the market. Projects each game to a spread +
   win probability from our efficiency data (power ratings), compares it to the
   book's spread/total/moneyline, and flags **value** and **favorite
   disagreements**. When we differ it explains **why** (our weighted drivers) and
   **what the book may price that we don't** (injuries, rest, weather, division).
   Line-movement / sharp-money signals plug in via a live odds feed when connected.
-- **🎯 Picks of the Week** — auto-surfaced model leans (the week's biggest unit
-  + positional mismatches, ranked) plus a personal pick log you can export to CSV.
+- **🎯 Picks of the Week** — simulation-based **value plays with Kelly stake
+  sizing**, auto-surfaced model leans, and a personal pick log you can export.
 
 ## Edges are weighted by what actually decides NFL games
 
