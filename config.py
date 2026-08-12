@@ -111,6 +111,12 @@ QB_ADJUST_SCALE = 0.6          # damp raw EPA->points so elite QBs aren't overst
 QB_ADJUST_CAP = 9.0            # max points swing for a QB going out
 SPECIAL_TEAMS_WEIGHT = 1.0     # multiplier on ST points/game in the power rating
 
+# Weather: wind is the dominant factor on scoring; cold a smaller one.
+WIND_THRESHOLD = 10            # mph before wind starts biting
+WIND_PTS_PER_MPH = 0.30        # total points removed per mph over threshold
+WIND_MAX_PTS = 6.0             # cap on wind's total reduction
+COLD_THRESHOLD = 25            # °F before cold starts biting
+
 
 # --- Injuries ----------------------------------------------------------------
 # A player counts as a "major" injury if they play at least this share of their

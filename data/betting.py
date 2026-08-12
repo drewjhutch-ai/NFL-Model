@@ -23,6 +23,7 @@ import pandas as pd
 import config
 from data import edges
 from data.qbvalue import qb_adjustment
+from data.weather import weather_effects
 
 
 # --- team power ratings ------------------------------------------------------
@@ -156,12 +157,9 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
     if pd.notna(hr) and pd.notna(ar) and abs(hr - ar) >= 3:
         edge_team = home if hr > ar else away
         flags.append(f"🛌 Rest edge: {edge_team} (+{int(abs(hr - ar))} days)")
-    wind = row.get("wind")
-    if pd.notna(wind) and wind >= 15:
-        flags.append(f"💨 Wind {int(wind)} mph — suppresses passing/scoring (market leans under)")
-    temp = row.get("temp")
-    if pd.notna(temp) and temp <= 20:
-        flags.append(f"🥶 {int(temp)}°F — cold-weather game")
+    wx = weather_effects(row)
+    if wx["note"] and wx["total_adj"]:
+        flags.append(f"{wx['note']} — **priced in** ({wx['total_adj']:+.1f} total)")
     if row.get("div_game") == 1:
         flags.append("🤝 Division game — historically tighter than the spread")
     return flags
@@ -172,6 +170,9 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     home, away = row["home_team"], row["away_team"]
     st, qb = extras.get("st_ppg"), extras.get("qb_value")
     margin = project_margin(off, deff, home, away, st, qb)  # + = home favored
+    wx = weather_effects(row)
+    if pd.notna(margin):
+        margin *= (1 - wx["margin_compression"])   # bad weather => closer game
     p_home = win_prob(margin)
 
     mkt_spread = row.get("spread_line")                # + = home favored
@@ -204,6 +205,8 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     model_total = project_total(off, deff, home, away)
     if qb is not None and not qb.empty and pd.notna(model_total):
         model_total -= 0.5 * (qb_adjustment(qb, home) + qb_adjustment(qb, away))
+    if pd.notna(model_total):
+        model_total += wx["total_adj"]            # wind/cold suppress scoring
     mkt_total = row.get("total_line")
     total_edge = (model_total - mkt_total) if pd.notna(model_total) and pd.notna(mkt_total) else np.nan
     total_side = None
