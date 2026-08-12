@@ -3,6 +3,7 @@ pandas>=2.0
 numpy>=1.24
 nfl_data_py>=0.3.2
 plotly>=5.20
+matplotlib>=3.7
 requests>=2.31
 lxml>=5.0
 # Optional: only needed if a free stats site renders its tables with JavaScript.
