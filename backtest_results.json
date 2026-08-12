@@ -44,25 +44,25 @@
       "facet": "QB / Passing",
       "correlation": 0.54,
       "suggested_weight": 1.75,
-      "current_weight": 2.4
+      "current_weight": 2.5
     },
     {
       "facet": "3rd down",
       "correlation": 0.529,
       "suggested_weight": 1.71,
-      "current_weight": 0.9
+      "current_weight": 1.4
     },
     {
       "facet": "Rushing",
       "correlation": 0.507,
       "suggested_weight": 1.64,
-      "current_weight": 0.6
+      "current_weight": 1.0
     },
     {
       "facet": "Red zone",
       "correlation": 0.425,
       "suggested_weight": 1.37,
-      "current_weight": 0.7
+      "current_weight": 0.9
     },
     {
       "facet": "Explosive",
@@ -74,7 +74,7 @@
       "facet": "WR receiving",
       "correlation": 0.231,
       "suggested_weight": 0.75,
-      "current_weight": 1.1
+      "current_weight": 0.9
     },
     {
       "facet": "TE receiving",
@@ -86,7 +86,7 @@
       "facet": "RB receiving",
       "correlation": 0.182,
       "suggested_weight": 0.59,
-      "current_weight": 0.35
+      "current_weight": 0.4
     }
   ]
 }
