@@ -72,17 +72,22 @@ EXPLOSIVE_RUSH_YARDS = 10
 #   * RB receiving is a real but small slice of the game — far below WR value.
 # Refs: SumerSports "sticky stats", nflfastR/EPA research, ESPN win-rate metrics.
 # Tune freely; 1.0 = league-average importance.
+# Retuned from the backtest's facet-predictiveness (scripts/backtest.py): 3rd-down
+# and rushing tracked real margins far better than their old weights, WR receiving
+# less so. Raised the underweighted-but-predictive facets, but *tempered* rushing
+# and red zone (their correlation is inflated by winner's bias — winning teams run
+# out the clock and finish drives — and both regress year to year).
 EDGE_WEIGHTS = {
-    "QB / Passing": 2.4,
+    "QB / Passing": 2.5,
     "Pass rush": 1.4,
+    "3rd down": 1.4,          # was 0.9 — strongly predictive in backtest
+    "Coverage scheme": 1.4,   # activates when PFF offense-vs-coverage data exists
     "Explosive": 1.3,
-    "WR receiving": 1.1,
-    "3rd down": 0.9,
-    "Coverage scheme": 1.3,   # activates when PFF offense-vs-coverage data exists
-    "Red zone": 0.7,
-    "Rushing": 0.6,
+    "Rushing": 1.0,          # was 0.6 — raised, tempered for winner's bias
+    "Red zone": 0.9,         # was 0.7 — raised modestly (regression-prone)
+    "WR receiving": 0.9,     # was 1.1 — less predictive than assumed
     "TE receiving": 0.6,
-    "RB receiving": 0.35,
+    "RB receiving": 0.4,
 }
 DEFAULT_EDGE_WEIGHT = 1.0
 
