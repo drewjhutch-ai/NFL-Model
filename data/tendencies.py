@@ -97,13 +97,23 @@ def compute_offense(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
     m["rush_sr_rank"] = _rank(m["rush_sr"], best_high=True)
     m["explosive_rate_rank"] = _rank(m["explosive_rate"], best_high=True)
     m["style"] = labels.band_series(m["neutral_pass_rate"], labels.STYLE_BANDS)
-    # QB / passing composite: dropback efficiency (EPA) blended with accuracy
-    # over expected (CPOE). This is the single most predictive offensive signal.
+    compute_qb_rank(m)
+    return m.sort_values("epa_play", ascending=False)
+
+
+def compute_qb_rank(m: pd.DataFrame) -> pd.DataFrame:
+    """QB / passing composite: dropback EPA blended with accuracy over expected.
+
+    The single most predictive offensive signal. Recomputed after opponent
+    adjustment so it reflects adjusted passing efficiency.
+    """
+    if m.empty or "pass_epa" not in m.columns:
+        return m
     epa_pct = m["pass_epa"].rank(pct=True)
-    cpoe_pct = m["cpoe"].rank(pct=True) if m["cpoe"].notna().any() else epa_pct
+    cpoe_pct = m["cpoe"].rank(pct=True) if "cpoe" in m.columns and m["cpoe"].notna().any() else epa_pct
     m["qb_score"] = 0.7 * epa_pct + 0.3 * cpoe_pct
     m["qb_rank"] = _rank(m["qb_score"], best_high=True)
-    return m.sort_values("epa_play", ascending=False)
+    return m
 
 
 def compute_defense(pbp_weighted: pd.DataFrame) -> pd.DataFrame:

@@ -7,8 +7,8 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (injuries, loaders, positional, pressure, rushing, situational,
-                  tendencies)
+from data import (adjust, injuries, loaders, positional, pressure, rushing,
+                  situational, tendencies)
 from ui import betting, league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -23,6 +23,9 @@ def build_frames():
 
     off = tendencies.compute_offense(pbp_w)
     deff = tendencies.compute_defense(pbp_w)
+    # opponent-adjust EPA (strength of schedule) — flows into ranks, edges, betting
+    off, deff = adjust.apply_epa_adjustment(off, deff, pbp_w)
+    tendencies.compute_qb_rank(off)
     blitz = tendencies.compute_blitz(pbp_w, ftn)
     live = loaders.has_current_season_data(pbp_w)
 
