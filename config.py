@@ -29,6 +29,16 @@ PRIOR_SEASON_WEIGHT = 1e-6
 # is the smoothing baseline; the current season is the driver.
 SEASONS = [PRIOR_SEASON, CURRENT_SEASON]
 
+# Within the current season, weight recent games more than early ones (form,
+# roster changes). Per-week multiplier applied by how many weeks back a play is.
+RECENCY_DECAY = 0.96
+
+# Empirical-Bayes shrinkage: regress a team's noisy rate stats toward the league
+# mean by this many "pseudo-plays". Bigger = more regression (for less stable
+# stats). Small samples (early season) get pulled to the mean; full samples don't.
+SHRINK_SITUATIONAL = 45   # red zone / 3rd down are regression-prone
+SHRINK_RATE = 20          # success / explosive rates
+
 
 # --- "Neutral game script" filter --------------------------------------------
 # Play-style leans (how pass-happy a team is) are only meaningful when a team

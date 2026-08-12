@@ -9,6 +9,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+import config
+from data.statutil import shrink
+
 
 def _wmean(g: pd.DataFrame, value: str) -> float:
     v, w = g[value], g["w"]
@@ -37,12 +40,19 @@ def _situational(pbp_weighted: pd.DataFrame, team_col: str, best_high: bool) -> 
             "team": team,
             "third_conv": _wmean(_flag(gt, "first_down"), "_x") if not gt.empty else np.nan,
             "third_epa": _wmean(gt, "epa") if not gt.empty else np.nan,
+            "third_n": float(gt["w"].sum()),
             "rz_td_rate": _wmean(_flag(gz, "touchdown"), "_x") if not gz.empty else np.nan,
             "rz_epa": _wmean(gz, "epa") if not gz.empty else np.nan,
+            "rz_n": float(gz["w"].sum()),
         })
     m = pd.DataFrame(rows).set_index("team")
     if m.empty:
         return m
+    # Shrink these regression-prone rates toward league mean by sample size.
+    lg_third = m["third_conv"].mean()
+    lg_rz = m["rz_td_rate"].mean()
+    m["third_conv"] = shrink(m["third_conv"], m["third_n"], lg_third, config.SHRINK_SITUATIONAL)
+    m["rz_td_rate"] = shrink(m["rz_td_rate"], m["rz_n"], lg_rz, config.SHRINK_SITUATIONAL)
     asc = not best_high
     m["third_rank"] = m["third_epa"].rank(ascending=asc, method="min").astype("Int64")
     m["rz_rank"] = m["rz_td_rate"].rank(ascending=asc, method="min").astype("Int64")

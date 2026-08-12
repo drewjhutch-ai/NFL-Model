@@ -270,7 +270,13 @@ def add_recency_weight(df: pd.DataFrame) -> pd.DataFrame:
         return df.assign(w=1.0) if not df.empty else df
     out = df.copy()
     out["w"] = 0.0
-    out.loc[out["season"] == config.CURRENT_SEASON, "w"] = 1.0
+    cur = out["season"] == config.CURRENT_SEASON
+    out.loc[cur, "w"] = 1.0
+    # intra-season recency: recent weeks weigh more than early ones
+    if cur.any() and "week" in out.columns:
+        maxw = out.loc[cur, "week"].max()
+        weeks_back = (maxw - out.loc[cur, "week"]).clip(lower=0)
+        out.loc[cur, "w"] = config.RECENCY_DECAY ** weeks_back
     out.loc[out["season"] == config.PRIOR_SEASON, "w"] = config.PRIOR_SEASON_WEIGHT
     return out[out["w"] > 0].copy()
 
