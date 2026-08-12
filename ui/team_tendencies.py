@@ -11,10 +11,62 @@ import pandas as pd
 import streamlit as st
 
 import config
+from data import form as form_mod
 from data import loaders, pressure, profiles, rushing
 from data.providers import load_coverage
 from ui.components import (facet_html, fmt, gauge_bar_html, injury_card_html,
-                           ordinal, percentile_chart, sw_card_html)
+                           ordinal, percentile_chart, radar_chart, sw_card_html)
+
+
+def _pct(rank, total: int = 32) -> float:
+    if rank is None or pd.isna(rank):
+        return 0.0
+    return (total - int(rank)) / (total - 1) * 100
+
+
+def _radar_values(team, off, deff, extras, side: str) -> tuple[list, list]:
+    if side == "offense" and team in off.index:
+        o = off.loc[team]
+        os_ = extras.get("off_sit"); dr = extras.get("drives_off")
+        cats = ["Pass", "Rush", "Explosive", "Success", "3rd down", "Red zone", "Pts/drive"]
+        vals = [_pct(o["pass_epa_rank"]), _pct(o["rush_epa_rank"]), _pct(o["explosive_rate_rank"]),
+                _pct(o["pass_sr_rank"]),
+                _pct(os_.loc[team, "third_rank"]) if os_ is not None and team in os_.index else 0,
+                _pct(os_.loc[team, "rz_rank"]) if os_ is not None and team in os_.index else 0,
+                _pct(dr.loc[team, "ppd_rank"]) if dr is not None and team in dr.index else 0]
+        return cats, vals
+    if side == "defense" and team in deff.index:
+        d = deff.loc[team]
+        prs = extras.get("pressure"); dr = extras.get("drives_def")
+        cats = ["Pass D", "Run D", "Explosive", "Success", "Pass rush", "Pts/drive", "Turnovers"]
+        to = extras.get("turnovers")
+        vals = [_pct(d["pass_epa_rank"]), _pct(d["rush_epa_rank"]), _pct(d["explosive_rate_rank"]),
+                _pct(d["pass_sr_rank"]),
+                _pct(prs.loc[team, "pressure_rate_rank"]) if prs is not None and team in prs.index else 0,
+                _pct(dr.loc[team, "ppd_rank"]) if dr is not None and team in dr.index else 0,
+                _pct(to.loc[team, "margin_rank"]) if to is not None and team in to.index else 0]
+        return cats, vals
+    return [], []
+
+
+def _compare_section(off, deff, extras, team, teams) -> None:
+    st.markdown("### 🕸️ Radar & compare")
+    others = [t for t in teams if t != team]
+    cmp = st.selectbox("Compare with (optional)", ["— none —"] + others, key="cmp_team")
+    meta = loaders.team_meta()
+    c1, c2 = st.columns(2)
+    for col, side in ((c1, "offense"), (c2, "defense")):
+        cats, vals = _radar_values(team, off, deff, extras, side)
+        if not cats:
+            continue
+        series = [(team, vals, meta.get(team, {}).get("color") or "#1f77b4")]
+        if cmp != "— none —":
+            c2cats, c2vals = _radar_values(cmp, off, deff, extras, side)
+            if c2vals:
+                series.append((cmp, c2vals, meta.get(cmp, {}).get("color") or "#e74c3c"))
+        col.plotly_chart(radar_chart(cats, series, side.capitalize() + " (percentile)"),
+                         use_container_width=True)
+    st.caption("Further from center = better (league percentile). Overlay a second team to compare.")
 
 
 def _per_source_expander(scheme_row) -> None:
@@ -66,6 +118,15 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
     if qb is not None and not qb.empty and team in qb.index:
         qlab = qb.loc[team].get("qb_style", "—")
     k4.metric("QB style", qlab, help="Mobility from scramble + designed-run rate (league-relative)")
+
+    fm = extras.get("form")
+    if fm is not None and not fm.empty and team in fm.index:
+        f = fm.loc[team]
+        oa = form_mod.arrow(f["off_delta"], good_high=True)
+        da = form_mod.arrow(f["def_delta"], good_high=False)
+        st.caption(f"📈 **Recent form** (last {int(f['games_in_window'])}): "
+                   f"offense {oa} ({f['off_recent']:+.2f} vs {f['off_season']:+.2f} season) · "
+                   f"defense {da} ({f['def_recent']:+.2f} allowed vs {f['def_season']:+.2f})")
 
 
 def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
@@ -202,3 +263,5 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     st.divider()
     if team in deff.index:
         _defense_section(deff, blitz, team, extras, scheme_row)
+    st.divider()
+    _compare_section(off, deff, extras, team, teams)

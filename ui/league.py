@@ -47,6 +47,7 @@ def _power_rankings(off, deff, extras) -> None:
     pr = betting.power_ratings(off, deff)
     meta = loaders.team_meta()
     st_ppg = extras.get("st_ppg")
+    sos = extras.get("sos")
     rows = []
     for team, r in pr.sort_values("power_rank").iterrows():
         s, w = _team_sw(team, off, deff, extras)
@@ -59,6 +60,7 @@ def _power_rankings(off, deff, extras) -> None:
             "Off": int(off.loc[team, "epa_play_rank"]) if team in off.index else None,
             "Def": int(deff.loc[team, "epa_play_rank"]) if team in deff.index else None,
             "ST": round(float(st_ppg.get(team)), 1) if st_ppg is not None and team in st_ppg.index else None,
+            "SOS": round(float(sos.get(team)), 3) if sos is not None and team in sos.index else None,
             "Strength": s,
             "Struggle": w,
         })
@@ -70,6 +72,8 @@ def _power_rankings(off, deff, extras) -> None:
         "Off": st.column_config.NumberColumn("Off", help="Offensive efficiency rank"),
         "Def": st.column_config.NumberColumn("Def", help="Defensive efficiency rank"),
         "ST": st.column_config.NumberColumn("ST", format="%+.1f", help="Special-teams points/game"),
+        "SOS": st.column_config.NumberColumn("SOS", format="%+.3f",
+            help="Strength of schedule: average opponent net rating (played)."),
     })
 
 
@@ -108,6 +112,29 @@ def _quadrant(off, deff) -> None:
     st.plotly_chart(fig, use_container_width=True)
     st.caption("Opponent-adjusted EPA per play. **Up-and-to-the-right = the best teams** "
                "(good offense *and* defense). Dotted lines are league average.")
+
+
+def _passrush_quadrant(off) -> None:
+    import plotly.graph_objects as go
+    meta = loaders.team_meta()
+    teams = [t for t in off.index if pd.notna(off.loc[t, "pass_epa"]) and pd.notna(off.loc[t, "rush_epa"])]
+    if not teams:
+        return
+    x = [off.loc[t, "pass_epa"] for t in teams]
+    y = [off.loc[t, "rush_epa"] for t in teams]
+    colors = [meta.get(t, {}).get("color") or "#888" for t in teams]
+    fig = go.Figure(go.Scatter(x=x, y=y, mode="markers+text", text=teams,
+        textposition="top center", textfont=dict(size=9),
+        marker=dict(size=13, color=colors, line=dict(width=1, color="rgba(255,255,255,0.6)")),
+        hoverinfo="text"))
+    fig.add_vline(x=sum(x)/len(x), line_dash="dot", line_color="rgba(128,128,128,0.5)")
+    fig.add_hline(y=sum(y)/len(y), line_dash="dot", line_color="rgba(128,128,128,0.5)")
+    fig.update_layout(height=560, margin=dict(l=10, r=10, t=30, b=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
+        xaxis=dict(title="Pass EPA/play (better →)", gridcolor="rgba(128,128,128,0.12)", zeroline=False),
+        yaxis=dict(title="Rush EPA/play (better ↑)", gridcolor="rgba(128,128,128,0.12)", zeroline=False))
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Offensive identity: balanced pass+rush teams sit up-and-to-the-right.")
 
 
 # --- color-coded stat tables -------------------------------------------------
@@ -251,7 +278,12 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
 
     st.divider()
     st.markdown("### 📈 The efficiency quadrant")
-    _quadrant(off, deff)
+    qmode = st.radio("Chart", ["Offense vs Defense", "Pass vs Rush (offense)"],
+                     horizontal=True, label_visibility="collapsed")
+    if qmode == "Offense vs Defense":
+        _quadrant(off, deff)
+    else:
+        _passrush_quadrant(off)
 
     st.divider()
     st.markdown("### 📋 Stat tables")

@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (adjust, coaching, drives, injuries, loaders, players,
+from data import (adjust, coaching, drives, form, injuries, loaders, players,
                   positional, pressure, qbvalue, rushing, situational,
                   tendencies, turnovers)
 from data import betting as betmodel
@@ -56,6 +56,8 @@ def build_frames():
     }
     extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
     extras["players"] = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
+    extras["form"] = form.team_form(pbp)
+    extras["sos"] = betmodel.strength_of_schedule(schedule, betmodel.power_ratings(off, deff))
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
         loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)

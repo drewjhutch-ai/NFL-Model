@@ -198,6 +198,25 @@ def injury_card_html(items: list[dict], week=None, has_report: bool = True) -> s
             f"<ul style='margin:4px 0 0;padding-left:18px;'>{lis}</ul></div>")
 
 
+def radar_chart(categories: list[str], series: list[tuple], title: str = ""):
+    """Percentile radar ('pizza') chart. series = list of (name, values, color)."""
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    for name, values, color in series:
+        vals = list(values) + [values[0]]
+        cats = categories + [categories[0]]
+        fig.add_trace(go.Scatterpolar(r=vals, theta=cats, fill="toself", name=name,
+                      line=dict(color=color), fillcolor=color, opacity=0.45))
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=14)),
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100], showticklabels=False),
+                   bgcolor="rgba(0,0,0,0)"),
+        height=380, margin=dict(l=30, r=30, t=40, b=30),
+        paper_bgcolor="rgba(0,0,0,0)", showlegend=len(series) > 1,
+        legend=dict(orientation="h", y=-0.1))
+    return fig
+
+
 def gauge_bar_html(value_pct: float, label_left: str = "Run", label_right: str = "Pass") -> str:
     """A run↔pass spectrum bar with a marker at value_pct (0-100)."""
     v = 0 if value_pct is None or pd.isna(value_pct) else max(0, min(100, value_pct))

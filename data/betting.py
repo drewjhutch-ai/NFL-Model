@@ -59,6 +59,24 @@ def home_field(home: str) -> float:
     return config.TEAM_HFA.get(home, config.HOME_FIELD_ADVANTAGE)
 
 
+def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Series:
+    """Avg opponent net power rating over completed games (played SOS)."""
+    if schedule is None or schedule.empty or power.empty or "net" not in power.columns:
+        return pd.Series(dtype=float)
+    played = schedule[schedule.get("result").notna()] if "result" in schedule.columns else schedule
+    if played.empty:
+        return pd.Series(dtype=float)
+    season = played["season"].max()
+    played = played[played["season"] == season]
+    opp = {}
+    for _, r in played.iterrows():
+        h, a = r.get("home_team"), r.get("away_team")
+        if h in power.index and a in power.index:
+            opp.setdefault(h, []).append(power.loc[a, "net"])
+            opp.setdefault(a, []).append(power.loc[h, "net"])
+    return pd.Series({t: float(pd.Series(v).mean()) for t, v in opp.items()})
+
+
 # --- projection --------------------------------------------------------------
 def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
                    st: pd.Series | None = None, qb: pd.DataFrame | None = None) -> float:
