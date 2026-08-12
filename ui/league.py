@@ -185,6 +185,48 @@ def _blitz_scheme(blitz, scheme_df) -> None:
         st.caption("🔒 Zone/man appears once a source is connected (free scrapers or a PFF upload).")
 
 
+def _drives_table(extras) -> None:
+    odr, ddr = extras.get("drives_off"), extras.get("drives_def")
+    if odr is None or odr.empty:
+        st.info("Drive data not available.")
+        return
+    d = pd.DataFrame(index=odr.index)
+    d["Pts/drive (O)"] = odr["pts_per_drive"]
+    d["Score% (O)"] = odr["score_rate"]
+    d["TD% (O)"] = odr["td_rate"]
+    if ddr is not None and not ddr.empty:
+        d["Pts/drive allowed"] = ddr["pts_per_drive"]
+    d = d.sort_values("Pts/drive (O)", ascending=False)
+    st.dataframe(_shade(d, ["Pts/drive (O)", "Score% (O)", "TD% (O)"], ["Pts/drive allowed"],
+                        ["Score% (O)", "TD% (O)"]), width="stretch")
+    st.caption("Points per drive ties efficiency straight to scoring — a sharp favorite.")
+
+
+def _turnovers_table(extras) -> None:
+    to = extras.get("turnovers")
+    if to is None or to.empty:
+        st.info("Turnover data not available.")
+        return
+    d = to[["giveaways", "takeaways", "margin", "reg_margin"]].copy()
+    d.columns = ["Giveaways/gm", "Takeaways/gm", "Margin/gm", "Regressed margin"]
+    d = d.sort_values("Margin/gm", ascending=False)
+    st.dataframe(_shade(d, ["Takeaways/gm", "Margin/gm", "Regressed margin"], ["Giveaways/gm"], []),
+                 width="stretch")
+    st.caption("Turnovers are ~60% luck — **Regressed margin** is the more predictive number.")
+
+
+def _coaching_table(extras) -> None:
+    co = extras.get("coaching")
+    if co is None or co.empty:
+        st.info("Coaching-tendency data (FTN charting) not available for these seasons.")
+        return
+    d = co[["play_action_rate", "no_huddle_rate", "motion_rate"]].copy()
+    d.columns = ["Play-action%", "No-huddle%", "Motion%"]
+    d = d.sort_values("Play-action%", ascending=False)
+    st.dataframe(_shade(d, [], [], list(d.columns)), width="stretch")
+    st.caption("How a staff plays: play-action, tempo, and pre-snap motion (FTN charting).")
+
+
 def _glossary() -> None:
     with st.expander("📖 What these numbers mean"):
         st.markdown(
@@ -214,13 +256,19 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     st.divider()
     st.markdown("### 📋 Stat tables")
     _glossary()
-    view = st.radio("Show", ["Offense", "Defense", "Situational", "Blitz / scheme"],
-                    horizontal=True)
+    view = st.radio("Show", ["Offense", "Defense", "Drives", "Turnovers", "Situational",
+                             "Coaching", "Blitz / scheme"], horizontal=True)
     if view == "Offense":
         _offense_table(off)
     elif view == "Defense":
         _defense_table(deff, scheme_df)
+    elif view == "Drives":
+        _drives_table(extras)
+    elif view == "Turnovers":
+        _turnovers_table(extras)
     elif view == "Situational":
         _situational_table(extras)
+    elif view == "Coaching":
+        _coaching_table(extras)
     else:
         _blitz_scheme(blitz, scheme_df)

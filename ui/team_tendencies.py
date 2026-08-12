@@ -111,6 +111,21 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
                     f"{fmt(b['epa_vs_blitz'], 'epa')} EPA blitzed vs "
                     f"{fmt(b['epa_no_blitz'], 'epa')} not"
                 )
+            dro = extras.get("drives_off")
+            if dro is not None and not dro.empty and team in dro.index:
+                r = dro.loc[team]
+                st.caption(f"**Drives:** {r['pts_per_drive']:.2f} pts/drive ({ordinal(r['ppd_rank'])}) · "
+                           f"score {fmt(r['score_rate'], 'pct')} · TD {fmt(r['td_rate'], 'pct')}")
+            to = extras.get("turnovers")
+            if to is not None and not to.empty and team in to.index:
+                t = to.loc[team]
+                st.caption(f"**Turnovers:** {t['margin']:+.2f}/gm (regressed {t['reg_margin']:+.2f}) · "
+                           f"give {t['giveaways']:.2f} · take {t['takeaways']:.2f}")
+            co = extras.get("coaching")
+            if co is not None and not co.empty and team in co.index:
+                c = co.loc[team]
+                st.caption(f"**Scheme:** {c.get('pa_label', '—')} "
+                           f"(PA {fmt(c['play_action_rate'], 'pct')} · motion {fmt(c['motion_rate'], 'pct')})")
             st.caption("**vs coverage schemes:** _upload PFF for man/zone splits_ 🔒")
     _strengths_struggles(profiles.offense_facets(team, off, extras))
 

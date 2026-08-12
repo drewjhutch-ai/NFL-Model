@@ -7,8 +7,8 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (adjust, injuries, loaders, positional, pressure, qbvalue,
-                  rushing, situational, tendencies)
+from data import (adjust, coaching, drives, injuries, loaders, positional,
+                  pressure, qbvalue, rushing, situational, tendencies, turnovers)
 from data import betting as betmodel
 from ui import betting, league, matchups, picks, team_tendencies
 
@@ -49,7 +49,10 @@ def build_frames():
         "off_sit": situational.offense_situational(pbp_w),
         "def_sit": situational.defense_situational(pbp_w),
         "pace": extras_pace,
+        "coaching": coaching.coaching_tendencies(pbp_w, ftn),
+        "turnovers": turnovers.turnover_margin(pbp_w),
     }
+    extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
         loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)

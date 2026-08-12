@@ -51,6 +51,9 @@ _PBP_COLUMNS = [
     "qb_scramble",
     "fumble_lost",
     "interception",
+    "fixed_drive",
+    "fixed_drive_result",
+    "series_result",
 ]
 
 _FTN_COLUMNS = [
