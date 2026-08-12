@@ -68,6 +68,23 @@ True bet%/handle% "sharp splits" are paid; as a free proxy we compare a sharp
 book (Pinnacle, etc.) to the market consensus. Line movement is built from
 snapshots the app stores as it runs.
 
+## Accuracy & methodology
+
+The ratings and betting projection are built the way modern models are:
+
+- **Opponent-adjusted EPA** (strength of schedule) — `data/adjust.py` solves
+  offense/defense fixed-effect ratings so numbers reflect *who* you played.
+- **Recency + shrinkage** — recent games weigh more within a season; noisy
+  small-sample stats (red zone, 3rd down) are shrunk toward the mean.
+- **QB value, special teams, team home field** fold into the projected line; the
+  number actually drops when a starting QB is ruled Out.
+- **Weather** — wind/cold move the total and compress the margin (domes exempt).
+- **Market-aware** — we blend toward the closing line (the best predictor) and
+  size value off the blended edge, with confidence + key-number (3/7) awareness.
+- **Backtest + learning loop** — `python scripts/backtest.py [season]` produces
+  honest out-of-sample accuracy and measures which facets actually predicted real
+  margins (surfaced in the Betting tab). Tunable knobs live in `config.py`.
+
 ## The data philosophy: current season drives everything
 
 The NFL moves fast, so last season is basically old news. Every ranking and
