@@ -22,6 +22,7 @@ import pandas as pd
 
 import config
 from data import edges
+from data.qbvalue import qb_adjustment
 
 
 # --- team power ratings ------------------------------------------------------
@@ -40,16 +41,37 @@ def power_ratings(off: pd.DataFrame, deff: pd.DataFrame) -> pd.DataFrame:
     return m
 
 
+# --- special teams -----------------------------------------------------------
+def team_st_points(st_weighted: pd.DataFrame) -> pd.Series:
+    """Special-teams points/game per team (weighted ST EPA per game)."""
+    if st_weighted is None or st_weighted.empty or "game_id" not in st_weighted.columns:
+        return pd.Series(dtype=float)
+    out = {}
+    for team, g in st_weighted.groupby("posteam"):
+        games = g["game_id"].nunique()
+        out[team] = float((g["w"] * g["epa"]).sum() / games) if games else 0.0
+    return pd.Series(out)
+
+
+def home_field(home: str) -> float:
+    """Home-field advantage in points (team-specific where it's known to differ)."""
+    return config.TEAM_HFA.get(home, config.HOME_FIELD_ADVANTAGE)
+
+
 # --- projection --------------------------------------------------------------
-def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str) -> float:
-    """Projected home margin (points, + = home favored), matchup-aware."""
+def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
+                   st: pd.Series | None = None, qb: pd.DataFrame | None = None) -> float:
+    """Projected home margin (points, + = home favored), matchup-aware.
+
+    Includes special-teams edge, team-specific home field, and a QB-out
+    adjustment (the projection actually drops when a starter is ruled Out).
+    """
     if home not in off.index or away not in off.index:
         return np.nan
 
     def exp_off(o_team, d_team):
-        # a team's expected EPA/play = blend of its offense and the D it faces
         o = off.loc[o_team, "epa_play"]
-        d = deff.loc[d_team, "epa_play"]  # EPA allowed by that defense
+        d = deff.loc[d_team, "epa_play"]
         if pd.isna(o) and pd.isna(d):
             return np.nan
         return np.nanmean([o, d])
@@ -58,8 +80,13 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str) 
     away_off = exp_off(away, home)
     if pd.isna(home_off) or pd.isna(away_off):
         return np.nan
-    margin_per_play = home_off - away_off
-    return margin_per_play * config.PLAYS_PER_TEAM + config.HOME_FIELD_ADVANTAGE
+    margin = (home_off - away_off) * config.PLAYS_PER_TEAM + home_field(home)
+    if st is not None and len(st):
+        margin += st.get(home, 0.0) - st.get(away, 0.0)
+    if qb is not None and not qb.empty:
+        margin -= qb_adjustment(qb, home)   # home starter Out -> home worse
+        margin += qb_adjustment(qb, away)   # away starter Out -> away worse
+    return margin
 
 
 def win_prob(margin: float) -> float:
@@ -115,11 +142,14 @@ def devig_home_prob(home_ml, away_ml) -> float:
 def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[str]:
     flags = []
     inj = extras.get("injuries", {}) if extras else {}
+    qb = extras.get("qb_value") if extras else None
     for team in (away, home):
         outs = [p for p in inj.get(team, []) if p["status"] == "Out"]
         qb_out = [p for p in outs if p["pos"] == "QB"]
         if qb_out:
-            flags.append(f"🔴 {team} QB {qb_out[0]['name']} is OUT — big market factor our model doesn't price")
+            pts = qb_adjustment(qb, team) if qb is not None else 0
+            worth = f" (~{pts:.1f} pts, now priced in)" if pts else ""
+            flags.append(f"🔴 {team} QB {qb_out[0]['name']} is OUT{worth}")
         elif len(outs) >= 2:
             flags.append(f"🟠 {team} missing {len(outs)} starters (Out)")
     hr, ar = row.get("home_rest"), row.get("away_rest")
@@ -140,7 +170,8 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
 # --- full assessment ---------------------------------------------------------
 def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> dict:
     home, away = row["home_team"], row["away_team"]
-    margin = project_margin(off, deff, home, away)     # + = home favored
+    st, qb = extras.get("st_ppg"), extras.get("qb_value")
+    margin = project_margin(off, deff, home, away, st, qb)  # + = home favored
     p_home = win_prob(margin)
 
     mkt_spread = row.get("spread_line")                # + = home favored
@@ -169,8 +200,10 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
                     key=lambda e: e["impact"], reverse=True)
         why = [e for e in fe if e["impact"] >= 6][:3]
 
-    # total (over/under) value
+    # total (over/under) value — a QB out also suppresses expected scoring
     model_total = project_total(off, deff, home, away)
+    if qb is not None and not qb.empty and pd.notna(model_total):
+        model_total -= 0.5 * (qb_adjustment(qb, home) + qb_adjustment(qb, away))
     mkt_total = row.get("total_line")
     total_edge = (model_total - mkt_total) if pd.notna(model_total) and pd.notna(mkt_total) else np.nan
     total_side = None

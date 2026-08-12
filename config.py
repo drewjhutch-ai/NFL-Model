@@ -92,12 +92,24 @@ DEFAULT_EDGE_WEIGHT = 1.0
 # the market. These are sensible defaults meant to be *calibrated* by the
 # results/learning loop over time — not gospel.
 HOME_FIELD_ADVANTAGE = 1.8      # points; modern NFL home edge has shrunk to ~1.5-2
+# Team-specific home field where it's known to differ (altitude, cold, noise);
+# others fall back to HOME_FIELD_ADVANTAGE. Calibratable.
+TEAM_HFA = {"DEN": 2.8, "SEA": 2.4, "GB": 2.3, "BUF": 2.3, "KC": 2.3,
+            "BAL": 2.2, "NO": 2.2, "PIT": 2.2, "MIN": 2.1, "LAC": 1.4, "LA": 1.4}
 PLAYS_PER_TEAM = 63             # to scale EPA/play into a game-level margin
 WINPROB_SLOPE = 0.146          # logistic slope: margin (pts) -> win probability
 VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
 VALUE_PROB = 0.05              # flag moneyline value when our edge >= this
 VALUE_TOTAL_PTS = 2.5          # flag total value when |our total - market| >= this
 LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the total
+
+# QB value: points a starter adds over a replacement QB, applied when the starter
+# is ruled Out (the biggest week-to-week line mover).
+QB_REPLACEMENT_EPA = -0.08     # EPA/dropback of a replacement-level passer
+QB_DROPBACKS_PER_GAME = 34
+QB_ADJUST_SCALE = 0.6          # damp raw EPA->points so elite QBs aren't overstated
+QB_ADJUST_CAP = 9.0            # max points swing for a QB going out
+SPECIAL_TEAMS_WEIGHT = 1.0     # multiplier on ST points/game in the power rating
 
 
 # --- Injuries ----------------------------------------------------------------

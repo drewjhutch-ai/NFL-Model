@@ -7,8 +7,9 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (adjust, injuries, loaders, positional, pressure, rushing,
-                  situational, tendencies)
+from data import (adjust, injuries, loaders, positional, pressure, qbvalue,
+                  rushing, situational, tendencies)
+from data import betting as betmodel
 from ui import betting, league, matchups, picks, team_tendencies
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
@@ -45,11 +46,20 @@ def build_frames():
         "off_sit": situational.offense_situational(pbp_w),
         "def_sit": situational.defense_situational(pbp_w),
     }
+    rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
-        loaders.load_injuries(), loaders.load_snaps(), loaders.load_rosters(),
-        config.CURRENT_SEASON)
+        loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)
     extras["injuries"] = inj_map
     extras["injury_week"] = inj_week
+
+    # special teams + QB value (feed the betting projection)
+    st_w = loaders.add_recency_weight(loaders.load_special_teams())
+    extras["st_ppg"] = betmodel.team_st_points(st_w)
+    out_gsis = {t: {p["gsis"] for p in items if p["status"] == "Out"}
+                for t, items in inj_map.items()}
+    name_map = (dict(zip(rosters["player_id"], rosters["player_name"]))
+                if not rosters.empty and "player_name" in rosters.columns else {})
+    extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)
     return off, deff, blitz, live, schedule, extras
 
 

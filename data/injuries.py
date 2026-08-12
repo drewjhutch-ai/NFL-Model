@@ -69,6 +69,7 @@ def build(inj: pd.DataFrame, snaps: pd.DataFrame, rosters: pd.DataFrame,
         if not team:
             continue
         out[team].append({
+            "gsis": getattr(row, "gsis_id", None),
             "name": getattr(row, "full_name", "?"),
             "pos": getattr(row, "position", ""),
             "status": row.report_status,

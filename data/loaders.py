@@ -45,9 +45,12 @@ _PBP_COLUMNS = [
     "complete_pass",
     "receiver_player_id",
     "rusher_player_id",
+    "passer_player_id",
     "sack",
     "qb_hit",
     "qb_scramble",
+    "fumble_lost",
+    "interception",
 ]
 
 _FTN_COLUMNS = [
@@ -97,6 +100,23 @@ def load_pbp(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     # Real scrimmage plays only.
     df = df[df["play_type"].isin(["pass", "run"])].copy()
     return df
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading special teams…")
+def load_special_teams(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Special-teams plays (for a team ST-points contribution)."""
+    import nfl_data_py as nfl
+
+    cols = ["game_id", "season", "week", "season_type", "posteam", "special", "epa", "play_type"]
+    df = _safe_import(nfl.import_pbp_data, list(seasons), columns=cols,
+                      downcast=True, cache=False)
+    if df.empty:
+        return df
+    if "season_type" in df.columns:
+        df = df[df["season_type"] == "REG"]
+    if "special" in df.columns:
+        df = df[df["special"] == 1]
+    return df[df["posteam"].notna() & df["epa"].notna()].copy()
 
 
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading FTN charting…")
