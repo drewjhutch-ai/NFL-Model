@@ -81,9 +81,13 @@ def _markets_panel(a: dict, row: pd.Series) -> None:
     with sp:
         st.markdown("**📐 Spread**")
         st.caption(f"Market: {_spread_str(a['home'], a['away'], a['mkt_spread'])}")
-        st.caption(f"Ours: {_spread_str(a['home'], a['away'], a['model_margin'])}")
+        st.caption(f"Ours: {_spread_str(a['home'], a['away'], a['model_margin'])} "
+                   f"(blended {_spread_str(a['home'], a['away'], a.get('blended_margin'))})")
         if a["value_side"]:
-            st.markdown(f"🎯 **{a['value_side']}** (+{abs(a['edge_pts']):.1f})")
+            st.markdown(f"🎯 **{a['value_side']}** (+{abs(a['edge_pts']):.1f}) · "
+                        f"conf **{a.get('confidence', '—')}**")
+        if a.get("key_number"):
+            st.caption(f"🔑 crosses the **{a['key_number']}** — key-number value")
     with tot:
         st.markdown("**🔢 Total**")
         st.caption(f"Market: {a['total_line']:.1f}" if pd.notna(a["total_line"]) else "Market: —")

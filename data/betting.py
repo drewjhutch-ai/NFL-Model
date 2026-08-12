@@ -97,8 +97,9 @@ def win_prob(margin: float) -> float:
     return 1.0 / (1.0 + math.exp(-margin * config.WINPROB_SLOPE))
 
 
-def project_total(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str) -> float:
-    """Projected combined points, from both teams' matchup-expected efficiency."""
+def project_total(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
+                  pace: pd.Series | None = None) -> float:
+    """Projected combined points from matchup efficiency, adjusted for pace."""
     if home not in off.index or away not in off.index:
         return np.nan
 
@@ -112,9 +113,34 @@ def project_total(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str) -
     h, a = exp_off(home, away), exp_off(away, home)
     if pd.isna(h) or pd.isna(a):
         return np.nan
-    home_pts = config.LEAGUE_TEAM_PPG + h * config.PLAYS_PER_TEAM
-    away_pts = config.LEAGUE_TEAM_PPG + a * config.PLAYS_PER_TEAM
-    return home_pts + away_pts
+    total = 2 * config.LEAGUE_TEAM_PPG + (h + a) * config.PLAYS_PER_TEAM
+    if pace is not None and len(pace) and home in pace.index and away in pace.index:
+        lg = float(pace.mean())
+        extra = (pace.get(home, lg) + pace.get(away, lg) - 2 * lg)
+        total += extra * config.PACE_PTS_PER_PLAY
+    return total
+
+
+def _key_number_straddle(our_margin, mkt_spread) -> int | None:
+    """Return a key number our number and the market land on opposite sides of."""
+    if pd.isna(our_margin) or pd.isna(mkt_spread):
+        return None
+    lo, hi = sorted((abs(our_margin), abs(mkt_spread)))
+    for k in config.KEY_NUMBERS:
+        if lo < k < hi:  # they straddle key number k
+            return k
+    return None
+
+
+def _confidence(edge_pts) -> str:
+    if pd.isna(edge_pts):
+        return "—"
+    e = abs(edge_pts)
+    if e >= 4:
+        return "High"
+    if e >= 2.5:
+        return "Medium"
+    return "Low"
 
 
 def fair_moneyline(prob: float) -> int | None:
@@ -178,22 +204,28 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     mkt_spread = row.get("spread_line")                # + = home favored
     mkt_p_home = devig_home_prob(row.get("home_moneyline"), row.get("away_moneyline"))
 
-    # our line vs market line (both home-favored positive)
-    edge_pts = (margin - mkt_spread) if pd.notna(margin) and pd.notna(mkt_spread) else np.nan
+    # Blend toward the market (it's highly efficient) — trust our divergence only
+    # partway. The actionable edge is measured off this blended number.
+    if pd.notna(margin) and pd.notna(mkt_spread):
+        blended = config.MODEL_TRUST * margin + (1 - config.MODEL_TRUST) * mkt_spread
+        p_home = win_prob(blended)
+    else:
+        blended = margin
+    edge_pts = (blended - mkt_spread) if pd.notna(blended) and pd.notna(mkt_spread) else np.nan
     edge_prob = (p_home - mkt_p_home) if pd.notna(p_home) and pd.notna(mkt_p_home) else np.nan
 
-    # value side on the spread: if our margin > market spread, we like HOME
     value_side = None
     if pd.notna(edge_pts) and abs(edge_pts) >= config.VALUE_SPREAD_PTS:
         value_side = home if edge_pts > 0 else away
+    confidence = _confidence(edge_pts)
+    key = _key_number_straddle(margin, mkt_spread)
 
-    # disagreement on the outright favorite
+    # disagreement uses our *raw* lean (our genuine opinion vs the book)
     our_fav = home if (pd.notna(margin) and margin > 0) else (away if pd.notna(margin) else None)
     mkt_fav = home if (pd.notna(mkt_spread) and mkt_spread > 0) else (away if pd.notna(mkt_spread) else None)
     disagree = (our_fav and mkt_fav and our_fav != mkt_fav)
 
-    # why: our strongest weighted edges for the side we favor
-    fav = our_fav
+    fav = value_side or our_fav
     why = []
     if fav:
         opp = away if fav == home else home
@@ -201,29 +233,33 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
                     key=lambda e: e["impact"], reverse=True)
         why = [e for e in fe if e["impact"] >= 6][:3]
 
-    # total (over/under) value — a QB out also suppresses expected scoring
-    model_total = project_total(off, deff, home, away)
+    # total (over/under): pace-aware, QB-out & weather adjusted, then market-blended
+    model_total = project_total(off, deff, home, away, extras.get("pace"))
     if qb is not None and not qb.empty and pd.notna(model_total):
         model_total -= 0.5 * (qb_adjustment(qb, home) + qb_adjustment(qb, away))
     if pd.notna(model_total):
-        model_total += wx["total_adj"]            # wind/cold suppress scoring
+        model_total += wx["total_adj"]
     mkt_total = row.get("total_line")
-    total_edge = (model_total - mkt_total) if pd.notna(model_total) and pd.notna(mkt_total) else np.nan
+    total_edge = np.nan
     total_side = None
-    if pd.notna(total_edge) and abs(total_edge) >= config.VALUE_TOTAL_PTS:
-        total_side = "Over" if total_edge > 0 else "Under"
+    if pd.notna(model_total) and pd.notna(mkt_total):
+        blended_total = config.MODEL_TRUST * model_total + (1 - config.MODEL_TRUST) * mkt_total
+        total_edge = blended_total - mkt_total
+        if abs(total_edge) >= config.VALUE_TOTAL_PTS:
+            total_side = "Over" if total_edge > 0 else "Under"
 
-    # moneyline value: our side when our win prob beats the book's implied by margin
     ml_side = None
     if pd.notna(edge_prob) and abs(edge_prob) >= config.VALUE_PROB:
         ml_side = home if edge_prob > 0 else away
 
     return {
         "home": home, "away": away,
-        "model_margin": margin, "model_p_home": p_home, "model_total": model_total,
+        "model_margin": margin, "blended_margin": blended,
+        "model_p_home": p_home, "model_total": model_total,
         "mkt_spread": mkt_spread, "mkt_p_home": mkt_p_home, "total_line": mkt_total,
         "edge_pts": edge_pts, "edge_prob": edge_prob, "total_edge": total_edge,
         "value_side": value_side, "total_side": total_side, "ml_side": ml_side,
+        "confidence": confidence, "key_number": key,
         "our_fav": our_fav, "mkt_fav": mkt_fav, "disagree": bool(disagree),
         "why": why, "context": context_flags(row, home, away, extras),
     }

@@ -32,6 +32,9 @@ def build_frames():
 
     schedule = loaders.load_schedule()
     posmap = loaders.position_map()
+    # pace: offensive plays per game (feeds pace-aware totals)
+    _pace = pbp_w.groupby("posteam").agg(n=("epa", "size"), g=("game_id", "nunique"))
+    extras_pace = (_pace["n"] / _pace["g"]).rename("pace")
     wr_off, wr_def = positional.wr_tiers(pbp_w, posmap)
     extras = {
         "dvp": positional.defense_vs_position(pbp_w, posmap),
@@ -45,6 +48,7 @@ def build_frames():
         "rush": rushing.team_rushing_profile(loaders.load_ngs_rushing()),
         "off_sit": situational.offense_situational(pbp_w),
         "def_sit": situational.defense_situational(pbp_w),
+        "pace": extras_pace,
     }
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(

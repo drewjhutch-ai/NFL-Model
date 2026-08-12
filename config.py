@@ -102,6 +102,13 @@ VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
 VALUE_PROB = 0.05              # flag moneyline value when our edge >= this
 VALUE_TOTAL_PTS = 2.5          # flag total value when |our total - market| >= this
 LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the total
+# The market (closing line) is the single most accurate NFL predictor, so we
+# trust our *divergence* from it only partway — blend our number toward the line.
+# 1.0 = pure model, 0.0 = pure market. Calibrate against results.
+MODEL_TRUST = 0.5
+MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
+KEY_NUMBERS = (3, 7, 6, 10, 4, 14)  # margins cluster here; straddling one adds value
+PACE_PTS_PER_PLAY = 0.32     # extra combined plays -> extra total points
 
 # QB value: points a starter adds over a replacement QB, applied when the starter
 # is ruled Out (the biggest week-to-week line mover).
