@@ -143,6 +143,20 @@ def _confidence(edge_pts) -> str:
     return "Low"
 
 
+def kelly_stake(p: float, odds_american: float = -110, fraction: float = 0.25) -> float:
+    """Fractional-Kelly stake as a share of bankroll for win prob ``p``.
+
+    Defaults to quarter-Kelly at standard -110 juice — the conservative sizing
+    pros use so variance doesn't wreck the bankroll.
+    """
+    if p is None or pd.isna(p) or p <= 0 or p >= 1:
+        return 0.0
+    dec = 1 + (100 / abs(odds_american) if odds_american < 0 else odds_american / 100)
+    b = dec - 1
+    f = (b * p - (1 - p)) / b
+    return max(0.0, f * fraction)
+
+
 def fair_moneyline(prob: float) -> int | None:
     """Fair American odds for a win probability (no vig)."""
     if prob is None or pd.isna(prob) or prob <= 0 or prob >= 1:

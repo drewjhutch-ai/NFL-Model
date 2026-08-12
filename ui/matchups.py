@@ -250,6 +250,13 @@ def _environment(away, home, extras) -> None:
         hr, ar = row.get("home_rest"), row.get("away_rest")
         if pd.notna(hr) and pd.notna(ar) and abs(hr - ar) >= 3:
             notes.append(f"🛌 Rest edge: {home if hr > ar else away} (+{int(abs(hr - ar))} days)")
+        # situational spots
+        for t, rest in ((home, hr), (away, ar)):
+            if pd.notna(rest):
+                if rest >= 13:
+                    notes.append(f"🌴 {t} off a bye ({int(rest)} days rest)")
+                elif rest <= 4:
+                    notes.append(f"⚡ {t} on a short week ({int(rest)} days — Thursday spot)")
         if row.get("div_game") == 1:
             notes.append("🤝 Division game — historically tighter.")
     hfa = betting.home_field(home)
