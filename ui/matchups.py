@@ -15,6 +15,7 @@ import streamlit as st
 
 import config
 from data import betting, edges, injuries, loaders, positional, pressure, rushing
+from data import simulation
 from data.providers import load_coverage
 from data.weather import weather_effects
 from ui.components import edge_bar_chart, edge_meter_html, fmt, ordinal
@@ -302,6 +303,46 @@ def _scouting(away, home, off, deff, extras) -> None:
 
 
 # --- assembly ----------------------------------------------------------------
+def _simulation(away, home, off, deff, extras, row) -> None:
+    sim = simulation.simulate(off, deff, home, away, extras, row)
+    if not sim:
+        return
+    st.markdown("### 🎲 Game simulation "
+                f"<span style='color:#888;font-size:0.9rem'>({sim['n']:,} runs)</span>",
+                unsafe_allow_html=True)
+    k = st.columns(4)
+    k[0].metric(f"{home} win", f"{sim['home_win']*100:.0f}%")
+    k[1].metric(f"{away} win", f"{(1-sim['home_win'])*100:.0f}%")
+    if "home_cover" in sim:
+        cover_team = home if sim["home_cover"] >= 0.5 else away
+        cover_pct = sim["home_cover"] if cover_team == home else 1 - sim["home_cover"]
+        k[2].metric(f"{cover_team} covers", f"{cover_pct*100:.0f}%",
+                    help=f"vs market {home} {sim['mkt_spread']:+.1f}")
+    if "over" in sim:
+        k[3].metric("Over hits", f"{sim['over']*100:.0f}%", help=f"vs market total {sim['mkt_total']}")
+    st.caption(f"**Projected score:** {away} {sim['proj_away']:.0f} — {home} {sim['proj_home']:.0f} "
+               f"· {simulation.game_script(sim['margin_mean'])}")
+    _margin_hist(sim)
+
+
+def _margin_hist(sim) -> None:
+    import plotly.graph_objects as go
+    m = sim["margins"]
+    meta = loaders.team_meta()
+    fig = go.Figure(go.Histogram(x=m, nbinsx=40, marker_color="#1f77b4", opacity=0.85))
+    fig.add_vline(x=0, line_color="rgba(200,200,200,0.6)")
+    if "mkt_spread" in sim:
+        fig.add_vline(x=sim["mkt_spread"], line_dash="dot", line_color="#e74c3c",
+                      annotation_text="market", annotation_font_color="#e74c3c")
+    fig.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=28),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      showlegend=False,
+                      xaxis=dict(title=f"{sim['home']} margin (+ = {sim['home']} wins)",
+                                 gridcolor="rgba(128,128,128,0.12)"),
+                      yaxis=dict(visible=False))
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     if away == home:
         st.info("Pick two different teams.")
@@ -310,6 +351,8 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     _banner(away, home, game_row)
     _injuries_row(away, home, extras)
     _verdict(away, home, off, deff, extras)
+    st.divider()
+    _simulation(away, home, off, deff, extras, game_row)
     st.divider()
     st.markdown("### ⚔️ Attack breakdowns")
     la, ra = st.columns(2)

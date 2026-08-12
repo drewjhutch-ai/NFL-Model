@@ -112,6 +112,8 @@ LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the tot
 # 1.0 = pure model, 0.0 = pure market. Calibrate against results.
 MODEL_TRUST = 0.5
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
+TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
+SIM_N = 20000                # Monte Carlo iterations per game
 KEY_NUMBERS = (3, 7, 6, 10, 4, 14)  # margins cluster here; straddling one adds value
 PACE_PTS_PER_PLAY = 0.32     # extra combined plays -> extra total points
 
