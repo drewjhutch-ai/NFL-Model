@@ -8,12 +8,48 @@ a sharp-book-vs-consensus signal, and line movement.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 import config
 from data import betting, loaders
 from data import odds_providers as op
+
+_BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
+
+
+def _performance() -> None:
+    with st.expander("📈 Model performance & the learning loop"):
+        if not _BACKTEST_FILE.exists():
+            st.caption("Run `python scripts/backtest.py` to generate out-of-sample "
+                       "accuracy and facet-predictiveness numbers here.")
+            return
+        data = json.loads(_BACKTEST_FILE.read_text())
+        s = data.get("summary", {})
+        st.markdown(f"**Out-of-sample backtest — {data.get('season')} season** "
+                    f"({s.get('games','?')} games, ratings from prior weeks only)")
+        c1, c2, c3, c4 = st.columns(4)
+        if s.get("model_mae") is not None:
+            c1.metric("Our margin error", f"{s['model_mae']:.1f} pts")
+        if s.get("market_mae") is not None:
+            c2.metric("Market error", f"{s['market_mae']:.1f} pts",
+                      help="The market is the benchmark — close is good.")
+        if s.get("ats_pct") is not None:
+            c3.metric("Raw ATS", f"{s['ats_pct']:.0f}%")
+        if s.get("su_pct") is not None:
+            c4.metric("Straight-up", f"{s['su_pct']:.0f}%")
+        facets = data.get("facets", [])
+        if facets:
+            st.markdown("**What's actually working** — each facet's correlation with real "
+                        "margins vs. its current weight (the basis for tuning):")
+            fp = pd.DataFrame(facets)
+            st.dataframe(fp, width="stretch", hide_index=True)
+            st.caption("Correlation is descriptive (winning teams also pile up some of "
+                       "these), so treat suggested weights as a signal, not gospel — but "
+                       "big gaps (e.g. 3rd down underweighted) are worth acting on.")
 
 
 @st.cache_data(ttl=300, show_spinner="Fetching live odds…")
@@ -224,6 +260,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     wk = st.selectbox(f"Week ({season})", weeks, index=idx)
     games = s[s["week"] == wk]
 
+    _performance()
     st.markdown("### 📊 This week: model vs market")
     _overview(games, off, deff, extras, live)
 
