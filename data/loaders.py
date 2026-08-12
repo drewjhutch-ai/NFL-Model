@@ -194,6 +194,22 @@ def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
     return df[keep]
 
 
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading player stats…")
+def load_weekly_player(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Per-player, per-week offensive stats (for player usage & prop projections)."""
+    import nfl_data_py as nfl
+
+    df = _safe_import(nfl.import_weekly_data, list(seasons))
+    if df.empty:
+        return df
+    keep = [c for c in ["player_id", "player_display_name", "position", "recent_team",
+                        "opponent_team", "season", "week", "attempts", "completions",
+                        "passing_yards", "passing_tds", "interceptions", "carries",
+                        "rushing_yards", "rushing_tds", "targets", "receptions",
+                        "receiving_yards", "receiving_tds"] if c in df.columns]
+    return df[keep].copy()
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading rushing tracking…")
 def load_ngs_rushing(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     """Next Gen Stats rushing (season totals, week==0) for RB playstyle."""

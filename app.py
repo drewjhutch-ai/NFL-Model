@@ -7,10 +7,12 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (adjust, coaching, drives, injuries, loaders, positional,
-                  pressure, qbvalue, rushing, situational, tendencies, turnovers)
+from data import (adjust, coaching, drives, injuries, loaders, players,
+                  positional, pressure, qbvalue, rushing, situational,
+                  tendencies, turnovers)
 from data import betting as betmodel
 from ui import betting, league, matchups, picks, team_tendencies
+from ui import players as ui_players
 
 st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
 
@@ -53,6 +55,7 @@ def build_frames():
         "turnovers": turnovers.turnover_margin(pbp_w),
     }
     extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
+    extras["players"] = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
         loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)
@@ -124,15 +127,18 @@ def main() -> None:
 
     sidebar(live)
 
-    tab_data, tab_league, tab_matchups, tab_betting, tab_picks = st.tabs(
-        ["📊 Team Data", "📋 League", "⚔️ Matchups", "💰 Betting", "🎯 Picks of the Week"]
-    )
+    (tab_data, tab_league, tab_matchups, tab_players,
+     tab_betting, tab_picks) = st.tabs(
+        ["📊 Team Data", "📋 League", "⚔️ Matchups", "🧍 Players",
+         "💰 Betting", "🎯 Picks of the Week"])
     with tab_data:
         team_tendencies.render(off, deff, blitz, extras)
     with tab_league:
         league.render(off, deff, blitz, extras)
     with tab_matchups:
         matchups.render(off, deff, blitz, schedule, extras)
+    with tab_players:
+        ui_players.render(off, deff, schedule, extras)
     with tab_betting:
         betting.render(off, deff, schedule, extras)
     with tab_picks:
