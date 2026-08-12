@@ -69,6 +69,33 @@ def win_prob(margin: float) -> float:
     return 1.0 / (1.0 + math.exp(-margin * config.WINPROB_SLOPE))
 
 
+def project_total(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str) -> float:
+    """Projected combined points, from both teams' matchup-expected efficiency."""
+    if home not in off.index or away not in off.index:
+        return np.nan
+
+    def exp_off(o_team, d_team):
+        o = off.loc[o_team, "epa_play"]
+        d = deff.loc[d_team, "epa_play"]
+        if pd.isna(o) and pd.isna(d):
+            return np.nan
+        return np.nanmean([o, d])
+
+    h, a = exp_off(home, away), exp_off(away, home)
+    if pd.isna(h) or pd.isna(a):
+        return np.nan
+    home_pts = config.LEAGUE_TEAM_PPG + h * config.PLAYS_PER_TEAM
+    away_pts = config.LEAGUE_TEAM_PPG + a * config.PLAYS_PER_TEAM
+    return home_pts + away_pts
+
+
+def fair_moneyline(prob: float) -> int | None:
+    """Fair American odds for a win probability (no vig)."""
+    if prob is None or pd.isna(prob) or prob <= 0 or prob >= 1:
+        return None
+    return int(round(-100 * prob / (1 - prob))) if prob >= 0.5 else int(round(100 * (1 - prob) / prob))
+
+
 # --- market ------------------------------------------------------------------
 def implied_prob(moneyline) -> float:
     if moneyline is None or pd.isna(moneyline):
@@ -142,14 +169,26 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
                     key=lambda e: e["impact"], reverse=True)
         why = [e for e in fe if e["impact"] >= 6][:3]
 
+    # total (over/under) value
+    model_total = project_total(off, deff, home, away)
+    mkt_total = row.get("total_line")
+    total_edge = (model_total - mkt_total) if pd.notna(model_total) and pd.notna(mkt_total) else np.nan
+    total_side = None
+    if pd.notna(total_edge) and abs(total_edge) >= config.VALUE_TOTAL_PTS:
+        total_side = "Over" if total_edge > 0 else "Under"
+
+    # moneyline value: our side when our win prob beats the book's implied by margin
+    ml_side = None
+    if pd.notna(edge_prob) and abs(edge_prob) >= config.VALUE_PROB:
+        ml_side = home if edge_prob > 0 else away
+
     return {
         "home": home, "away": away,
-        "model_margin": margin, "model_p_home": p_home,
-        "mkt_spread": mkt_spread, "mkt_p_home": mkt_p_home,
-        "total_line": row.get("total_line"),
-        "edge_pts": edge_pts, "edge_prob": edge_prob,
-        "value_side": value_side, "our_fav": our_fav, "mkt_fav": mkt_fav,
-        "disagree": bool(disagree),
+        "model_margin": margin, "model_p_home": p_home, "model_total": model_total,
+        "mkt_spread": mkt_spread, "mkt_p_home": mkt_p_home, "total_line": mkt_total,
+        "edge_pts": edge_pts, "edge_prob": edge_prob, "total_edge": total_edge,
+        "value_side": value_side, "total_side": total_side, "ml_side": ml_side,
+        "our_fav": our_fav, "mkt_fav": mkt_fav, "disagree": bool(disagree),
         "why": why, "context": context_flags(row, home, away, extras),
     }
 

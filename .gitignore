@@ -23,3 +23,6 @@ data_cache/
 # Paid scheme feed drops (kept local, never committed)
 data/providers/dropbox/
 scheme_data/
+
+# Live odds snapshots (local, not committed)
+odds_snapshots/

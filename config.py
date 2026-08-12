@@ -86,6 +86,8 @@ PLAYS_PER_TEAM = 63             # to scale EPA/play into a game-level margin
 WINPROB_SLOPE = 0.146          # logistic slope: margin (pts) -> win probability
 VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
 VALUE_PROB = 0.05              # flag moneyline value when our edge >= this
+VALUE_TOTAL_PTS = 2.5          # flag total value when |our total - market| >= this
+LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the total
 
 
 # --- Injuries ----------------------------------------------------------------

@@ -53,6 +53,21 @@ offense vs a zone-heavy defense then earns a weighted edge). Weights live in
 **thickness** = weight, ordered by **impact** (edge × weight) — so QB/passing
 dominates and RB receiving stays small even on a big raw edge.
 
+## Live odds (optional, free) — unlocks line shopping + sharp signal
+
+The Betting tab works off the free schedule consensus line out of the box. To add
+multi-book line shopping, a sharp-book-vs-consensus signal, and line movement,
+connect **The Odds API** (free tier ~500 requests/mo):
+
+1. Get a key at [the-odds-api.com](https://the-odds-api.com).
+2. Add it as `ODDS_API_KEY` — in `.streamlit/secrets.toml` locally / the Streamlit
+   Cloud **Secrets** box when hosted, or as an environment variable.
+3. The tab auto-detects it and lights up the live-odds section.
+
+True bet%/handle% "sharp splits" are paid; as a free proxy we compare a sharp
+book (Pinnacle, etc.) to the market consensus. Line movement is built from
+snapshots the app stores as it runs.
+
 ## The data philosophy: current season drives everything
 
 The NFL moves fast, so last season is basically old news. Every ranking and
