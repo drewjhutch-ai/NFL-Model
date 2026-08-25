@@ -95,7 +95,8 @@ def sidebar(live: bool) -> None:
     st.sidebar.divider()
     st.sidebar.markdown("### 🔒 Coverage (zone/man)")
     st.sidebar.caption(
-        "Free sources (SumerSports, StatRankings) load automatically. "
+        "A weekly GitHub Action auto-fetches zone/man from the free sources "
+        "and commits it, so this loads without any manual step. "
         "Optionally add PFF for gold-standard charting:"
     )
     up = st.sidebar.file_uploader(
@@ -114,8 +115,8 @@ def sidebar(live: bool) -> None:
 
     st.sidebar.divider()
     st.sidebar.caption(
-        "Data: nflverse + FTN charting (free). Coverage scheme: blended from "
-        "PFF + SumerSports + StatRankings."
+        "Data: nflverse + FTN charting (free). Coverage scheme: weekly "
+        "auto-fetch blended with PFF + SumerSports + StatRankings."
     )
 
 

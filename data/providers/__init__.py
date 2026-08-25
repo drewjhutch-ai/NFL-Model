@@ -16,6 +16,7 @@ import pandas as pd
 import streamlit as st
 
 from .base import COVERAGE_SCHEMA, SchemeDataProvider, SchemeUnavailable
+from .committed import CommittedCoverageProvider
 from .composite import CompositeSchemeProvider
 from .pff_csv import PFFCoverageProvider
 from .statrankings import StatRankingsProvider
@@ -42,6 +43,10 @@ def get_provider(pff_buffer: bytes | None = None) -> SchemeDataProvider:
     return CompositeSchemeProvider(
         providers=[
             PFFCoverageProvider(buffer=pff_buffer),
+            # Auto-fetched weekly by the GitHub Action (works on hosts where the
+            # live scrapes below are blocked). Listed first among the free feeds
+            # so it's the reliable path on Streamlit Cloud.
+            CommittedCoverageProvider(),
             SumerSportsProvider(),
             StatRankingsProvider(),
         ]

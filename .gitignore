@@ -20,9 +20,12 @@ data_cache/
 .idea/
 .vscode/
 
-# Paid scheme feed drops (kept local, never committed)
+# Paid scheme feed drops (PFF exports kept local, never committed — TOS).
+# The free-source blend the update Action writes IS committed, so the deployed
+# app can read it (see !coverage_*.csv below).
 data/providers/dropbox/
-scheme_data/
+scheme_data/*
+!scheme_data/coverage_*.csv
 
 # Live odds snapshots (local, not committed)
 odds_snapshots/
