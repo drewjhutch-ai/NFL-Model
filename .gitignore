@@ -29,3 +29,7 @@ scheme_data/*
 
 # Live odds snapshots (local, not committed)
 odds_snapshots/
+
+# Evolution Engine: weekly snapshots ARE committed (they're the model's memory).
+!history/
+!history/*.csv

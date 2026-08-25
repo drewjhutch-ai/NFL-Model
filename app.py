@@ -7,10 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
-from data import (adjust, coaching, drives, form, injuries, loaders, players,
-                  positional, pressure, qbvalue, rushing, situational,
-                  tendencies, turnovers)
-from data import betting as betmodel
+from data import loaders, pipeline
 from ui import betting, league, matchups, picks, team_tendencies
 from ui import players as ui_players
 
@@ -19,60 +16,12 @@ st.set_page_config(page_title="NFL Model", page_icon="🏈", layout="wide")
 
 @st.cache_data(ttl=60 * 60, show_spinner="Crunching tendencies…")
 def build_frames():
-    """Load, weight, and aggregate everything the tabs need. Cached as a unit."""
-    pbp = loaders.load_pbp()
-    ftn = loaders.load_ftn()
-    pbp_w = loaders.add_recency_weight(pbp)
+    """Load, weight, and aggregate everything the tabs need. Cached as a unit.
 
-    off = tendencies.compute_offense(pbp_w)
-    deff = tendencies.compute_defense(pbp_w)
-    # opponent-adjust EPA (strength of schedule) — flows into ranks, edges, betting
-    off, deff = adjust.apply_epa_adjustment(off, deff, pbp_w)
-    tendencies.compute_qb_rank(off)
-    blitz = tendencies.compute_blitz(pbp_w, ftn)
-    live = loaders.has_current_season_data(pbp_w)
-
-    schedule = loaders.load_schedule()
-    posmap = loaders.position_map()
-    # pace: offensive plays per game (feeds pace-aware totals)
-    _pace = pbp_w.groupby("posteam").agg(n=("epa", "size"), g=("game_id", "nunique"))
-    extras_pace = (_pace["n"] / _pace["g"]).rename("pace")
-    wr_off, wr_def = positional.wr_tiers(pbp_w, posmap)
-    extras = {
-        "dvp": positional.defense_vs_position(pbp_w, posmap),
-        "usage": positional.offense_usage(pbp_w, posmap),
-        "wr_off": wr_off,
-        "wr_def": wr_def,
-        "qb": pressure.qb_profiles(pbp_w, posmap),
-        "pressure": pressure.defense_pressure(pbp_w),
-        "protection": pressure.offense_protection(pbp_w),
-        "ovb": pressure.offense_vs_blitz(pbp_w, ftn),
-        "rush": rushing.team_rushing_profile(loaders.load_ngs_rushing()),
-        "off_sit": situational.offense_situational(pbp_w),
-        "def_sit": situational.defense_situational(pbp_w),
-        "pace": extras_pace,
-        "coaching": coaching.coaching_tendencies(pbp_w, ftn),
-        "turnovers": turnovers.turnover_margin(pbp_w),
-    }
-    extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
-    extras["players"] = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
-    extras["form"] = form.team_form(pbp)
-    extras["sos"] = betmodel.strength_of_schedule(schedule, betmodel.power_ratings(off, deff))
-    rosters = loaders.load_rosters()
-    inj_map, inj_week = injuries.build(
-        loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)
-    extras["injuries"] = inj_map
-    extras["injury_week"] = inj_week
-
-    # special teams + QB value (feed the betting projection)
-    st_w = loaders.add_recency_weight(loaders.load_special_teams())
-    extras["st_ppg"] = betmodel.team_st_points(st_w)
-    out_gsis = {t: {p["gsis"] for p in items if p["status"] == "Out"}
-                for t, items in inj_map.items()}
-    name_map = (dict(zip(rosters["player_id"], rosters["player_name"]))
-                if not rosters.empty and "player_name" in rosters.columns else {})
-    extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)
-    return off, deff, blitz, live, schedule, extras
+    The heavy lifting lives in ``data.pipeline`` so the weekly snapshot Action
+    can reuse the exact same code path outside Streamlit.
+    """
+    return pipeline.build_frames()
 
 
 def sidebar(live: bool) -> None:

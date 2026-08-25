@@ -234,6 +234,71 @@ def gauge_bar_html(value_pct: float, label_left: str = "Run", label_right: str =
     """
 
 
+_SPARK_TICKS = "▁▂▃▄▅▆▇█"
+
+
+def unicode_spark(values: list[float]) -> str:
+    """A tiny inline sparkline from block glyphs — renders anywhere text does.
+
+    Great inside dataframes and captions where a chart can't go. Empty string if
+    there isn't enough data to draw a trend.
+    """
+    vals = [v for v in (values or []) if v is not None and not pd.isna(v)]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    if hi == lo:
+        return _SPARK_TICKS[3] * len(vals)
+    out = []
+    for v in vals:
+        idx = int(round((v - lo) / (hi - lo) * (len(_SPARK_TICKS) - 1)))
+        out.append(_SPARK_TICKS[idx])
+    return "".join(out)
+
+
+def movement_arrow(delta, spots_word: bool = False) -> str:
+    """Rank-movement chip: ▲ improved (green), ▼ slipped (red), – unchanged.
+
+    ``delta`` is the change toward #1 since last snapshot (positive = better).
+    Returns an HTML span. Empty string when there's no prior week to compare.
+    """
+    if delta is None or pd.isna(delta):
+        return ""
+    d = int(round(delta))
+    if d == 0:
+        return "<span style='color:#8a8a8a;'>–</span>"
+    up = d > 0
+    color = "#2ecc71" if up else "#e74c3c"
+    glyph = "▲" if up else "▼"
+    tail = " spots" if spots_word else ""
+    return (f"<span style='color:{color};font-weight:600;font-size:0.85em;'>"
+            f"{glyph}{abs(d)}{tail}</span>")
+
+
+def sparkline_fig(values: list[float], color: str = "#1f77b4", height: int = 44):
+    """A minimal Plotly sparkline (no axes/grid) for headers and cards.
+
+    Returns ``None`` when there isn't enough data, so callers can skip cleanly.
+    """
+    vals = [v for v in (values or []) if v is not None and not pd.isna(v)]
+    if len(vals) < 2:
+        return None
+    import plotly.graph_objects as go
+    up = vals[-1] >= vals[0]
+    line_color = color if color else ("#2ecc71" if up else "#e74c3c")
+    fig = go.Figure(go.Scatter(
+        y=vals, mode="lines", line=dict(color=line_color, width=2),
+        fill="tozeroy", fillcolor="rgba(127,127,127,0.10)", hoverinfo="skip"))
+    fig.add_trace(go.Scatter(
+        x=[len(vals) - 1], y=[vals[-1]], mode="markers",
+        marker=dict(color=line_color, size=6), hoverinfo="skip"))
+    fig.update_layout(
+        height=height, margin=dict(l=0, r=0, t=2, b=2), showlegend=False,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False), yaxis=dict(visible=False))
+    return fig
+
+
 def fmt(x, kind: str = "num") -> str:
     """Format a metric value for display."""
     if x is None or pd.isna(x):
