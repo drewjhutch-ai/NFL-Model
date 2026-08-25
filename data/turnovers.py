@@ -20,13 +20,18 @@ def turnover_margin(pbp_weighted: pd.DataFrame) -> pd.DataFrame:
     df = pbp_weighted.copy()
     df["_to"] = ((df.get("interception", 0) == 1) | (df.get("fumble_lost", 0) == 1)).astype(float)
 
-    give, take = {}, {}
-    for team, g in df[df["posteam"].notna()].groupby("posteam"):
+    def per_game(g):
+        # weighted per-play rate x plays/game — weight-scale-invariant, so the
+        # tiny phantom-baseline weight cancels instead of zeroing the count.
+        wsum = g["w"].sum()
         games = g["game_id"].nunique()
-        give[team] = float((g["w"] * g["_to"]).sum() / games) if games else np.nan
-    for team, g in df[df["defteam"].notna()].groupby("defteam"):
-        games = g["game_id"].nunique()
-        take[team] = float((g["w"] * g["_to"]).sum() / games) if games else np.nan
+        if not wsum or not games:
+            return np.nan
+        rate = (g["w"] * g["_to"]).sum() / wsum
+        return float(rate * len(g) / games)
+
+    give = {t: per_game(g) for t, g in df[df["posteam"].notna()].groupby("posteam")}
+    take = {t: per_game(g) for t, g in df[df["defteam"].notna()].groupby("defteam")}
 
     teams = sorted(set(give) | set(take))
     m = pd.DataFrame({"giveaways": pd.Series(give), "takeaways": pd.Series(take)},

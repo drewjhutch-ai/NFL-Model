@@ -49,8 +49,10 @@ def team_st_points(st_weighted: pd.DataFrame) -> pd.Series:
         return pd.Series(dtype=float)
     out = {}
     for team, g in st_weighted.groupby("posteam"):
+        wsum = g["w"].sum()
         games = g["game_id"].nunique()
-        out[team] = float((g["w"] * g["epa"]).sum() / games) if games else 0.0
+        # weighted per-play ST EPA x plays/game — weight-scale-invariant.
+        out[team] = float((g["w"] * g["epa"]).sum() / wsum * len(g) / games) if wsum and games else 0.0
     return pd.Series(out)
 
 
