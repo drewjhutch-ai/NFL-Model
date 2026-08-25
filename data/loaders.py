@@ -166,6 +166,8 @@ def team_meta() -> dict[str, dict]:
             "color": r.get("team_color", "#1f77b4"),
             "color2": r.get("team_color2", "#333333"),
             "logo": r.get("team_logo_espn") or r.get("team_logo_wikipedia", ""),
+            "conf": r.get("team_conf", ""),
+            "division": r.get("team_division", ""),
         }
     return out
 
