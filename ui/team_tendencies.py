@@ -1,9 +1,13 @@
 """The 'Team Data' tab: a visual, chart-driven scouting profile per team.
 
-Pick a team and get a branded header + headline ranks, percentile charts for
-offense and defense, an analytical run/pass identity, split Strengths vs
-Struggles cards (broad headline + the ultra-specific chink), and the contextual
-scouting notes. League-wide tables live on their own tab.
+Two views:
+  * **Overview** — the glance layer: a letter grade, an identity thesis, headline
+    ranks with week-over-week movement and an EPA-trajectory sparkline, then the
+    offense/defense percentile charts and the strengths/struggles read.
+  * **Advanced** — the drill-in: situational splits (early/late down, script,
+    home/away), NextGen tracking stats, radar compare, and the coverage feed.
+
+League-wide tables live on their own tab.
 """
 from __future__ import annotations
 
@@ -12,10 +16,11 @@ import streamlit as st
 
 import config
 from data import form as form_mod
-from data import loaders, pressure, profiles, rushing
+from data import history, loaders, pressure, profiles, rushing, splits
 from data.providers import load_coverage
 from ui.components import (facet_html, fmt, gauge_bar_html, injury_card_html,
-                           ordinal, percentile_chart, radar_chart, sw_card_html)
+                           movement_arrow, ordinal, percentile_chart, radar_chart,
+                           sparkline_fig, sw_card_html, unicode_spark)
 
 
 def _pct(rank, total: int = 32) -> float:
@@ -92,43 +97,79 @@ def _strengths_struggles(facets: list[dict]) -> None:
                 unsafe_allow_html=True)
 
 
+# --- grade + thesis header ---------------------------------------------------
+def _metric_move(label, rank, delta, help_txt) -> str:
+    arrow = movement_arrow(delta)
+    move = f" {arrow}" if arrow else ""
+    return (f"<div style='font-size:0.8rem;color:#8a8a8a;'>{label}</div>"
+            f"<div style='font-size:1.5rem;font-weight:700;line-height:1.1;'>{ordinal(rank)}{move}</div>")
+
+
 def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> None:
     meta = loaders.team_meta().get(team, {})
     color = meta.get("color") or "#1f77b4"
-    c_logo, c_name = st.columns([1, 9])
+    from data import betting
+    power = betting.power_ratings(off, deff)
+    prank = int(power.loc[team, "power_rank"]) if team in power.index and pd.notna(power.loc[team, "power_rank"]) else None
+    grade = profiles.team_grade(prank)
+    thesis = profiles.team_thesis(team, off, deff, extras) if team in off.index else ""
+
+    # week-over-week movement from persisted snapshots (empty until weeks accrue)
+    hist = history.load_history(config.CURRENT_SEASON)
+    mv = {k: history.rank_movement(hist, f"{k}_rank") for k in ("power", "off", "def")}
+
+    c_logo, c_name, c_grade = st.columns([1, 7, 2])
     if meta.get("logo"):
         c_logo.image(meta["logo"], width=58)
     c_name.markdown(
         f"<div style='border-left:6px solid {color};padding:2px 0 2px 12px;'>"
         f"<h2 style='margin:0;'>{meta.get('name', team)}</h2>"
-        f"<span style='color:#888;font-size:0.85rem;'>2025 baseline · 2026 drives once live</span>"
-        f"</div>", unsafe_allow_html=True)
+        f"<span style='color:#9aa0a6;font-size:0.9rem;'>{thesis}</span></div>",
+        unsafe_allow_html=True)
+    c_grade.markdown(
+        f"<div style='text-align:center;border:1px solid {color};border-radius:12px;padding:4px;'>"
+        f"<div style='font-size:0.65rem;letter-spacing:.14em;color:#8a8a8a;'>GRADE</div>"
+        f"<div style='font-size:2rem;font-weight:800;line-height:1;color:{color};'>{grade}</div></div>",
+        unsafe_allow_html=True)
 
-    k1, k2, k3, k4 = st.columns(4)
     o = off.loc[team] if team in off.index else None
     d = deff.loc[team] if team in deff.index else None
-    k1.metric("Offense", ordinal(o["epa_play_rank"]) if o is not None else "—",
-              help="Overall offensive efficiency rank (EPA/play)")
-    k2.metric("Defense", ordinal(d["epa_play_rank"]) if d is not None else "—",
-              help="Overall defensive efficiency rank (lower EPA allowed = better)")
+    k1, k2, k3, k4 = st.columns(4)
+    k1.markdown(_metric_move("Offense", o["epa_play_rank"] if o is not None else None,
+                             mv["off"].get(team), "Offensive EPA/play rank"), unsafe_allow_html=True)
+    k2.markdown(_metric_move("Defense", d["epa_play_rank"] if d is not None else None,
+                             mv["def"].get(team), "Defensive EPA/play rank"), unsafe_allow_html=True)
     pi = profiles.pass_identity(team, off) if team in off.index else None
-    k3.metric("Identity", pi["base"] if pi else "—", help="How they lean in neutral situations")
+    k3.markdown(f"<div style='font-size:0.8rem;color:#8a8a8a;'>Identity</div>"
+                f"<div style='font-size:1.1rem;font-weight:600;margin-top:6px;'>{pi['base'] if pi else '—'}</div>",
+                unsafe_allow_html=True)
     qb = extras.get("qb")
-    qlab = "—"
-    if qb is not None and not qb.empty and team in qb.index:
-        qlab = qb.loc[team].get("qb_style", "—")
-    k4.metric("QB style", qlab, help="Mobility from scramble + designed-run rate (league-relative)")
+    qlab = qb.loc[team].get("qb_style", "—") if qb is not None and not qb.empty and team in qb.index else "—"
+    k4.markdown(f"<div style='font-size:0.8rem;color:#8a8a8a;'>QB style</div>"
+                f"<div style='font-size:1.1rem;font-weight:600;margin-top:6px;'>{qlab}</div>",
+                unsafe_allow_html=True)
 
+    # EPA-trajectory sparkline + recent form
+    weekly = history.weekly_epa(extras.get("pbp"))
+    net_series = history.spark_series(weekly, team, "net")
+    fig = sparkline_fig(net_series, color=color, height=54)
     fm = extras.get("form")
+    cs, cf = st.columns([1, 3])
+    if fig is not None:
+        cs.caption("Net EPA trajectory")
+        cs.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     if fm is not None and not fm.empty and team in fm.index:
         f = fm.loc[team]
         oa = form_mod.arrow(f["off_delta"], good_high=True)
         da = form_mod.arrow(f["def_delta"], good_high=False)
-        st.caption(f"📈 **Recent form** (last {int(f['games_in_window'])}): "
+        cf.caption(f"📈 **Recent form** (last {int(f['games_in_window'])}): "
                    f"offense {oa} ({f['off_recent']:+.2f} vs {f['off_season']:+.2f} season) · "
                    f"defense {da} ({f['def_recent']:+.2f} allowed vs {f['def_season']:+.2f})")
+    if not any(history.rank_movement(hist, "power_rank").to_dict()):
+        cf.caption("↕️ Week-over-week movement arrows appear once the season logs two weeks.")
 
 
+# --- offense / defense sections (kept) ---------------------------------------
 def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
     o = off.loc[team]
     st.markdown("### 🏈 Offense")
@@ -142,23 +183,19 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             ("Rush success", fmt(o["rush_sr"], "pct"), o["rush_sr_rank"]),
             ("Explosive", fmt(o["explosive_rate"], "pct"), o["explosive_rate_rank"]),
         ]
-        st.plotly_chart(percentile_chart(rows, "Offense percentiles"),
-                        width="stretch")
+        st.plotly_chart(percentile_chart(rows, "Offense percentiles"), width="stretch")
     with cn:
         with st.container(border=True):
             pi = profiles.pass_identity(team, off)
             st.markdown("**Run / Pass identity**")
             st.markdown(gauge_bar_html(pi["npr_pct"]), unsafe_allow_html=True)
             pct_txt = f"{pi['npr_pct']:.0f}th pct" if pd.notna(pi["npr_pct"]) else "—"
-            st.caption(
-                f"**{pi['base']}** · neutral pass {fmt(pi['neutral_pass_rate'], 'pct')} "
-                f"({pct_txt}) · PROE {fmt(pi['proe'], 'num1')} — {pi['tendency']}"
-            )
+            st.caption(f"**{pi['base']}** · neutral pass {fmt(pi['neutral_pass_rate'], 'pct')} "
+                       f"({pct_txt}) · PROE {fmt(pi['proe'], 'num1')} — {pi['tendency']}")
             qb = extras.get("qb")
             if qb is not None and not qb.empty and team in qb.index:
                 q = qb.loc[team]
-                st.caption(f"**QB:** {q.get('qb_style', '—')} "
-                           f"({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
+                st.caption(f"**QB:** {q.get('qb_style', '—')} ({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
             rush = extras.get("rush")
             if rush is not None and not rush.empty and team in rush.index:
                 r = rush.loc[team]
@@ -167,11 +204,8 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             ovb = extras.get("ovb")
             if ovb is not None and not ovb.empty and team in ovb.index:
                 b = ovb.loc[team]
-                st.caption(
-                    f"**vs Blitz:** {b.get('resilience', '—')} — "
-                    f"{fmt(b['epa_vs_blitz'], 'epa')} EPA blitzed vs "
-                    f"{fmt(b['epa_no_blitz'], 'epa')} not"
-                )
+                st.caption(f"**vs Blitz:** {b.get('resilience', '—')} — "
+                           f"{fmt(b['epa_vs_blitz'], 'epa')} EPA blitzed vs {fmt(b['epa_no_blitz'], 'epa')} not")
             dro = extras.get("drives_off")
             if dro is not None and not dro.empty and team in dro.index:
                 r = dro.loc[team]
@@ -187,7 +221,6 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
                 c = co.loc[team]
                 st.caption(f"**Scheme:** {c.get('pa_label', '—')} "
                            f"(PA {fmt(c['play_action_rate'], 'pct')} · motion {fmt(c['motion_rate'], 'pct')})")
-            st.caption("**vs coverage schemes:** _upload PFF for man/zone splits_ 🔒")
     _strengths_struggles(profiles.offense_facets(team, off, extras))
 
 
@@ -205,18 +238,15 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             ("Rush success allowed", fmt(d["rush_sr"], "pct"), d["rush_sr_rank"]),
             ("Explosive allowed", fmt(d["explosive_rate"], "pct"), d["explosive_rate_rank"]),
         ]
-        st.plotly_chart(percentile_chart(rows, "Defense percentiles (100 = stingiest)"),
-                        width="stretch")
+        st.plotly_chart(percentile_chart(rows, "Defense percentiles (100 = stingiest)"), width="stretch")
     with cn:
         with st.container(border=True):
             prs = extras.get("pressure")
             if prs is not None and not prs.empty and team in prs.index:
                 p = prs.loc[team]
-                st.caption(
-                    f"**Pass rush:** {pressure.pressure_label(p['pressure_rate_rank'])} — "
-                    f"pressure {fmt(p['pressure_rate'], 'pct')} ({ordinal(p['pressure_rate_rank'])}), "
-                    f"sacks {fmt(p['sack_rate'], 'pct')}"
-                )
+                st.caption(f"**Pass rush:** {pressure.pressure_label(p['pressure_rate_rank'])} — "
+                           f"pressure {fmt(p['pressure_rate'], 'pct')} ({ordinal(p['pressure_rate_rank'])}), "
+                           f"sacks {fmt(p['sack_rate'], 'pct')}")
             if not blitz.empty and team in blitz.index:
                 b = blitz.loc[team]
                 st.caption(f"**Blitz:** {fmt(b['blitz_rate'], 'pct')} of dropbacks "
@@ -224,18 +254,68 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             else:
                 st.caption("**Blitz:** FTN charting not loaded for these seasons.")
             if scheme_row is not None:
-                st.caption(
-                    f"**Coverage:** zone {fmt(scheme_row['zone_rate'], 'pct')} · "
-                    f"man {fmt(scheme_row['man_rate'], 'pct')} · "
-                    f"confidence **{scheme_row.get('confidence', '—')}**"
-                )
+                st.caption(f"**Coverage:** zone {fmt(scheme_row['zone_rate'], 'pct')} · "
+                           f"man {fmt(scheme_row['man_rate'], 'pct')} · "
+                           f"confidence **{scheme_row.get('confidence', '—')}**")
                 _per_source_expander(scheme_row)
             else:
-                st.caption("**Coverage (zone/man):** _no source connected_ 🔒")
+                st.caption("**Coverage (zone/man):** _auto-fetch pending or offseason_ 🔒")
             st.caption("_Upload PFF (sidebar) → Cover 0–6 shells & situational man/zone._")
     _strengths_struggles(profiles.defense_facets(team, deff, extras))
 
 
+# --- advanced: splits + NGS --------------------------------------------------
+def _splits_section(team: str, extras: dict) -> None:
+    st.markdown("### 🔀 Situational splits")
+    sp = splits.team_splits(extras.get("pbp"), extras.get("schedule"), team)
+    if sp.empty:
+        st.info("Splits need play-by-play for the current season — they populate once games are played.")
+        return
+    try:
+        sty = sp.style.background_gradient(cmap="RdYlGn", subset=["Off EPA/play"])
+        if "Def EPA/play" in sp.columns:
+            sty = sty.background_gradient(cmap="RdYlGn_r", subset=["Def EPA/play"])
+        sty = sty.format({c: "{:+.3f}" for c in sp.columns if c != "Split"}, na_rep="—")
+        st.dataframe(sty, width="stretch", hide_index=True)
+    except Exception:  # noqa: BLE001 - styling needs matplotlib; fall back to plain
+        st.dataframe(sp, width="stretch", hide_index=True)
+    st.caption("EPA/play by situation. A team much better on early downs or at home is "
+               "an edge the season number hides.")
+
+
+def _ngs_section(team: str, extras: dict) -> None:
+    st.markdown("### 📡 NextGen tracking")
+    npass, nrec = extras.get("ngs_pass"), extras.get("ngs_rec")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Passing (QB)**")
+        if npass is not None and not npass.empty and team in npass.index:
+            r = npass.loc[team]
+            st.caption(f"⏱️ Time to throw: **{fmt(r.get('avg_time_to_throw'), 'num1')}s** "
+                       f"({ordinal(r.get('ttt_rank'))})")
+            st.caption(f"🎯 CPOE: **{fmt(r.get('completion_percentage_above_expectation'), 'num1')}** "
+                       f"({ordinal(r.get('cpoe_rank'))})")
+            st.caption(f"💥 Aggressiveness: **{fmt(r.get('aggressiveness'), 'num1')}%** "
+                       f"({ordinal(r.get('aggr_rank'))})")
+        else:
+            st.caption("_NGS passing not available for this season yet._")
+    with c2:
+        st.markdown("**Receiving (targets-weighted)**")
+        if nrec is not None and not nrec.empty and team in nrec.index:
+            r = nrec.loc[team]
+            st.caption(f"↔️ Separation: **{fmt(r.get('avg_separation'), 'num1')} yds** "
+                       f"({ordinal(r.get('sep_rank'))})")
+            st.caption(f"🏃 YAC over expected: **{fmt(r.get('avg_yac_above_expectation'), 'num1')}** "
+                       f"({ordinal(r.get('yac_rank'))})")
+            if pd.notna(r.get("top_separation")):
+                st.caption(f"⭐ Top target: **{r.get('top_target')}** "
+                           f"({fmt(r.get('top_separation'), 'num1')} yds separation)")
+        else:
+            st.caption("_NGS receiving not available for this season yet._")
+    st.caption("Player-tracking data (2016+, free from nflverse). The 'why' behind the EPA.")
+
+
+# --- render ------------------------------------------------------------------
 def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
            extras: dict | None = None) -> None:
     extras = extras or {}
@@ -247,9 +327,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     team = st.selectbox("Team", teams, index=0, label_visibility="collapsed")
 
     scheme_df = load_coverage(config.CURRENT_SEASON, st.session_state.get("pff_bytes"))
-    scheme_row = None
-    if scheme_df is not None and team in scheme_df.index:
-        scheme_row = scheme_df.loc[team]
+    scheme_row = scheme_df.loc[team] if scheme_df is not None and team in scheme_df.index else None
 
     _header(team, off, deff, extras)
     st.markdown(
@@ -258,10 +336,17 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
                          has_report=extras.get("injury_week") is not None),
         unsafe_allow_html=True)
     st.divider()
-    if team in off.index:
-        _offense_section(off, team, extras)
-    st.divider()
-    if team in deff.index:
-        _defense_section(deff, blitz, team, extras, scheme_row)
-    st.divider()
-    _compare_section(off, deff, extras, team, teams)
+
+    overview, advanced = st.tabs(["📋 Overview", "🔬 Advanced"])
+    with overview:
+        if team in off.index:
+            _offense_section(off, team, extras)
+        st.divider()
+        if team in deff.index:
+            _defense_section(deff, blitz, team, extras, scheme_row)
+    with advanced:
+        _splits_section(team, extras)
+        st.divider()
+        _ngs_section(team, extras)
+        st.divider()
+        _compare_section(off, deff, extras, team, teams)

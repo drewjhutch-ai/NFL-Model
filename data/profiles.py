@@ -82,6 +82,34 @@ def facet_line(f: dict) -> str:
     return f"**{f['unit']}** — {f['detail']} ({_ordinal(f['rank'])})"
 
 
+def team_grade(rank, total: int = 32) -> str:
+    """A letter grade from a 1..total rank (A+ elite → F bottom)."""
+    if rank is None or pd.isna(rank):
+        return "—"
+    pct = 1 - (int(rank) - 1) / max(total - 1, 1)  # 1.0 best → 0 worst
+    bands = [(0.97, "A+"), (0.90, "A"), (0.83, "A-"), (0.75, "B+"), (0.66, "B"),
+             (0.57, "B-"), (0.48, "C+"), (0.40, "C"), (0.31, "C-"), (0.22, "D+"),
+             (0.12, "D"), (0.0, "F")]
+    for cutoff, letter in bands:
+        if pct >= cutoff:
+            return letter
+    return "F"
+
+
+def team_thesis(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> str:
+    """One-line identity read: how they win, and where they break."""
+    facets = offense_facets(team, off, extras) + defense_facets(team, deff, extras)
+    s, w = strengths_and_struggles(facets, n=1)
+    ident = pass_identity(team, off)["base"] if team in off.index else ""
+    lead = f"{ident} offense" if ident and ident != "—" else "Balanced attack"
+    if s:
+        core = f"{lead} that leans on {s[0]['unit'].lower()} ({_ordinal(s[0]['rank'])})"
+    else:
+        core = f"{lead} with no standout unit"
+    weak = f"exploitable at {w[0]['unit'].lower()} ({_ordinal(w[0]['rank'])})" if w else "few clear holes"
+    return f"{core}; {weak}."
+
+
 # --- analytical pass identity ------------------------------------------------
 def pass_identity(team: str, off: pd.DataFrame) -> dict:
     """A nuanced read on how a team chooses to attack, not a 3-way bucket.

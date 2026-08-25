@@ -236,6 +236,58 @@ def load_ngs_rushing(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.Dat
     return df[keep].copy()
 
 
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading passing tracking…")
+def load_ngs_passing(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Next Gen Stats passing (season totals, week==0) — time to throw, CPOE, aggressiveness."""
+    import nfl_data_py as nfl
+
+    frames = []
+    for year in seasons:
+        try:
+            frames.append(nfl.import_ngs_data(stat_type="passing", years=[year]))
+        except Exception as exc:  # noqa: BLE001
+            print(f"[loaders] NGS passing unavailable for {year}: {exc}")
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    if df.empty:
+        return df
+    if "week" in df.columns:
+        df = df[df["week"] == 0]
+    keep = [c for c in ["season", "team_abbr", "player_gsis_id", "player_display_name",
+                        "attempts", "avg_time_to_throw", "aggressiveness",
+                        "completion_percentage_above_expectation",
+                        "avg_air_yards_differential", "avg_intended_air_yards"]
+            if c in df.columns]
+    return df[keep].copy()
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading receiving tracking…")
+def load_ngs_receiving(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Next Gen Stats receiving (season totals, week==0) — separation, cushion, YAC over expected."""
+    import nfl_data_py as nfl
+
+    frames = []
+    for year in seasons:
+        try:
+            frames.append(nfl.import_ngs_data(stat_type="receiving", years=[year]))
+        except Exception as exc:  # noqa: BLE001
+            print(f"[loaders] NGS receiving unavailable for {year}: {exc}")
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    if df.empty:
+        return df
+    if "week" in df.columns:
+        df = df[df["week"] == 0]
+    keep = [c for c in ["season", "team_abbr", "player_gsis_id", "player_display_name",
+                        "targets", "receptions", "avg_cushion", "avg_separation",
+                        "avg_yac_above_expectation", "avg_intended_air_yards",
+                        "percent_share_of_intended_air_yards"]
+            if c in df.columns]
+    return df[keep].copy()
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading rosters…")
 def load_rosters(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     """Player rosters (for player_id -> position mapping)."""

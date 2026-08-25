@@ -7,8 +7,8 @@ state. ``app.py`` wraps this in an ``@st.cache_data`` shim.
 from __future__ import annotations
 
 import config
-from data import (adjust, coaching, drives, form, injuries, loaders, players,
-                  positional, pressure, qbvalue, rushing, situational,
+from data import (adjust, coaching, drives, form, injuries, loaders, ngs,
+                  players, positional, pressure, qbvalue, rushing, situational,
                   tendencies, turnovers)
 from data import betting as betmodel
 
@@ -49,11 +49,14 @@ def build_frames():
         "pace": extras_pace,
         "coaching": coaching.coaching_tendencies(pbp_w, ftn),
         "turnovers": turnovers.turnover_margin(pbp_w),
-        "pbp": pbp,  # raw pbp for on-the-fly weekly trends (Evolution Engine)
+        "pbp": pbp,  # raw pbp for on-the-fly weekly trends + situational splits
+        "ngs_pass": ngs.team_passing(loaders.load_ngs_passing()),
+        "ngs_rec": ngs.team_receiving(loaders.load_ngs_receiving()),
     }
     extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
     extras["players"] = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
     extras["form"] = form.team_form(pbp)
+    extras["schedule"] = schedule  # for situational home/away splits
     extras["sos"] = betmodel.strength_of_schedule(schedule, betmodel.power_ratings(off, deff))
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
