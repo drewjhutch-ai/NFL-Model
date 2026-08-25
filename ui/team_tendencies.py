@@ -65,7 +65,7 @@ def _compare_section(off, deff, extras, team, teams) -> None:
             if c2vals:
                 series.append((cmp, c2vals, meta.get(cmp, {}).get("color") or "#e74c3c"))
         col.plotly_chart(radar_chart(cats, series, side.capitalize() + " (percentile)"),
-                         use_container_width=True)
+                         width="stretch")
     st.caption("Further from center = better (league percentile). Overlay a second team to compare.")
 
 
@@ -143,7 +143,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             ("Explosive", fmt(o["explosive_rate"], "pct"), o["explosive_rate_rank"]),
         ]
         st.plotly_chart(percentile_chart(rows, "Offense percentiles"),
-                        use_container_width=True)
+                        width="stretch")
     with cn:
         with st.container(border=True):
             pi = profiles.pass_identity(team, off)
@@ -206,7 +206,7 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             ("Explosive allowed", fmt(d["explosive_rate"], "pct"), d["explosive_rate_rank"]),
         ]
         st.plotly_chart(percentile_chart(rows, "Defense percentiles (100 = stingiest)"),
-                        use_container_width=True)
+                        width="stretch")
     with cn:
         with st.container(border=True):
             prs = extras.get("pressure")

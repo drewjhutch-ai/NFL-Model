@@ -109,7 +109,7 @@ def _quadrant(off, deff) -> None:
         xaxis=dict(title="Offense EPA/play  (better →)", gridcolor="rgba(128,128,128,0.12)", zeroline=False),
         yaxis=dict(title="Defense EPA/play allowed  (better ↑)", autorange="reversed",
                    gridcolor="rgba(128,128,128,0.12)", zeroline=False))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     st.caption("Opponent-adjusted EPA per play. **Up-and-to-the-right = the best teams** "
                "(good offense *and* defense). Dotted lines are league average.")
 
@@ -133,7 +133,7 @@ def _passrush_quadrant(off) -> None:
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
         xaxis=dict(title="Pass EPA/play (better →)", gridcolor="rgba(128,128,128,0.12)", zeroline=False),
         yaxis=dict(title="Rush EPA/play (better ↑)", gridcolor="rgba(128,128,128,0.12)", zeroline=False))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     st.caption("Offensive identity: balanced pass+rush teams sit up-and-to-the-right.")
 
 

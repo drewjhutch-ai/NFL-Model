@@ -115,7 +115,7 @@ def _direction(o_team, d_team, off, deff, blitz, extras) -> None:
 
     fe = edges.facet_edges(o_team, d_team, off, deff, extras)
     if fe:
-        st.plotly_chart(edge_bar_chart(fe), use_container_width=True)
+        st.plotly_chart(edge_bar_chart(fe), width="stretch")
 
     pos_tbl = positional.matchup_table(o_team, d_team, extras.get("usage", pd.DataFrame()),
                                        extras.get("dvp", {}))
@@ -347,7 +347,7 @@ def _margin_hist(sim) -> None:
                       xaxis=dict(title=f"{sim['home']} margin (+ = {sim['home']} wins)",
                                  gridcolor="rgba(128,128,128,0.12)"),
                       yaxis=dict(visible=False))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
