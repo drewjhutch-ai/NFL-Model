@@ -306,7 +306,9 @@ def fmt(x, kind: str = "num") -> str:
     if kind == "pct":
         return f"{x * 100:.1f}%"
     if kind == "epa":
-        return f"{x:+.3f}"
+        # EPA/play is a hard-to-read tiny decimal (-0.073). Show it "per 100
+        # plays" instead (-7.3) — same stat, far easier to read. 0 = average.
+        return f"{x * 100:+.1f}"
     if kind == "num1":
         return f"{x:.1f}"
     return f"{x:.3f}"

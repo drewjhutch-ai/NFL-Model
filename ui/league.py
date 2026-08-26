@@ -91,7 +91,7 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
             "Team": m.get("name", team),
             "Trend": unicode_spark(history.spark_series(weekly, team, "net")),
             "Tier": _tier(int(r["power_rank"])),
-            "Net EPA": round(r["net"], 3),
+            "Net EPA": round(r["net"] * 100, 1),
             "Off": int(off.loc[team, "epa_play_rank"]) if team in off.index else None,
             "Def": int(deff.loc[team, "epa_play_rank"]) if team in deff.index else None,
             "ST": round(float(st_ppg.get(team)), 1) if st_ppg is not None and team in st_ppg.index else None,
@@ -111,8 +111,8 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
         "Move": st.column_config.NumberColumn("Δ Wk", format="%+d",
             help="Power-rank change since last week (+ = climbing)") if has_move else None,
         "Trend": st.column_config.TextColumn("Trend", help="Weekly net-EPA trajectory this season"),
-        "Net EPA": st.column_config.NumberColumn("Net EPA", format="%+.3f",
-            help="Opponent-adjusted offense EPA minus defense EPA allowed."),
+        "Net EPA": st.column_config.NumberColumn("Net/100", format="%+.1f",
+            help="Opponent-adjusted net EPA per 100 plays (offense minus defense). 0 = average."),
         "Off": st.column_config.NumberColumn("Off", help="Offensive efficiency rank"),
         "Def": st.column_config.NumberColumn("Def", help="Defensive efficiency rank"),
         "ST": st.column_config.NumberColumn("ST", format="%+.1f", help="Special-teams points/game"),
@@ -125,14 +125,14 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
 
 # --- efficiency quadrant (with logos + presets) ------------------------------
 _PRESETS = {
-    "Offense vs Defense": ("off:epa_play", "def:epa_play", "Offense EPA/play  (better →)",
-                           "Defense EPA/play allowed  (better ↑)", True,
+    "Offense vs Defense": ("off:epa_play", "def:epa_play", "Offense (net pts / 100 plays, better →)",
+                           "Defense (pts allowed / 100 plays, better ↑)", True,
                            [("Complete", "max", "min"), ("Stout D, weak O", "min", "min"),
                             ("Explosive, leaky", "max", "max"), ("Rebuilding", "min", "max")]),
-    "Pass vs Rush (offense)": ("off:pass_epa", "off:rush_epa", "Pass EPA/play (better →)",
-                               "Rush EPA/play (better ↑)", False, None),
-    "Pass O vs Pass D": ("off:pass_epa", "def:pass_epa", "Pass offense EPA (better →)",
-                         "Pass defense EPA allowed (better ↑)", True, None),
+    "Pass vs Rush (offense)": ("off:pass_epa", "off:rush_epa", "Pass (pts / 100 plays, better →)",
+                               "Rush (pts / 100 plays, better ↑)", False, None),
+    "Pass O vs Pass D": ("off:pass_epa", "def:pass_epa", "Pass offense (pts / 100, better →)",
+                         "Pass defense allowed (pts / 100, better ↑)", True, None),
 }
 
 
@@ -153,8 +153,10 @@ def _quadrant(off, deff, preset: str) -> None:
     if not teams:
         st.info("Not enough data to plot yet.")
         return
-    x = [float(xdf.loc[t, xcol]) for t in teams]
-    y = [float(ydf.loc[t, ycol]) for t in teams]
+    # EPA columns are tiny decimals; plot them per-100-plays so the axis reads
+    # in whole numbers (-10..+15) instead of -0.10..0.15.
+    x = [float(xdf.loc[t, xcol]) * 100 for t in teams]
+    y = [float(ydf.loc[t, ycol]) * 100 for t in teams]
     colors = [meta.get(t, {}).get("color") or "#888" for t in teams]
 
     fig = go.Figure(go.Scatter(
@@ -201,20 +203,20 @@ def _distribution(off, deff, extras) -> None:
     import plotly.graph_objects as go
     meta = loaders.team_meta()
     options = {
-        "Offense EPA/play": (off, "epa_play", True),
-        "Defense EPA/play allowed": (deff, "epa_play", False),
-        "Pass offense EPA": (off, "pass_epa", True),
-        "Pass defense EPA allowed": (deff, "pass_epa", False),
-        "Rush offense EPA": (off, "rush_epa", True),
-        "Explosive rate": (off, "explosive_rate", True),
+        "Offense (pts/100 plays)": (off, "epa_play", True, 100),
+        "Defense (pts/100 allowed)": (deff, "epa_play", False, 100),
+        "Pass offense (pts/100)": (off, "pass_epa", True, 100),
+        "Pass defense (pts/100)": (deff, "pass_epa", False, 100),
+        "Rush offense (pts/100)": (off, "rush_epa", True, 100),
+        "Explosive rate (%)": (off, "explosive_rate", True, 100),
     }
     metric = st.selectbox("Metric", list(options.keys()))
-    df, col, good_high = options[metric]
+    df, col, good_high, scale = options[metric]
     teams = [t for t in df.index if pd.notna(df.loc[t, col])]
     if not teams:
         st.info("No data yet.")
         return
-    vals = [float(df.loc[t, col]) for t in teams]
+    vals = [float(df.loc[t, col]) * scale for t in teams]
     colors = [meta.get(t, {}).get("color") or "#888" for t in teams]
     order = np.argsort(vals)[::-1] if good_high else np.argsort(vals)
     teams = [teams[i] for i in order]; vals = [vals[i] for i in order]
@@ -229,7 +231,7 @@ def _distribution(off, deff, extras) -> None:
                       xaxis=dict(gridcolor="rgba(128,128,128,0.12)", title=metric))
     st.plotly_chart(fig, width="stretch")
     spread = max(vals) - min(vals)
-    st.caption(f"League spread: {spread:.3f}. The bigger the gap from the pack, the more real "
+    st.caption(f"League spread: {spread:.1f}. The bigger the gap from the pack, the more real "
                "the edge — clustered metrics offer little separation to bet on.")
 
 
@@ -244,31 +246,35 @@ def _shade(df: pd.DataFrame, good_high_cols: list[str], good_low_cols: list[str]
         if c in df.columns:
             sty = sty.background_gradient(cmap="RdYlGn_r", subset=[c])
     fmts = {c: "{:.1%}" for c in pct_cols if c in df.columns}
-    fmts.update({c: "{:+.3f}" for c in ["EPA/play", "Pass EPA", "Rush EPA"] if c in df.columns})
+    # EPA columns are stored as tiny decimals but shown per-100-plays (×100).
+    for c in ["EPA/100", "Pass/100", "Rush/100"]:
+        if c in df.columns:
+            fmts[c] = lambda v: "—" if pd.isna(v) else f"{v * 100:+.1f}"
     return sty.format(fmts, na_rep="—")
 
 
 def _offense_table(off) -> None:
-    d = off.copy().rename(columns={"epa_play": "EPA/play", "pass_epa": "Pass EPA", "rush_epa": "Rush EPA",
+    d = off.copy().rename(columns={"epa_play": "EPA/100", "pass_epa": "Pass/100", "rush_epa": "Rush/100",
                                    "pass_sr": "Pass SR", "rush_sr": "Rush SR", "explosive_rate": "Explosive",
                                    "neutral_pass_rate": "Neutral pass"})
-    cols = ["EPA/play", "Pass EPA", "Rush EPA", "Pass SR", "Rush SR", "Explosive", "Neutral pass", "style"]
-    d = d[[c for c in cols if c in d.columns]].rename(columns={"style": "Lean"}).sort_values("EPA/play", ascending=False)
-    st.dataframe(_shade(d, ["EPA/play", "Pass EPA", "Rush EPA", "Pass SR", "Rush SR", "Explosive"],
+    cols = ["EPA/100", "Pass/100", "Rush/100", "Pass SR", "Rush SR", "Explosive", "Neutral pass", "style"]
+    d = d[[c for c in cols if c in d.columns]].rename(columns={"style": "Lean"}).sort_values("EPA/100", ascending=False)
+    st.dataframe(_shade(d, ["EPA/100", "Pass/100", "Rush/100", "Pass SR", "Rush SR", "Explosive"],
                         [], ["Pass SR", "Rush SR", "Explosive", "Neutral pass"]), width="stretch")
+    st.caption("EPA columns are shown **per 100 plays** (0 = league average) — easier to read than the raw decimal.")
 
 
 def _defense_table(deff, scheme_df) -> None:
     d = deff.copy()
     if scheme_df is not None:
         d["Zone%"] = [scheme_df.loc[t, "zone_rate"] if t in scheme_df.index else None for t in d.index]
-    d = d.rename(columns={"epa_play": "EPA/play", "pass_epa": "Pass EPA", "rush_epa": "Rush EPA",
+    d = d.rename(columns={"epa_play": "EPA/100", "pass_epa": "Pass/100", "rush_epa": "Rush/100",
                           "pass_sr": "Pass SR", "rush_sr": "Rush SR", "explosive_rate": "Explosive"})
-    cols = ["EPA/play", "Pass EPA", "Rush EPA", "Pass SR", "Rush SR", "Explosive"]
+    cols = ["EPA/100", "Pass/100", "Rush/100", "Pass SR", "Rush SR", "Explosive"]
     if "Zone%" in d.columns:
         cols.append("Zone%")
-    d = d[[c for c in cols if c in d.columns]].sort_values("EPA/play")
-    st.dataframe(_shade(d, [], ["EPA/play", "Pass EPA", "Rush EPA", "Pass SR", "Rush SR", "Explosive"],
+    d = d[[c for c in cols if c in d.columns]].sort_values("EPA/100")
+    st.dataframe(_shade(d, [], ["EPA/100", "Pass/100", "Rush/100", "Pass SR", "Rush SR", "Explosive"],
                         ["Pass SR", "Rush SR", "Explosive", "Zone%"]), width="stretch")
 
 
@@ -346,8 +352,9 @@ def _coaching_table(extras) -> None:
 def _glossary() -> None:
     with st.expander("📖 What these numbers mean"):
         st.markdown(
-            "- **Net EPA** — opponent-adjusted offense minus defense; our power rating.\n"
-            "- **EPA/play** — efficiency; 0 = average, elite O ≈ +0.10–0.20, good D is negative.\n"
+            "- **Net/100 & EPA/100** — efficiency shown as points per **100 plays** (the raw "
+            "EPA/play ×100), so it reads in whole numbers. 0 = league average; elite offense ≈ "
+            "+10–20, good defense is negative (fewer points allowed).\n"
             "- **Move (Δ Wk)** — power-rank change since last week. **Trend** — weekly net-EPA path.\n"
             "- **SR** — success rate. **Explosive** — big-play rate.\n"
             "- Tables are heat-shaded green→red (defense reversed, since lower is better)."

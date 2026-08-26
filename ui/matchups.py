@@ -250,7 +250,7 @@ def _tale_of_the_tape(away, home, off, deff, extras) -> None:
     if pace is not None:
         rows.append(("Pace (plays/gm)", "num0", {t: (pace.get(t), pace_rank.get(t) if pace_rank is not None else None) for t in (away, home)}))
     if st_ppg is not None:
-        rows.append(("Special teams", "epa", {t: (st_ppg.get(t), st_rank.get(t) if st_rank is not None else None) for t in (away, home)}))
+        rows.append(("Special teams", "pts", {t: (st_ppg.get(t), st_rank.get(t) if st_rank is not None else None) for t in (away, home)}))
 
     def cell(val, rk, kind):
         if kind == "rankonly":
@@ -259,6 +259,8 @@ def _tale_of_the_tape(away, home, off, deff, extras) -> None:
             disp = fmt(val, "pct")
         elif kind == "num0":
             disp = f"{val:.0f}" if pd.notna(val) else "—"
+        elif kind == "pts":
+            disp = f"{val:+.1f}" if pd.notna(val) else "—"
         else:
             disp = fmt(val, "epa")
         badge = f"<span style='color:{rank_color(rk)};font-size:0.75rem;'> {ordinal(rk)}</span>" if pd.notna(rk) and kind != "rankonly" else ""

@@ -176,7 +176,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
     cc, cn = st.columns([3, 2])
     with cc:
         rows = [
-            ("Overall (EPA/play)", fmt(o["epa_play"], "epa"), o["epa_play_rank"]),
+            ("Overall (pts/100)", fmt(o["epa_play"], "epa"), o["epa_play_rank"]),
             ("Passing", fmt(o["pass_epa"], "epa"), o["pass_epa_rank"]),
             ("Rushing", fmt(o["rush_epa"], "epa"), o["rush_epa_rank"]),
             ("Pass success", fmt(o["pass_sr"], "pct"), o["pass_sr_rank"]),
@@ -271,16 +271,21 @@ def _splits_section(team: str, extras: dict) -> None:
     if sp.empty:
         st.info("Splits need play-by-play for the current season — they populate once games are played.")
         return
+    sp = sp.rename(columns={"Off EPA/play": "Off /100", "Def EPA/play": "Def /100"})
+    num_cols = [c for c in sp.columns if c != "Split"]
     try:
-        sty = sp.style.background_gradient(cmap="RdYlGn", subset=["Off EPA/play"])
-        if "Def EPA/play" in sp.columns:
-            sty = sty.background_gradient(cmap="RdYlGn_r", subset=["Def EPA/play"])
-        sty = sty.format({c: "{:+.3f}" for c in sp.columns if c != "Split"}, na_rep="—")
+        sty = sp.style.background_gradient(cmap="RdYlGn", subset=["Off /100"])
+        if "Def /100" in sp.columns:
+            sty = sty.background_gradient(cmap="RdYlGn_r", subset=["Def /100"])
+        sty = sty.format({c: (lambda v: "—" if pd.isna(v) else f"{v * 100:+.1f}") for c in num_cols},
+                         na_rep="—")
         st.dataframe(sty, width="stretch", hide_index=True)
     except Exception:  # noqa: BLE001 - styling needs matplotlib; fall back to plain
+        for c in num_cols:
+            sp[c] = (sp[c] * 100).round(1)
         st.dataframe(sp, width="stretch", hide_index=True)
-    st.caption("EPA/play by situation. A team much better on early downs or at home is "
-               "an edge the season number hides.")
+    st.caption("Points per **100 plays** by situation (0 = average). A team much better on early "
+               "downs or at home is an edge the season number hides.")
 
 
 def _ngs_section(team: str, extras: dict) -> None:
