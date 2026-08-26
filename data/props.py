@@ -161,6 +161,26 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     return df
 
 
+def leans_to_bets(leans: pd.DataFrame, games_played: int = 0) -> list[dict]:
+    """Convert auto prop leans into Bet-Engine rows so props compete on the board.
+
+    Each lean is priced at a baseline line (the player's season norm) at -110 both
+    ways, with ``corr_group`` set to the game so same-game correlation is handled
+    in parlays. Edge is the hit probability minus the no-vig 50%.
+    """
+    if leans is None or leans.empty:
+        return []
+    out = []
+    for _, r in leans.iterrows():
+        p = r["Hit%"] / 100.0
+        sel = f"{r['Player']} {r['Stat']} {r['Side']} {r['Baseline']:g}"
+        out.append(betengine._bet(
+            r["Game"], r["Game"], "Player prop", sel, p, -110, -110,
+            corr_group=r["Game"], games_played=games_played,
+            rationale=f"Proj {r['Projection']:g} vs {r['Baseline']:g} · {r['Matchup']}"))
+    return out
+
+
 def prop_bets(player: pd.Series, proj: dict, game_id: str, game: str, opp: str,
               lines: dict | None = None, games_played: int = 0) -> list[dict]:
     """Turn a player's projections into Bet-Engine rows (edge needs a line).

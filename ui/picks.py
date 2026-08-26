@@ -133,21 +133,16 @@ def _confidence(board, gp) -> None:
                "The model's best guesses, whatever the market.")
 
 
-def _prop_leans(off, deff, extras, games, gp) -> None:
+def _prop_leans(prop_df) -> None:
     st.markdown("### 🎯 Player prop leans")
-    st.caption("The model isn't limited to sides & totals — these are its strongest player-prop "
-               "mismatches for the slate (projection vs baseline). Price the exact line in Players → "
-               "Prop edge finder.")
-    stats = extras.get("players")
-    if stats is None or stats.empty:
-        st.info("Player data not available for prop leans yet.")
-        return
-    board = props.auto_prop_picks(stats, off, deff, extras, games, games_played=gp)
-    if board.empty:
+    st.caption("The strongest player-prop mismatches for the slate (projection vs baseline). These "
+               "also compete in Most Edge, Parlays, and Confidence above. Price the exact line in "
+               "Players → Prop edge finder.")
+    if prop_df is None or prop_df.empty:
         st.info("No prop leans surfaced for this slate.")
         return
-    show = board.head(10)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
-                           "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+    show = prop_df.head(10)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
+                             "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
     st.dataframe(show, width="stretch", hide_index=True, column_config={
         "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
         "Conf": st.column_config.NumberColumn("Conf", format="%d"),
@@ -201,9 +196,16 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
                       index=weeks.index(default_wk) if default_wk in weeks else 0, key="picks_week")
     games = s[s["week"] == wk]
     gp = _games_played(extras)
-    # game-market board needs posted lines; prop leans do not.
+    # game-market board needs posted lines; prop leans do not — merge both so
+    # every bet type competes for Most Edge, Parlays, and Confidence.
     priced = games[games["spread_line"].notna()] if "spread_line" in games.columns else games.iloc[0:0]
     board = _board(priced, off, deff, extras, gp) if not priced.empty else pd.DataFrame()
+    stats = extras.get("players")
+    prop_df = (props.auto_prop_picks(stats, off, deff, extras, games, games_played=gp)
+               if stats is not None and not stats.empty else pd.DataFrame())
+    prop_bets = props.leans_to_bets(prop_df, gp)
+    if prop_bets:
+        board = pd.concat([board, pd.DataFrame(prop_bets)], ignore_index=True)
 
     if not board.empty:
         _most_edge(board)
@@ -212,9 +214,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         st.divider()
         _confidence(board, gp)
     else:
-        st.info("No market lines posted for this week yet — spread/total/ML picks need lines to "
-                "measure edge. Player-prop leans (below) don't, so they're live now.")
+        st.info("No priced bets yet — game lines aren't posted and no player data for props.")
     st.divider()
-    _prop_leans(off, deff, extras, games, gp)
+    _prop_leans(prop_df)
     st.divider()
     _pick_log()
