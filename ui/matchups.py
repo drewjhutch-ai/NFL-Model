@@ -53,17 +53,17 @@ def _banner(away: str, home: str, game_row) -> None:
                 "color:#888;'>@</div>", unsafe_allow_html=True)
     _team_head(c2, home, meta)
     if game_row is not None and "gameday" in game_row and pd.notna(game_row.get("gameday")):
-        st.caption(f"📅 {game_row['gameday']} · Week {int(game_row['week'])}")
+        st.caption(f"{game_row['gameday']} · Week {int(game_row['week'])}")
 
 
 def _injuries_row(away, home, extras) -> None:
     imap = extras.get("injuries", {})
     if extras.get("injury_week") is None:
-        st.caption("🩺 Injury reports appear here once the season starts.")
+        st.caption("Injury reports appear here once the season starts.")
         return
     c1, c2 = st.columns(2)
-    c1.markdown(f"**{away}** 🩺 {injuries.summary_line(imap.get(away, []))}")
-    c2.markdown(f"**{home}** 🩺 {injuries.summary_line(imap.get(home, []))}")
+    c1.markdown(f"**{away}** {injuries.summary_line(imap.get(away, []))}")
+    c2.markdown(f"**{home}** {injuries.summary_line(imap.get(home, []))}")
 
 
 # --- 1. model vs market ------------------------------------------------------
@@ -99,7 +99,7 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
     if not have_market:
         return None
 
-    st.markdown("### 🎯 Model vs Market")
+    st.markdown("### Model vs Market")
     c1, c2, c3 = st.columns(3)
 
     # --- spread ---
@@ -109,7 +109,7 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
     mkt_line = (betting.fmt_line(home if a["mkt_spread"] > 0 else away, a["mkt_spread"])
                 if pd.notna(a["mkt_spread"]) else "—")
     if a["value_side"]:
-        chip = _lean_chip(f"✅ {a['value_side']} +{abs(a['edge_pts']):.1f} value", "value")
+        chip = _lean_chip(f"{a['value_side']} +{abs(a['edge_pts']):.1f} value", "value")
         sub = f"{a['confidence']} confidence · edge {a['edge_pts']:+.1f} pts"
     elif pd.notna(a["edge_pts"]):
         chip = _lean_chip("No spread edge", "neutral")
@@ -122,7 +122,7 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
     our_total = f"{a['model_total']:.1f}" if pd.notna(a["model_total"]) else "—"
     mkt_total = f"{a['total_line']:.1f}" if pd.notna(a["total_line"]) else "—"
     if a["total_side"]:
-        chip = _lean_chip(f"✅ {a['total_side']} +{abs(a['total_edge']):.1f}", "value")
+        chip = _lean_chip(f"{a['total_side']} +{abs(a['total_edge']):.1f}", "value")
         sub = f"our total {a['total_edge']:+.1f} vs the number"
     elif pd.notna(a["total_edge"]):
         chip = _lean_chip("No total edge", "neutral")
@@ -135,7 +135,7 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
     our_p = f"{a['model_p_home']*100:.0f}% {home}" if pd.notna(a["model_p_home"]) else "—"
     mkt_p = f"{a['mkt_p_home']*100:.0f}% {home}" if pd.notna(a["mkt_p_home"]) else "—"
     if a["ml_side"]:
-        chip = _lean_chip(f"✅ {a['ml_side']} ML value", "value")
+        chip = _lean_chip(f"{a['ml_side']} ML value", "value")
         sub = f"win-prob edge {a['edge_prob']*100:+.0f} pts"
     else:
         chip = _lean_chip("No ML edge", "neutral")
@@ -144,15 +144,15 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
 
     # disagreement + drivers + what the market prices
     if a["disagree"]:
-        st.warning(f"⚠️ **We disagree with the book on the favorite** — our lean is "
+        st.warning(f"**We disagree with the book on the favorite** — our lean is "
                    f"**{a['our_fav']}**, the market favors **{a['mkt_fav']}**.")
     if a["why"]:
         drivers = " · ".join(f"{w['label']} ({w['detail']})" for w in a["why"])
-        st.caption(f"📈 **Our drivers:** {drivers}")
+        st.caption(f"**Our drivers:** {drivers}")
     if a["context"]:
-        st.caption("🧮 **What the market is pricing:** " + " · ".join(a["context"]))
+        st.caption("**What the market is pricing:** " + " · ".join(a["context"]))
     if a["key_number"]:
-        st.info(f"🔑 Our number and the market straddle the key number "
+        st.info(f"Our number and the market straddle the key number "
                 f"**{a['key_number']}** — extra value if you can get this side.")
     return a
 
@@ -315,7 +315,7 @@ def _simulation(away, home, off, deff, extras, row) -> dict | None:
     sim = simulation.simulate(off, deff, home, away, extras, row)
     if not sim:
         return None
-    st.markdown("### 🎲 Simulation "
+    st.markdown("### Simulation "
                 f"<span style='color:#888;font-size:0.9rem'>({sim['n']:,} runs)</span>",
                 unsafe_allow_html=True)
     k = st.columns(4)
@@ -359,7 +359,7 @@ def _key_numbers(sim, away, home) -> None:
     """Probability the game lands ON each key number, and cover leverage."""
     import numpy as np
     m = np.asarray(sim["margins"])
-    st.markdown("**🔑 Key-number leverage**")
+    st.markdown("**Key-number leverage**")
     rows = []
     for k in sorted(config.KEY_NUMBERS):
         # probability the final margin is exactly within [k-0.5, k+0.5] either way
@@ -384,7 +384,7 @@ def _box_score(sim, away, home, extras) -> None:
         if dro is not None and t in dro.index:
             bits.append(f"{t} {dro.loc[t,'pts_per_drive']:.2f} pts/drive")
     if bits:
-        st.caption("📦 **Projected box:** " + " · ".join(bits))
+        st.caption("**Projected box:** " + " · ".join(bits))
 
 
 # --- 4. attack breakdowns + drill-downs (existing, lightly kept) --------------
@@ -448,19 +448,19 @@ def _trench_rows(o_team, d_team, deff, extras) -> list[dict]:
 
 def _edge_word(mag) -> str:
     if mag >= 8:
-        return "🟢 Strong offense"
+        return "Strong offense"
     if mag >= 3:
-        return "🟢 Offense"
+        return "Offense"
     if mag <= -8:
-        return "🔴 Strong defense"
+        return "Strong defense"
     if mag <= -3:
-        return "🔴 Defense"
-    return "🟡 Even"
+        return "Defense"
+    return "Even"
 
 
 def _dropdowns(away, home, off, deff, extras) -> None:
-    st.markdown("### 🔬 Deeper breakdown")
-    with st.expander("⚔️ Trenches — O-line vs D-line (the undervalued battle)"):
+    st.markdown("### Deeper breakdown")
+    with st.expander("Trenches — O-line vs D-line (the undervalued battle)"):
         for o, d in ((away, home), (home, away)):
             rows = _trench_rows(o, d, deff, extras)
             if rows:
@@ -470,14 +470,14 @@ def _dropdowns(away, home, off, deff, extras) -> None:
         st.caption("Pass protection = sacks allowed vs pressure generated. Run blocking = "
                    "rush yards over expected vs run defense. An underdog winning the trenches "
                    "is one of the strongest angles in football.")
-    with st.expander("🎯 WR1 / WR2 / WR3 detail"):
+    with st.expander("WR1 / WR2 / WR3 detail"):
         for o, d in ((away, home), (home, away)):
             wr = positional.wr_tier_matchup(o, d, extras.get("wr_off", pd.DataFrame()),
                                             extras.get("wr_def", {}))
             if not wr.empty:
                 st.markdown(f"**{o} receivers vs {d} coverage**")
                 st.dataframe(wr, width="stretch", hide_index=True)
-    with st.expander("📊 Situational & pace"):
+    with st.expander("Situational & pace"):
         os_ = extras.get("off_sit"); pace = extras.get("pace")
         rows = []
         for o, d in ((away, home), (home, away)):
@@ -489,9 +489,9 @@ def _dropdowns(away, home, off, deff, extras) -> None:
                              "Pace (plays/gm)": f"{pace.get(o, float('nan')):.0f}" if pace is not None else "—"})
         if rows:
             st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-    with st.expander("🌦️ Environment — weather, rest, home field"):
+    with st.expander("Environment — weather, rest, home field"):
         _environment(away, home, extras)
-    with st.expander("🔒 Coverage scheme (unlocks with PFF)"):
+    with st.expander("Coverage scheme (unlocks with PFF)"):
         scheme = load_coverage(config.CURRENT_SEASON, st.session_state.get("pff_bytes"))
         if scheme is not None and not getattr(scheme, "empty", True):
             rows = []
@@ -514,22 +514,22 @@ def _environment(away, home, extras) -> None:
             notes.append(wx["note"])
         hr, ar = row.get("home_rest"), row.get("away_rest")
         if pd.notna(hr) and pd.notna(ar) and abs(hr - ar) >= 3:
-            notes.append(f"🛌 Rest edge: {home if hr > ar else away} (+{int(abs(hr - ar))} days)")
+            notes.append(f"Rest edge: {home if hr > ar else away} (+{int(abs(hr - ar))} days)")
         for t, rest in ((home, hr), (away, ar)):
             if pd.notna(rest):
                 if rest >= 13:
-                    notes.append(f"🌴 {t} off a bye ({int(rest)} days rest)")
+                    notes.append(f"{t} off a bye ({int(rest)} days rest)")
                 elif rest <= 4:
-                    notes.append(f"⚡ {t} on a short week ({int(rest)} days — Thursday spot)")
+                    notes.append(f"{t} on a short week ({int(rest)} days — Thursday spot)")
         if row.get("div_game") == 1:
-            notes.append("🤝 Division game — historically tighter.")
+            notes.append("Division game — historically tighter.")
     hfa = betting.home_field(home)
-    notes.append(f"🏟️ {home} home field ≈ {hfa:.1f} pts")
+    notes.append(f"{home} home field ≈ {hfa:.1f} pts")
     imap = extras.get("injuries", {})
     for t in (away, home):
         outs = [p for p in imap.get(t, []) if p["status"] == "Out"]
         if outs:
-            notes.append(f"🩺 {t} without {', '.join(p['name'] for p in outs[:3])}")
+            notes.append(f"{t} without {', '.join(p['name'] for p in outs[:3])}")
     for n in notes:
         st.markdown(f"- {n}")
 
@@ -537,7 +537,7 @@ def _environment(away, home, extras) -> None:
 # --- 5. the angle finder -----------------------------------------------------
 def _angle_finder(away, home, off, deff, extras, assessment, sim) -> None:
     """Rank every edge in the game, including ones the headline lean doesn't state."""
-    st.markdown("### 🧭 Angle Finder")
+    st.markdown("### Angle Finder")
     angles = []  # each: (score, market, lean, confidence, rationale)
 
     a = assessment
@@ -598,7 +598,7 @@ def _angle_finder(away, home, off, deff, extras, assessment, sim) -> None:
 
 # --- 6. scouting notes -------------------------------------------------------
 def _scouting(away, home, off, deff, extras) -> None:
-    st.markdown("### 📝 Scouting notes")
+    st.markdown("### Scouting notes")
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
     margin = betting.project_margin(off, deff, home, away, st_ppg, qb)
     bullets = []
@@ -625,7 +625,7 @@ def _scouting(away, home, off, deff, extras) -> None:
     for t in (away, home):
         qout = [p for p in imap.get(t, []) if p["status"] == "Out" and p["pos"] == "QB"]
         if qout:
-            bullets.append(f"⚠️ **{t} QB {qout[0]['name']} OUT** — model has docked their projection.")
+            bullets.append(f"**{t} QB {qout[0]['name']} OUT** — model has docked their projection.")
     for b in bullets:
         st.markdown(f"- {b}")
     st.caption("Layered read — trenches, skill, situational, and environment together. "
@@ -648,7 +648,7 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
         _projection_verdict(away, home, off, deff, extras)
 
     st.divider()
-    st.markdown("### ⚖️ Tale of the tape")
+    st.markdown("### Tale of the tape")
     _tale_of_the_tape(away, home, off, deff, extras)
     _attack_meter(away, home, off, deff, extras)
 
@@ -658,13 +658,13 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
         _box_score(sim, away, home, extras)
 
     st.divider()
-    st.markdown("### ⚔️ Attack breakdowns")
+    st.markdown("### Attack breakdowns")
     la, ra = st.columns(2)
     with la:
         _direction(away, home, off, deff, blitz, extras)
     with ra:
         _direction(home, away, off, deff, blitz, extras)
-    st.caption("🟢 offense edge · 🔴 defense edge. Bar length = raw edge; thickness = "
+    st.caption("offense edge · defense edge. Bar length = raw edge; thickness = "
                "how much the facet decides games; ordered by weighted impact.")
 
     st.divider()

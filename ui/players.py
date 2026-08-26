@@ -48,7 +48,7 @@ def _pick_card(col, r) -> None:
 
 
 def _auto_picks(stats, off, deff, extras, games) -> None:
-    st.markdown("### 🎯 Top prop picks this week")
+    st.markdown("### Top prop picks this week")
     st.caption("The model's strongest player-prop leans — biggest gaps between a matchup-adjusted "
                "projection and the player's baseline. No line needed; these are the mismatches to target.")
     gp = _games_played(extras)
@@ -89,7 +89,7 @@ def _auto_picks(stats, off, deff, extras, games) -> None:
 
 # --- section 2: prop edge finder (streamlined) -------------------------------
 def _finder(stats, off, deff, extras, schedule) -> None:
-    st.markdown("### 🔎 Prop edge finder")
+    st.markdown("### Prop edge finder")
     st.caption("Pick a player to see every projectable stat and its lean. Enter the book's line on "
                "any stat for the exact edge, fair odds, and Kelly stake.")
     teams = sorted(stats["team"].dropna().unique())
@@ -145,14 +145,14 @@ def _finder(stats, off, deff, extras, schedule) -> None:
     m3.metric("Fair odds", betengine.fmt_odds(bet["fair_odds"]))
     m4.metric("Kelly", f"{bet['kelly']*100:.1f}u" if bet["kelly"] else "—")
     if pd.notna(bet["edge"]) and bet["edge"] > 0.02:
-        st.success(f"🟢 Value on the **{side}** — fair {betengine.fmt_odds(bet['fair_odds'])} "
+        st.success(f"Value on the **{side}** — fair {betengine.fmt_odds(bet['fair_odds'])} "
                    f"vs your {betengine.fmt_odds(odds)}.")
     else:
-        st.info("🟡 No clear edge at this price.")
+        st.info("No clear edge at this price.")
 
 
 def _usage(stats, teams) -> None:
-    with st.expander("📋 Player usage explorer"):
+    with st.expander("Player usage explorer"):
         team = st.selectbox("Team", teams, key="pl_team")
         t = players.team_players(stats, team)
         if t.empty:

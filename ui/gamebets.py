@@ -4,9 +4,9 @@ The Picks tab ranks the whole slate; this drills into one game the way Matchups
 does — select the week and matchup, and the Bet Engine surfaces that game's best
 plays in three buckets:
 
-  * 🛡️ Safest — highest model win probability (most likely to cash).
-  * 💎 Most edge — biggest value vs the de-vigged line.
-  * 🧬 Same-game parlay — the best correlated combo, priced honestly.
+  * Safest — highest model win probability (most likely to cash).
+  * Most edge — biggest value vs the de-vigged line.
+  * Same-game parlay — the best correlated combo, priced honestly.
 
 When market lines aren't posted yet, it falls back to the model's straight read
 (projected score, win %, our number) so the game is never blank.
@@ -34,7 +34,7 @@ def _banner(away, home, row) -> None:
     cm.markdown("<div style='text-align:center;font-size:1.4rem;margin-top:14px;color:#888;'>@</div>",
                 unsafe_allow_html=True)
     if row is not None and pd.notna(row.get("gameday")):
-        st.caption(f"📅 {row['gameday']} · Week {int(row['week'])}")
+        st.caption(f"{row['gameday']} · Week {int(row['week'])}")
 
 
 def _bet_row(b, show_edge=True) -> str:
@@ -57,12 +57,12 @@ def _model_read(off, deff, extras, row, away, home) -> None:
         st.info("Not enough data to project this game yet.")
         return
     fav = home if sim["margin_mean"] > 0 else away
-    st.markdown(f"#### 📖 The model's read")
+    st.markdown(f"#### The model's read")
     k = st.columns(3)
     k[0].metric("Projected score", f"{away} {sim['proj_away']:.0f} – {home} {sim['proj_home']:.0f}")
     k[1].metric(f"{fav} win", f"{max(sim['home_win'],1-sim['home_win'])*100:.0f}%")
     k[2].metric("Model line", betting.fmt_line(fav, abs(sim['margin_mean'])))
-    st.caption("🔒 Categorized best bets (safest / edge / parlay) unlock once the book posts lines "
+    st.caption("Categorized best bets (safest / edge / parlay) unlock once the book posts lines "
                "for this game — then the model prices every market against them.")
 
 
@@ -77,7 +77,7 @@ def _game_props(off, deff, extras, row) -> None:
     if board.empty:
         return
     st.divider()
-    st.markdown("### 🎯 Player prop leans")
+    st.markdown("### Player prop leans")
     st.caption("Biggest projection-vs-baseline mismatches in this game — the model bets props too, "
                "not just the big three. Price exact lines in Players → Prop edge finder.")
     show = board.head(6)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
@@ -110,12 +110,12 @@ def _breakdown(off, deff, extras, row) -> None:
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("### 🛡️ Safest")
+        st.markdown("### Safest")
         st.caption("Most likely to cash, regardless of price.")
         for b in safest:
             st.markdown(_bet_row(b, show_edge=False), unsafe_allow_html=True)
     with c2:
-        st.markdown("### 💎 Most edge")
+        st.markdown("### Most edge")
         st.caption("Biggest value vs the de-vigged line.")
         if edges:
             for b in edges:
@@ -124,7 +124,7 @@ def _breakdown(off, deff, extras, row) -> None:
             st.info("No +EV bet in this game — the market has it priced tight.")
 
     st.divider()
-    st.markdown("### 🧬 Same-game parlay")
+    st.markdown("### Same-game parlay")
     pool = [b for b in bets if pd.notna(b["edge"]) and b["edge"] > 0] or safest
     legs = pool[:3] if len(pool) >= 2 else []
     if len(legs) >= 2:

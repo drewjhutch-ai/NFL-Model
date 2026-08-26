@@ -19,7 +19,7 @@ import config
 from data.teams import normalize_team
 
 _STATUSES = ("Out", "Doubtful", "Questionable")
-STATUS_ICON = {"Out": "🔴", "Doubtful": "🟠", "Questionable": "🟡"}
+STATUS_ICON = {"Out": "OUT", "Doubtful": "DBT", "Questionable": "Q"}
 STATUS_ORDER = {"Out": 0, "Doubtful": 1, "Questionable": 2}
 
 
@@ -83,9 +83,9 @@ def build(inj: pd.DataFrame, snaps: pd.DataFrame, rosters: pd.DataFrame,
 
 
 def summary_line(items: list[dict], limit: int = 4) -> str:
-    """Compact one-liner: '🔴 Mahomes (QB) · 🟠 Kelce (TE)'."""
+    """Compact one-liner: 'Mahomes (QB) · Kelce (TE)'."""
     if not items:
-        return "✅ No major injuries"
+        return "No major injuries"
     parts = [f"{STATUS_ICON.get(p['status'], '•')} {p['name']} ({p['pos']})"
              for p in items[:limit]]
     more = f" +{len(items) - limit} more" if len(items) > limit else ""

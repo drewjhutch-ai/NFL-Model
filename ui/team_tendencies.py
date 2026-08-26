@@ -55,7 +55,7 @@ def _radar_values(team, off, deff, extras, side: str) -> tuple[list, list]:
 
 
 def _compare_section(off, deff, extras, team, teams) -> None:
-    st.markdown("### 🕸️ Radar & compare")
+    st.markdown("### Radar & compare")
     others = [t for t in teams if t != team]
     cmp = st.selectbox("Compare with (optional)", ["— none —"] + others, key="cmp_team")
     meta = loaders.team_meta()
@@ -91,9 +91,9 @@ def _per_source_expander(scheme_row) -> None:
 def _strengths_struggles(facets: list[dict]) -> None:
     strengths, struggles = profiles.strengths_and_struggles(facets)
     c1, c2 = st.columns(2)
-    c1.markdown(sw_card_html("💪 Strengths", [facet_html(f) for f in strengths], "strength"),
+    c1.markdown(sw_card_html("Strengths", [facet_html(f) for f in strengths], "strength"),
                 unsafe_allow_html=True)
-    c2.markdown(sw_card_html("🩹 Struggles", [facet_html(f) for f in struggles], "struggle"),
+    c2.markdown(sw_card_html("Struggles", [facet_html(f) for f in struggles], "struggle"),
                 unsafe_allow_html=True)
 
 
@@ -162,17 +162,17 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
         f = fm.loc[team]
         oa = form_mod.arrow(f["off_delta"], good_high=True)
         da = form_mod.arrow(f["def_delta"], good_high=False)
-        cf.caption(f"📈 **Recent form** (last {int(f['games_in_window'])}): "
+        cf.caption(f"**Recent form** (last {int(f['games_in_window'])}): "
                    f"offense {oa} ({f['off_recent']:+.2f} vs {f['off_season']:+.2f} season) · "
                    f"defense {da} ({f['def_recent']:+.2f} allowed vs {f['def_season']:+.2f})")
     if not any(history.rank_movement(hist, "power_rank").to_dict()):
-        cf.caption("↕️ Week-over-week movement arrows appear once the season logs two weeks.")
+        cf.caption("↕ Week-over-week movement arrows appear once the season logs two weeks.")
 
 
 # --- offense / defense sections (kept) ---------------------------------------
 def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
     o = off.loc[team]
-    st.markdown("### 🏈 Offense")
+    st.markdown("### Offense")
     cc, cn = st.columns([3, 2])
     with cc:
         rows = [
@@ -227,7 +227,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
 def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
                      extras: dict, scheme_row) -> None:
     d = deff.loc[team]
-    st.markdown("### 🛡️ Defense")
+    st.markdown("### Defense")
     cc, cn = st.columns([3, 2])
     with cc:
         rows = [
@@ -259,14 +259,14 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
                            f"confidence **{scheme_row.get('confidence', '—')}**")
                 _per_source_expander(scheme_row)
             else:
-                st.caption("**Coverage (zone/man):** _auto-fetch pending or offseason_ 🔒")
+                st.caption("**Coverage (zone/man):** _auto-fetch pending or offseason_ ")
             st.caption("_Upload PFF (sidebar) → Cover 0–6 shells & situational man/zone._")
     _strengths_struggles(profiles.defense_facets(team, deff, extras))
 
 
 # --- advanced: splits + NGS --------------------------------------------------
 def _splits_section(team: str, extras: dict) -> None:
-    st.markdown("### 🔀 Situational splits")
+    st.markdown("### Situational splits")
     sp = splits.team_splits(extras.get("pbp"), extras.get("schedule"), team)
     if sp.empty:
         st.info("Splits need play-by-play for the current season — they populate once games are played.")
@@ -289,18 +289,18 @@ def _splits_section(team: str, extras: dict) -> None:
 
 
 def _ngs_section(team: str, extras: dict) -> None:
-    st.markdown("### 📡 NextGen tracking")
+    st.markdown("### NextGen tracking")
     npass, nrec = extras.get("ngs_pass"), extras.get("ngs_rec")
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("**Passing (QB)**")
         if npass is not None and not npass.empty and team in npass.index:
             r = npass.loc[team]
-            st.caption(f"⏱️ Time to throw: **{fmt(r.get('avg_time_to_throw'), 'num1')}s** "
+            st.caption(f"⏱ Time to throw: **{fmt(r.get('avg_time_to_throw'), 'num1')}s** "
                        f"({ordinal(r.get('ttt_rank'))})")
-            st.caption(f"🎯 CPOE: **{fmt(r.get('completion_percentage_above_expectation'), 'num1')}** "
+            st.caption(f"CPOE: **{fmt(r.get('completion_percentage_above_expectation'), 'num1')}** "
                        f"({ordinal(r.get('cpoe_rank'))})")
-            st.caption(f"💥 Aggressiveness: **{fmt(r.get('aggressiveness'), 'num1')}%** "
+            st.caption(f"Aggressiveness: **{fmt(r.get('aggressiveness'), 'num1')}%** "
                        f"({ordinal(r.get('aggr_rank'))})")
         else:
             st.caption("_NGS passing not available for this season yet._")
@@ -308,12 +308,12 @@ def _ngs_section(team: str, extras: dict) -> None:
         st.markdown("**Receiving (targets-weighted)**")
         if nrec is not None and not nrec.empty and team in nrec.index:
             r = nrec.loc[team]
-            st.caption(f"↔️ Separation: **{fmt(r.get('avg_separation'), 'num1')} yds** "
+            st.caption(f"↔ Separation: **{fmt(r.get('avg_separation'), 'num1')} yds** "
                        f"({ordinal(r.get('sep_rank'))})")
-            st.caption(f"🏃 YAC over expected: **{fmt(r.get('avg_yac_above_expectation'), 'num1')}** "
+            st.caption(f"YAC over expected: **{fmt(r.get('avg_yac_above_expectation'), 'num1')}** "
                        f"({ordinal(r.get('yac_rank'))})")
             if pd.notna(r.get("top_separation")):
-                st.caption(f"⭐ Top target: **{r.get('top_target')}** "
+                st.caption(f"Top target: **{r.get('top_target')}** "
                            f"({fmt(r.get('top_separation'), 'num1')} yds separation)")
         else:
             st.caption("_NGS receiving not available for this season yet._")
@@ -342,7 +342,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
         unsafe_allow_html=True)
     st.divider()
 
-    overview, advanced = st.tabs(["📋 Overview", "🔬 Advanced"])
+    overview, advanced = st.tabs(["Overview", "Advanced"])
     with overview:
         if team in off.index:
             _offense_section(off, team, extras)

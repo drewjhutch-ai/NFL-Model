@@ -35,15 +35,15 @@ def _games_played(extras) -> int:
 def _confidence_banner(extras) -> None:
     n = _games_played(extras)
     if n == 0:
-        st.warning("🧪 **Offseason / Week 1** — ranks are last season's phantom baseline until "
+        st.warning("**Offseason / Week 1** — ranks are last season's phantom baseline until "
                    "current-season games are played. Treat everything as a prior, not a read.")
     elif n < 4:
-        st.warning(f"🧪 **Small sample ({n} week{'s' if n != 1 else ''})** — early-season ranks are "
+        st.warning(f"**Small sample ({n} week{'s' if n != 1 else ''})** — early-season ranks are "
                    "noisy and regress hard. High-confidence reads come after ~Week 4.")
     elif n < 8:
-        st.info(f"📊 **{n} weeks in** — ranks are stabilizing but still firming up.")
+        st.info(f"**{n} weeks in** — ranks are stabilizing but still firming up.")
     else:
-        st.success(f"✅ **{n} weeks of data** — the sample is mature; ranks are reliable.")
+        st.success(f"**{n} weeks of data** — the sample is mature; ranks are reliable.")
 
 
 # --- strength / struggle -----------------------------------------------------
@@ -60,12 +60,12 @@ def _team_sw(team, off, deff, extras) -> tuple[str, str]:
 
 def _tier(rank: int) -> str:
     if rank <= 6:
-        return "🏆 Contender"
+        return "Contender"
     if rank <= 14:
-        return "🟢 Playoff caliber"
+        return "Playoff caliber"
     if rank <= 22:
-        return "🟡 In the mix"
-    return "🔴 Rebuilding"
+        return "In the mix"
+    return "Rebuilding"
 
 
 def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
@@ -120,7 +120,7 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
             help="Strength of schedule: average opponent net rating (played)."),
     })
     if not has_move:
-        st.caption("↕️ A weekly **Move** column (rank change) appears once the season logs two weeks.")
+        st.caption("↕ A weekly **Move** column (rank change) appears once the season logs two weeks.")
 
 
 # --- efficiency quadrant (with logos + presets) ------------------------------
@@ -306,7 +306,7 @@ def _blitz_scheme(blitz, scheme_df) -> None:
         st.dataframe(_shade(sd, [], [], ["Zone%", "Man%"]), width="stretch")
         st.caption("Blended from connected sources. Upload PFF for Cover 0–6 detail.")
     else:
-        st.caption("🔒 Zone/man appears once a source is connected (weekly auto-fetch or a PFF upload).")
+        st.caption("Zone/man appears once a source is connected (weekly auto-fetch or a PFF upload).")
 
 
 def _drives_table(extras) -> None:
@@ -350,7 +350,7 @@ def _coaching_table(extras) -> None:
 
 
 def _glossary() -> None:
-    with st.expander("📖 What these numbers mean"):
+    with st.expander("What these numbers mean"):
         st.markdown(
             "- **Net/100 & EPA/100** — efficiency shown as points per **100 plays** (the raw "
             "EPA/play ×100), so it reads in whole numbers. 0 = league average; elite offense ≈ "
@@ -371,7 +371,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     _confidence_banner(extras)
     scheme_df = load_coverage(config.CURRENT_SEASON, st.session_state.get("pff_bytes"))
 
-    st.markdown("### 🏆 Power rankings")
+    st.markdown("### Power rankings")
     c1, c2 = st.columns(2)
     conf_filter = c1.selectbox("Conference", ["All", "AFC", "NFC"], key="lg_conf")
     divs = ["All"] + ([f"{conf_filter} {d}" for d in ("East", "North", "South", "West")]
@@ -380,12 +380,12 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     _power_rankings(off, deff, extras, conf_filter, div_filter)
 
     st.divider()
-    st.markdown("### 📈 The efficiency quadrant")
+    st.markdown("### The efficiency quadrant")
     preset = st.radio("Chart", list(_PRESETS.keys()), horizontal=True, label_visibility="collapsed")
     _quadrant(off, deff, preset)
 
     st.divider()
-    st.markdown("### 📋 Stat tables")
+    st.markdown("### Stat tables")
     _glossary()
     view = st.radio("Show", ["Offense", "Defense", "Drives", "Turnovers", "Situational",
                              "Coaching", "Blitz / scheme", "Distributions"], horizontal=True)

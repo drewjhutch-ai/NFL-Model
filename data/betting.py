@@ -210,18 +210,18 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
         if qb_out:
             pts = qb_adjustment(qb, team) if qb is not None else 0
             worth = f" (~{pts:.1f} pts, now priced in)" if pts else ""
-            flags.append(f"🔴 {team} QB {qb_out[0]['name']} is OUT{worth}")
+            flags.append(f"{team} QB {qb_out[0]['name']} is OUT{worth}")
         elif len(outs) >= 2:
-            flags.append(f"🟠 {team} missing {len(outs)} starters (Out)")
+            flags.append(f"{team} missing {len(outs)} starters (Out)")
     hr, ar = row.get("home_rest"), row.get("away_rest")
     if pd.notna(hr) and pd.notna(ar) and abs(hr - ar) >= 3:
         edge_team = home if hr > ar else away
-        flags.append(f"🛌 Rest edge: {edge_team} (+{int(abs(hr - ar))} days)")
+        flags.append(f"Rest edge: {edge_team} (+{int(abs(hr - ar))} days)")
     wx = weather_effects(row)
     if wx["note"] and wx["total_adj"]:
         flags.append(f"{wx['note']} — **priced in** ({wx['total_adj']:+.1f} total)")
     if row.get("div_game") == 1:
-        flags.append("🤝 Division game — historically tighter than the spread")
+        flags.append("Division game — historically tighter than the spread")
     return flags
 
 

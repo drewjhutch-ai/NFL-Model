@@ -48,4 +48,4 @@ def arrow(delta: float, good_high: bool = True) -> str:
     down = delta < -0.03
     if not good_high:
         up, down = down, up
-    return "📈" if up else ("📉" if down else "→")
+    return "▲" if up else ("▼" if down else "→")

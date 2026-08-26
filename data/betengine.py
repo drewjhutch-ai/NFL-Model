@@ -81,7 +81,7 @@ def confidence(model_prob: float, edge: float, games_played: int = 0) -> float:
 
 def confidence_label(score: float) -> str:
     if score >= 70:
-        return "🔥 Elite"
+        return "Elite"
     if score >= 50:
         return "Strong"
     if score >= 32:

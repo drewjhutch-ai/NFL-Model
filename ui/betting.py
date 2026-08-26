@@ -59,7 +59,7 @@ def _effective_row(row: pd.Series, live_game: pd.DataFrame) -> pd.Series:
 
 # --- the edge board ----------------------------------------------------------
 def _edge_board(games, off, deff, extras, live, gp) -> None:
-    st.markdown("### 📊 The edge board")
+    st.markdown("### The edge board")
     rows = []
     for _, r in games.iterrows():
         lg = live[(live["away"] == r["away_team"]) & (live["home"] == r["home_team"])] \
@@ -103,14 +103,14 @@ def _edge_board(games, off, deff, extras, live, gp) -> None:
     })
     st.caption("Edge is measured against the **no-vig** price, so value means value vs the true "
                "line. Kelly is conservative quarter-Kelly. Not financial advice.")
-    st.caption("ℹ️ This board auto-prices the markets that carry posted lines (spread, total, "
+    st.caption("This board auto-prices the markets that carry posted lines (spread, total, "
                "moneyline). **Player props** surface as leans in the Players & Picks tabs and get "
                "exact edges in the prop finder — the model isn't limited to the big three.")
 
 
 # --- sharp-money tracker -----------------------------------------------------
 def _sharp_tracker(away, home, live_game, a) -> None:
-    st.markdown("##### 🦈 Sharp-money tracker")
+    st.markdown("##### Sharp-money tracker")
     signals = []          # (badge, text)
     prov = op.get_odds_provider()
 
@@ -147,12 +147,12 @@ def _sharp_tracker(away, home, live_game, a) -> None:
     # 4) model agreement — the gold state
     our = a.get("value_side") or a.get("our_fav")
     if our and (move_dir == our):
-        signals.append(("AGREE", f"✅ Sharp money **and our model** both lean **{our}** — "
+        signals.append(("AGREE", f"Sharp money **and our model** both lean **{our}** — "
                         "two independent edges pointing the same way."))
 
     if not signals:
         if not prov.is_available():
-            st.caption("🔌 Connect a live odds feed (ODDS_API_KEY) for line movement & sharp-book "
+            st.caption("Connect a live odds feed (ODDS_API_KEY) for line movement & sharp-book "
                        "signals. Our model lean is shown above; enter public % to check for RLM.")
         else:
             st.caption("No sharp signal yet — line is stable and books agree.")
@@ -171,7 +171,7 @@ def _report_card(extras) -> None:
     schedule = extras.get("schedule")
     proj = history.load_projections(config.CURRENT_SEASON)
     grade = history.grade_projections(proj, schedule) if not proj.empty else {}
-    with st.expander("🧾 Live report card & backtest (the learning loop)"):
+    with st.expander("Live report card & backtest (the learning loop)"):
         if grade:
             st.markdown("**This season — our graded picks:**")
             cols = st.columns(len(grade))
@@ -210,25 +210,25 @@ def _spread_str(home, away, home_margin) -> str:
 def _markets_panel(a) -> None:
     sp, tot, ml = st.columns(3)
     with sp:
-        st.markdown("**📐 Spread**")
+        st.markdown("**Spread**")
         st.caption(f"Market: {_spread_str(a['home'], a['away'], a['mkt_spread'])}")
         st.caption(f"Ours: {_spread_str(a['home'], a['away'], a['model_margin'])}")
         if a["value_side"]:
-            st.markdown(f"🎯 **{a['value_side']}** (+{abs(a['edge_pts']):.1f}) · conf **{a.get('confidence','—')}**")
+            st.markdown(f"**{a['value_side']}** (+{abs(a['edge_pts']):.1f}) · conf **{a.get('confidence','—')}**")
         if a.get("key_number"):
-            st.caption(f"🔑 crosses the **{a['key_number']}**")
+            st.caption(f"crosses the **{a['key_number']}**")
     with tot:
-        st.markdown("**🔢 Total**")
+        st.markdown("**Total**")
         st.caption(f"Market: {a['total_line']:.1f}" if pd.notna(a["total_line"]) else "Market: —")
         st.caption(f"Ours: {a['model_total']:.0f}" if pd.notna(a["model_total"]) else "Ours: —")
         if a["total_side"]:
-            st.markdown(f"🎯 **{a['total_side']}** (+{abs(a['total_edge']):.1f})")
+            st.markdown(f"**{a['total_side']}** (+{abs(a['total_edge']):.1f})")
     with ml:
-        st.markdown("**💵 Moneyline**")
+        st.markdown("**Moneyline**")
         if pd.notna(a["model_p_home"]):
             st.caption(f"Ours: {a['home']} {a['model_p_home']*100:.0f}% (fair {betting.fair_moneyline(a['model_p_home']):+d})")
         if a["ml_side"]:
-            st.markdown(f"🎯 **{a['ml_side']}** (+{abs(a['edge_prob'])*100:.0f}%)")
+            st.markdown(f"**{a['ml_side']}** (+{abs(a['edge_prob'])*100:.0f}%)")
 
 
 def _live_section(away, home, live_game) -> None:
@@ -238,7 +238,7 @@ def _live_section(away, home, live_game) -> None:
     show = live_game[["book", "home_spread", "total", "ml_home", "ml_away"]].copy()
     show = show.rename(columns={"home_spread": f"{home} spread", "ml_home": f"{home} ML",
                                 "ml_away": f"{away} ML"})
-    with st.expander(f"📈 Line shopping across {c.get('n_books','?')} books"):
+    with st.expander(f"Line shopping across {c.get('n_books','?')} books"):
         st.dataframe(show.sort_values(f"{home} spread"), width="stretch", hide_index=True)
         if c.get("best_home_spread") is not None:
             cc = st.columns(2)
@@ -261,17 +261,17 @@ def _detail(row, off, deff, extras, live) -> None:
 
     _markets_panel(a)
     if a["disagree"]:
-        st.warning(f"⚠️ We favor **{a['our_fav']}**, the market favors **{a['mkt_fav']}**.")
+        st.warning(f"We favor **{a['our_fav']}**, the market favors **{a['mkt_fav']}**.")
     d1, d2 = st.columns(2)
     with d1:
-        st.markdown("##### 🔍 Why our number differs")
+        st.markdown("##### Why our number differs")
         if a["why"]:
             for e in a["why"]:
                 st.markdown(f"- **{e['label']}** ({e['impact']:+.0f}) · {e['detail']}")
         else:
             st.caption("Efficiency-driven and close to market.")
     with d2:
-        st.markdown("##### 🏦 What the market may see")
+        st.markdown("##### What the market may see")
         if a["context"]:
             for f in a["context"]:
                 st.markdown(f"- {f}")
@@ -289,7 +289,7 @@ def _game_props(off, deff, extras, row) -> None:
                                      _games_played(extras))
     if not bets:
         return
-    st.markdown("##### 🎯 Player props in this game")
+    st.markdown("##### Player props in this game")
     top = sorted(bets, key=lambda b: (b["edge"] if pd.notna(b["edge"]) else -1), reverse=True)[:6]
     show = pd.DataFrame({
         "Prop": [b["selection"] for b in top],
@@ -320,7 +320,7 @@ def render(off, deff, schedule, extras) -> None:
 
     live = _live_odds()
     if not live.empty:
-        st.caption(f"🟢 Live odds connected ({live['book'].nunique()} books).")
+        st.caption(f"Live odds connected ({live['book'].nunique()} books).")
     gp = _games_played(extras)
 
     s = schedule[(schedule["season"] == season) & schedule["spread_line"].notna()]

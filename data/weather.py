@@ -22,7 +22,7 @@ def weather_effects(row: pd.Series) -> dict:
         return none
     roof = str(row.get("roof", "")).lower()
     if roof in _INDOOR:
-        return {**none, "note": "🏟️ Indoors — no weather."}
+        return {**none, "note": "Indoors — no weather."}
 
     wind = row.get("wind")
     temp = row.get("temp")
@@ -36,10 +36,10 @@ def weather_effects(row: pd.Series) -> dict:
         over = wind - config.WIND_THRESHOLD
         total_adj -= min(over * config.WIND_PTS_PER_MPH, config.WIND_MAX_PTS)
         pass_penalty += min(over * 0.012, 0.10)
-        notes.append(f"💨 {int(wind)} mph wind")
+        notes.append(f"{int(wind)} mph wind")
     if pd.notna(temp) and temp <= config.COLD_THRESHOLD:
         total_adj -= min((config.COLD_THRESHOLD - temp) * 0.08, 2.5)
-        notes.append(f"🥶 {int(temp)}°F")
+        notes.append(f"{int(temp)}°F")
 
     # low-scoring games play closer -> regress the margin toward pick'em a touch
     margin_compression = min(abs(total_adj) * 0.015, 0.12)

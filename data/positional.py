@@ -153,14 +153,14 @@ def _edge(share_rank, def_rank) -> tuple[str, int]:
     # magnitude: how featured + how soft
     mag = (33 - int(share_rank)) + (int(def_rank) - 16)
     if featured and soft:
-        return "🟢 Strong edge", mag
+        return "Strong edge", mag
     if soft:
-        return "🟢 Lean edge", mag
+        return "Lean edge", mag
     if featured and stout:
-        return "🔴 Tough spot", mag
+        return "Tough spot", mag
     if stout:
-        return "🔴 Lean tough", mag
-    return "🟡 Neutral", mag
+        return "Lean tough", mag
+    return "Neutral", mag
 
 
 def _rec_role(share_rank) -> str:

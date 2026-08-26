@@ -1,9 +1,9 @@
 """The 'Picks of the Week' tab — three sections.
 
-  1. 💎 Most Edge — every priced bet ranked by edge vs the de-vigged line.
-  2. 🧬 Parlay Builder — 3-to-7-leg parlays from the top +EV legs, priced with
+  1. Most Edge — every priced bet ranked by edge vs the de-vigged line.
+  2. Parlay Builder — 3-to-7-leg parlays from the top +EV legs, priced with
      correlation awareness (same-game legs don't multiply as if independent).
-  3. ⭐ Confidence Straights — the 3–8 bets the model is most confident in, any
+  3. Confidence Straights — the 3–8 bets the model is most confident in, any
      market, any price.
 
 Every bet type the Bet Engine can price competes here — moneyline, spread,
@@ -35,7 +35,7 @@ def _board(games, off, deff, extras, gp) -> pd.DataFrame:
 
 
 def _most_edge(board) -> None:
-    st.markdown("### 💎 Most edge")
+    st.markdown("### Most edge")
     st.caption("The pure +EV board — model probability minus the de-vigged market price, any market.")
     view = board[board["edge"].fillna(-1) > 0].sort_values("edge", ascending=False).head(12)
     if view.empty:
@@ -56,7 +56,7 @@ def _most_edge(board) -> None:
 
 
 def _parlays(board) -> None:
-    st.markdown("### 🧬 Parlay builder")
+    st.markdown("### Parlay builder")
     st.caption("Built only from +EV legs, then priced for correlation — same-game legs don't "
                "multiply as if independent. Parlays are high-variance; size tiny.")
     legs_pool = board[board["edge"].fillna(-1) > 0].sort_values("edge", ascending=False)
@@ -104,7 +104,7 @@ def _parlays(board) -> None:
 
 
 def _confidence(board, gp) -> None:
-    st.markdown("### ⭐ Confidence straights")
+    st.markdown("### Confidence straights")
     note = "" if gp > 0 else " _(offseason: ranked off the phantom baseline)_"
     st.caption(f"The 3–8 straights the model is most confident in — any market, any price. "
                f"Confidence = decisiveness × edge, damped by sample size.{note}")
@@ -134,7 +134,7 @@ def _confidence(board, gp) -> None:
 
 
 def _prop_leans(prop_df) -> None:
-    st.markdown("### 🎯 Player prop leans")
+    st.markdown("### Player prop leans")
     st.caption("The strongest player-prop mismatches for the slate (projection vs baseline). These "
                "also compete in Most Edge, Parlays, and Confidence above. Price the exact line in "
                "Players → Prop edge finder.")
@@ -150,7 +150,7 @@ def _prop_leans(prop_df) -> None:
 
 
 def _pick_log() -> None:
-    with st.expander("📝 Your pick log"):
+    with st.expander("Your pick log"):
         if "picks" not in st.session_state:
             st.session_state["picks"] = []
         with st.form("add_pick", clear_on_submit=True):
@@ -169,7 +169,7 @@ def _pick_log() -> None:
         df = pd.DataFrame(picks)
         st.dataframe(df, width="stretch", hide_index=True)
         c1, c2 = st.columns([1, 5])
-        c1.download_button("⬇️ Export CSV", df.to_csv(index=False).encode(),
+        c1.download_button("Export CSV", df.to_csv(index=False).encode(),
                            file_name="my_picks.csv", mime="text/csv")
         if c2.button("Clear all"):
             st.session_state["picks"] = []
