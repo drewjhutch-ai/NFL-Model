@@ -1,10 +1,14 @@
-"""The 'Picks of the Week' tab.
+"""The 'Picks of the Week' tab — three sections.
 
-Two halves:
-  * **Auto-surfaced leans** — the week's biggest unit + positional mismatches,
-    ranked, so the model points you at the strongest spots.
-  * **Your pick log** — record your own game/player picks with reasoning and
-    export them; a running record to hold yourself accountable.
+  1. 💎 Most Edge — every priced bet ranked by edge vs the de-vigged line.
+  2. 🧬 Parlay Builder — 3-to-7-leg parlays from the top +EV legs, priced with
+     correlation awareness (same-game legs don't multiply as if independent).
+  3. ⭐ Confidence Straights — the 3–8 bets the model is most confident in, any
+     market, any price.
+
+Every bet type the Bet Engine can price competes here — moneyline, spread,
+total (and player props once lines are supplied). Confidence is calibrated
+probability × edge, not the odds.
 """
 from __future__ import annotations
 
@@ -12,111 +16,182 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betting, edges, loaders, simulation
+from data import betengine, loaders
 
 
-def _value_plays(off, deff, games, extras) -> None:
-    st.markdown("### 💎 Value plays — model vs market (with Kelly sizing)")
+def _games_played(extras) -> int:
+    pbp = extras.get("pbp")
+    if pbp is None or pbp.empty or "season" not in pbp.columns:
+        return 0
+    cur = pbp[pbp["season"] == config.CURRENT_SEASON]
+    return int(cur["week"].nunique()) if not cur.empty and "week" in cur.columns else 0
+
+
+def _board(games, off, deff, extras, gp) -> pd.DataFrame:
     rows = []
     for _, r in games.iterrows():
-        if pd.isna(r.get("spread_line")):
-            continue
-        sim = simulation.simulate(off, deff, r["home_team"], r["away_team"], extras, r)
-        if not sim:
-            continue
-        home, away = r["home_team"], r["away_team"]
-        # spread
-        if "home_cover" in sim:
-            p = max(sim["home_cover"], 1 - sim["home_cover"])
-            side = home if sim["home_cover"] >= 0.5 else away
-            if p >= 0.53:
-                rows.append(("Spread", f"{away}@{home}", f"{side} {r['spread_line']:+.1f}"
-                             if side == home else f"{side} {-r['spread_line']:+.1f}", p))
-        # total
-        if "over" in sim:
-            p = max(sim["over"], 1 - sim["over"])
-            side = "Over" if sim["over"] >= 0.5 else "Under"
-            if p >= 0.53:
-                rows.append(("Total", f"{away}@{home}", f"{side} {r.get('total_line')}", p))
-    if not rows:
-        st.info("No spread/total plays clear the value threshold this week.")
-        return
-    out = []
-    for kind, game, bet, p in sorted(rows, key=lambda x: -x[3]):
-        stake = betting.kelly_stake(p)
-        out.append({"Market": kind, "Game": game, "Play": bet,
-                    "Model win%": f"{p*100:.0f}%", "Edge vs 52.4%": f"{(p-0.524)*100:+.1f} pts",
-                    "Kelly stake": f"{stake*100:.1f}u" if stake else "—"})
-    st.dataframe(pd.DataFrame(out), width="stretch", hide_index=True)
-    st.caption("Win% from the game simulation; **Kelly stake** is quarter-Kelly units "
-               "(of a 100-unit bankroll) at -110 — conservative sizing. Not financial advice.")
+        rows.extend(betengine.game_bets(r, off, deff, extras, gp))
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 
-def _auto_leans_games(off, deff, games, extras) -> None:
-    st.markdown("### 🔎 Model leans — biggest edges this week")
-    leans = edges.week_leans(games, off, deff, extras)
-    if leans.empty:
-        st.info("No standout edges for this week yet (early-season / offseason data).")
+def _most_edge(board) -> None:
+    st.markdown("### 💎 Most edge")
+    st.caption("The pure +EV board — model probability minus the de-vigged market price, any market.")
+    view = board[board["edge"].fillna(-1) > 0].sort_values("edge", ascending=False).head(12)
+    if view.empty:
+        st.info("No +EV bets on the board this week.")
         return
-    show = leans[["Game", "Edge", "Detail"]].copy()
-    show.insert(0, "#", range(1, len(show) + 1))
-    st.dataframe(show, width="stretch", hide_index=True)
-    st.caption(
-        "Edges rank offense-side mismatches (featured unit vs. a soft opponent). "
-        "A starting point for your own read — not a guarantee."
-    )
+    show = pd.DataFrame({
+        "Bet": view["selection"], "Market": view["market"], "Game": view["game"],
+        "Model %": (view["model_prob"] * 100).round(0),
+        "Fair": view["fair_odds"].map(betengine.fmt_odds),
+        "Line": view["market_odds"].map(betengine.fmt_odds),
+        "Edge %": (view["edge"] * 100).round(1),
+        "Kelly": (view["kelly"] * 100).round(1),
+    })
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Edge %": st.column_config.NumberColumn("Edge %", format="%+.1f"),
+        "Kelly": st.column_config.NumberColumn("Kelly", format="%.1fu"),
+    })
+
+
+def _parlays(board) -> None:
+    st.markdown("### 🧬 Parlay builder")
+    st.caption("Built only from +EV legs, then priced for correlation — same-game legs don't "
+               "multiply as if independent. Parlays are high-variance; size tiny.")
+    legs_pool = board[board["edge"].fillna(-1) > 0].sort_values("edge", ascending=False)
+    # diversify: prefer one leg per game first (lower correlation), then fill
+    seen, primary, extra = set(), [], []
+    for _, b in legs_pool.iterrows():
+        (primary if b["corr_group"] not in seen else extra).append(b)
+        seen.add(b["corr_group"])
+    ordered = primary + extra
+    if len(ordered) < 3:
+        st.info("Need at least 3 +EV legs to build a parlay — not enough edge on the board yet.")
+        return
+    rows, details = [], {}
+    for k in range(3, 8):
+        if len(ordered) < k:
+            break
+        legs = ordered[:k]
+        par = betengine.parlay(legs)
+        rows.append({
+            "Parlay": f"{k}-leg",
+            "Combined": betengine.fmt_odds(par["american"]),
+            "Model hit %": round(par["model_prob"] * 100, 1),
+            "EV": round(par["ev"] * 100, 1),
+            "Kelly": round(par["kelly"] * 100, 2),
+            "Same-game legs": par["same_game_legs"],
+        })
+        details[f"{k}-leg"] = legs
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, column_config={
+        "Model hit %": st.column_config.NumberColumn("Model hit %", format="%.1f%%"),
+        "EV": st.column_config.NumberColumn("EV", format="%+.1f%%",
+            help="Expected value per unit staked, using the model's joint probability."),
+        "Kelly": st.column_config.NumberColumn("Kelly", format="%.2fu"),
+    })
+    for name, legs in details.items():
+        with st.expander(f"{name} — the legs"):
+            st.dataframe(pd.DataFrame({
+                "Leg": [l["selection"] for l in legs],
+                "Market": [l["market"] for l in legs],
+                "Game": [l["game"] for l in legs],
+                "Model %": [round(l["model_prob"] * 100) for l in legs],
+                "Odds": [betengine.fmt_odds(l["market_odds"]) for l in legs],
+            }), width="stretch", hide_index=True)
+    st.caption("Combined odds compound the price; EV uses the model's correlation-adjusted joint "
+               "probability. A positive EV parlay is rare and worth a small ticket — not the bankroll.")
+
+
+def _confidence(board, gp) -> None:
+    st.markdown("### ⭐ Confidence straights")
+    note = "" if gp > 0 else " _(offseason: ranked off the phantom baseline)_"
+    st.caption(f"The 3–8 straights the model is most confident in — any market, any price. "
+               f"Confidence = decisiveness × edge, damped by sample size.{note}")
+    view = board.sort_values("confidence", ascending=False)
+    view = view[view["confidence"] > 0].head(8)
+    if len(view) < 3:
+        view = board.sort_values("confidence", ascending=False).head(3)
+    if view.empty:
+        st.info("No confident straights yet.")
+        return
+    meta = loaders.team_meta()
+    for _, b in view.iterrows():
+        conf = b["confidence"]
+        label = betengine.confidence_label(conf)
+        color = "#2ecc71" if conf >= 50 else ("#f1c40f" if conf >= 32 else "#9aa0a6")
+        edge_txt = f"{b['edge']*100:+.1f} pts edge" if pd.notna(b["edge"]) else ""
+        st.markdown(
+            f"<div style='border-left:4px solid {color};padding:6px 0 6px 12px;margin:7px 0;'>"
+            f"<span style='font-size:1.05rem;font-weight:700;'>{b['selection']}</span> "
+            f"<span style='color:#8a8a8a;'>· {b['market']} · {b['game']}</span><br>"
+            f"<span style='color:{color};font-weight:600;'>{label} ({conf:.0f})</span> "
+            f"<span style='color:#9aa0a6;font-size:0.9rem;'>· {b['model_prob']*100:.0f}% "
+            f"· fair {betengine.fmt_odds(b['fair_odds'])} · {edge_txt} · {b['rationale']}</span></div>",
+            unsafe_allow_html=True)
+    st.caption("Not chosen for odds — a −180 favorite and a +150 dog can both rank high. "
+               "The model's best guesses, whatever the market.")
 
 
 def _pick_log() -> None:
-    st.markdown("### 📝 Your picks")
-    if "picks" not in st.session_state:
-        st.session_state["picks"] = []
-
-    with st.form("add_pick", clear_on_submit=True):
-        c1, c2, c3 = st.columns([2, 2, 1])
-        game = c1.text_input("Game / player", placeholder="e.g. KC @ BUF — Kelce over 60.5 yds")
-        pick = c2.text_input("Your pick", placeholder="e.g. Kelce OVER")
-        conf = c3.selectbox("Confidence", ["★", "★★", "★★★"], index=1)
-        notes = st.text_input("Why (optional)", placeholder="e.g. BUF soft vs TE, KC pass-heavy")
-        if st.form_submit_button("Add pick") and (game or pick):
-            st.session_state["picks"].append(
-                {"Game/Player": game, "Pick": pick, "Confidence": conf, "Notes": notes}
-            )
-
-    picks = st.session_state["picks"]
-    if not picks:
-        st.caption("No picks logged yet. Add one above.")
-        return
-    df = pd.DataFrame(picks)
-    st.dataframe(df, width="stretch", hide_index=True)
-    c1, c2 = st.columns([1, 5])
-    c1.download_button("⬇️ Export CSV", df.to_csv(index=False).encode(),
-                       file_name="my_picks.csv", mime="text/csv")
-    if c2.button("Clear all picks"):
-        st.session_state["picks"] = []
-        st.rerun()
-    st.caption("Picks are saved for this session. Export to keep them.")
+    with st.expander("📝 Your pick log"):
+        if "picks" not in st.session_state:
+            st.session_state["picks"] = []
+        with st.form("add_pick", clear_on_submit=True):
+            c1, c2, c3 = st.columns([2, 2, 1])
+            game = c1.text_input("Game / player", placeholder="KC @ BUF — Kelce over 60.5")
+            pick = c2.text_input("Your pick", placeholder="Kelce OVER")
+            conf = c3.selectbox("Confidence", ["★", "★★", "★★★"], index=1)
+            notes = st.text_input("Why (optional)")
+            if st.form_submit_button("Add pick") and (game or pick):
+                st.session_state["picks"].append(
+                    {"Game/Player": game, "Pick": pick, "Confidence": conf, "Notes": notes})
+        picks = st.session_state["picks"]
+        if not picks:
+            st.caption("No picks logged yet.")
+            return
+        df = pd.DataFrame(picks)
+        st.dataframe(df, width="stretch", hide_index=True)
+        c1, c2 = st.columns([1, 5])
+        c1.download_button("⬇️ Export CSV", df.to_csv(index=False).encode(),
+                           file_name="my_picks.csv", mime="text/csv")
+        if c2.button("Clear all"):
+            st.session_state["picks"] = []
+            st.rerun()
 
 
 def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
            extras: dict) -> None:
     st.subheader("Picks of the Week")
+    st.caption("Everything a book offers is fair game — moneyline, spread, totals, and player props "
+               "all compete on one board.")
     if off.empty or deff.empty:
         st.info("Load data first (needs offensive & defensive numbers).")
         return
     season = config.CURRENT_SEASON
-    if schedule is not None and not schedule.empty and (schedule["season"] == season).any():
-        s = schedule[schedule["season"] == season]
-        weeks = sorted(int(w) for w in s["week"].unique())
-        default_wk = loaders.current_week(schedule, season) or weeks[0]
-        wk = st.selectbox(f"Week ({season})", weeks,
-                          index=weeks.index(default_wk) if default_wk in weeks else 0,
-                          key="picks_week")
-        games = s[s["week"] == wk]
-        _value_plays(off, deff, games, extras)
-        st.divider()
-        _auto_leans_games(off, deff, games, extras)
-    else:
-        st.info("Schedule not loaded — weekly plays unavailable. Use Matchups to compare teams.")
+    have = (schedule is not None and not schedule.empty and (schedule["season"] == season).any()
+            and schedule.loc[schedule["season"] == season, "spread_line"].notna().any())
+    if not have:
+        st.info("No market lines posted yet for the current season — the pick board needs lines to "
+                "measure edge. Check back once the week's lines are up.")
+        _pick_log()
+        return
+    s = schedule[(schedule["season"] == season) & schedule["spread_line"].notna()]
+    weeks = sorted(int(w) for w in s["week"].unique())
+    default_wk = loaders.current_week(schedule, season) or weeks[0]
+    wk = st.selectbox(f"Week ({season})", weeks,
+                      index=weeks.index(default_wk) if default_wk in weeks else 0, key="picks_week")
+    games = s[s["week"] == wk]
+    gp = _games_played(extras)
+    board = _board(games, off, deff, extras, gp)
+    if board.empty:
+        st.info("No priced bets for this week yet.")
+        _pick_log()
+        return
+    _most_edge(board)
+    st.divider()
+    _parlays(board)
+    st.divider()
+    _confidence(board, gp)
     st.divider()
     _pick_log()
