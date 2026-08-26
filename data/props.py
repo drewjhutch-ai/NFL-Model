@@ -67,6 +67,100 @@ def project_player(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
     return proj
 
 
+# raw-stat column behind each display stat, and the minimum volume worth a pick
+_RAW = {"Pass yds": "passing_yards", "Pass TD": "passing_tds", "Rush yds": "rushing_yards",
+        "Carries": "carries", "Rec yds": "receiving_yards", "Rec": "receptions", "Targets": "targets"}
+_MIN_VOL = {"Pass yds": 150, "Pass TD": 0.8, "Rush yds": 25, "Carries": 6,
+            "Rec yds": 25, "Rec": 2.0, "Targets": 3.0}
+
+
+def _matchup_note(pos: str, stat: str, opp: str, deff, dvp) -> tuple[str, int | None]:
+    """A human matchup reason + the opponent's rank for that facet (1=tough,32=soft)."""
+    from data.profiles import _ordinal
+    rank = None
+    if stat in ("Rec yds", "Rec", "Targets") and pos in dvp:
+        d = dvp.get(pos)
+        rank = int(d.loc[opp, "def_rank"]) if d is not None and opp in d.index and pd.notna(d.loc[opp, "def_rank"]) else None
+        desc = f"vs {pos}s"
+    elif stat in ("Rush yds", "Carries"):
+        rank = int(deff.loc[opp, "rush_epa_rank"]) if opp in deff.index else None
+        desc = "vs the run"
+    else:
+        rank = int(deff.loc[opp, "pass_epa_rank"]) if opp in deff.index else None
+        desc = "vs the pass"
+    if rank is None:
+        return f"{opp} {desc}", None
+    softness = "soft" if rank >= 22 else ("tough" if rank <= 11 else "average")
+    return f"{opp} {_ordinal(rank)} {desc} ({softness})", rank
+
+
+def _prop_confidence(p_side: float, delta: float, volume: float, vol_ref: float,
+                     games_played: int) -> float:
+    """0–100 for a prop lean: decisiveness × matchup swing × volume, damped by sample."""
+    decisiveness = min(abs(p_side - 0.5) * 2, 1.0)
+    swing = min(abs(delta) / 0.18, 1.0)
+    vol = min(volume / vol_ref, 1.0) if vol_ref else 0.5
+    core = 0.5 * decisiveness + 0.3 * swing + 0.2 * vol
+    sample = 0.6 if games_played <= 0 else min(games_played / 6.0, 1.0)
+    return round(100 * core * sample, 1)
+
+
+def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.DataFrame,
+                    per_team: int = 5, games_played: int = 0) -> pd.DataFrame:
+    """Auto-surface the strongest player-prop leans for a slate — no book line needed.
+
+    For each game we project every featured skill player against the opponent and
+    game script, then compare to their own season baseline. The biggest swings vs
+    a line set at their norm are the mismatches worth betting. Returns a ranked
+    frame of leans (side, projection, baseline, hit probability, matchup, confidence).
+    """
+    from data import betting, players as P
+    if stats is None or stats.empty or games is None or games.empty:
+        return pd.DataFrame()
+    dvp = extras.get("dvp", {})
+    st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
+    rows = []
+    for _, g in games.iterrows():
+        home, away = g["home_team"], g["away_team"]
+        margin = betting.project_margin(off, deff, home, away, st_ppg, qb)
+        for team, opp, is_home in ((away, home, False), (home, away, True)):
+            script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
+            tp = P.team_players(stats, team).head(per_team)
+            for _, pl in tp.iterrows():
+                proj = project_player(pl, opp, deff, dvp, script=script)
+                for stat, mean in proj.items():
+                    # TD/count props need a real half-point line (0.5/1.5) to read
+                    # sensibly — leave those to the finder, not the auto board.
+                    if stat in _POISSON:
+                        continue
+                    raw = _RAW.get(stat)
+                    base = pl.get(raw, 0) if raw else 0
+                    if raw is None or base < _MIN_VOL.get(stat, 0):
+                        continue
+                    p_over = over_prob(mean, float(base), stat)
+                    if pd.isna(p_over):
+                        continue
+                    side, p_side = ("Over", p_over) if p_over >= 0.5 else ("Under", 1 - p_over)
+                    delta = (mean - base) / base if base else 0.0
+                    note, rank = _matchup_note(pl.get("pos", ""), stat, opp, deff, dvp)
+                    vol_ref = {"Rec yds": 90, "Rush yds": 90, "Pass yds": 280, "Rec": 7,
+                               "Targets": 9, "Carries": 18, "Pass TD": 2}.get(stat, 10)
+                    volume = base
+                    conf = _prop_confidence(p_side, delta, volume, vol_ref, games_played)
+                    rows.append({
+                        "Player": pl.get("name"), "Pos": pl.get("pos"), "Team": team,
+                        "Game": f"{away} @ {home}", "Stat": stat, "Side": side,
+                        "Projection": round(mean, 1), "Baseline": round(float(base), 1),
+                        "Hit%": round(p_side * 100),
+                        "Matchup": note, "conf": conf,
+                        "_delta": abs(delta),
+                    })
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows).sort_values("conf", ascending=False).reset_index(drop=True)
+    return df
+
+
 def prop_bets(player: pd.Series, proj: dict, game_id: str, game: str, opp: str,
               lines: dict | None = None, games_played: int = 0) -> list[dict]:
     """Turn a player's projections into Bet-Engine rows (edge needs a line).

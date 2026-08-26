@@ -66,19 +66,39 @@ def _model_read(off, deff, extras, row, away, home) -> None:
                "for this game — then the model prices every market against them.")
 
 
+def _game_props(off, deff, extras, row) -> None:
+    from ui.betting import _games_played
+    stats = extras.get("players")
+    if stats is None or stats.empty:
+        return
+    from data import props
+    board = props.auto_prop_picks(stats, off, deff, extras, pd.DataFrame([row]),
+                                  games_played=_games_played(extras))
+    if board.empty:
+        return
+    st.divider()
+    st.markdown("### 🎯 Player prop leans")
+    st.caption("Biggest projection-vs-baseline mismatches in this game — the model bets props too, "
+               "not just the big three. Price exact lines in Players → Prop edge finder.")
+    show = board.head(6)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
+                          "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
+        "Conf": st.column_config.NumberColumn("Conf", format="%d"),
+    })
+
+
 def _breakdown(off, deff, extras, row) -> None:
     away, home = row["away_team"], row["home_team"]
     _banner(away, home, row)
     st.divider()
-    if pd.isna(row.get("spread_line")) and pd.isna(row.get("total_line")):
-        _model_read(off, deff, extras, row, away, home)
-        return
-
     from ui.betting import _games_played
     gp = _games_played(extras)
-    bets = betengine.game_bets(row, off, deff, extras, gp)
+    no_lines = pd.isna(row.get("spread_line")) and pd.isna(row.get("total_line"))
+    bets = [] if no_lines else betengine.game_bets(row, off, deff, extras, gp)
     if not bets:
         _model_read(off, deff, extras, row, away, home)
+        _game_props(off, deff, extras, row)
         return
 
     safest = sorted(bets, key=lambda b: b["model_prob"], reverse=True)[:3]
@@ -116,6 +136,8 @@ def _breakdown(off, deff, extras, row) -> None:
                    "high-variance; keep the ticket small.")
     else:
         st.info("Not enough +EV legs in this game for a parlay.")
+
+    _game_props(off, deff, extras, row)
 
 
 def render(off, deff, blitz, schedule, extras) -> None:

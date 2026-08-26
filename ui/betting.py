@@ -101,6 +101,9 @@ def _edge_board(games, off, deff, extras, live, gp) -> None:
     })
     st.caption("Edge is measured against the **no-vig** price, so value means value vs the true "
                "line. Kelly is conservative quarter-Kelly. Not financial advice.")
+    st.caption("ℹ️ This board auto-prices the markets that carry posted lines (spread, total, "
+               "moneyline). **Player props** surface as leans in the Players & Picks tabs and get "
+               "exact edges in the prop finder — the model isn't limited to the big three.")
 
 
 # --- sharp-money tracker -----------------------------------------------------

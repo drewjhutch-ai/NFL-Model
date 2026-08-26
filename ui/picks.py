@@ -16,7 +16,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betengine, loaders
+from data import betengine, loaders, props
 
 
 def _games_played(extras) -> int:
@@ -133,6 +133,27 @@ def _confidence(board, gp) -> None:
                "The model's best guesses, whatever the market.")
 
 
+def _prop_leans(off, deff, extras, games, gp) -> None:
+    st.markdown("### 🎯 Player prop leans")
+    st.caption("The model isn't limited to sides & totals — these are its strongest player-prop "
+               "mismatches for the slate (projection vs baseline). Price the exact line in Players → "
+               "Prop edge finder.")
+    stats = extras.get("players")
+    if stats is None or stats.empty:
+        st.info("Player data not available for prop leans yet.")
+        return
+    board = props.auto_prop_picks(stats, off, deff, extras, games, games_played=gp)
+    if board.empty:
+        st.info("No prop leans surfaced for this slate.")
+        return
+    show = board.head(10)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
+                           "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
+        "Conf": st.column_config.NumberColumn("Conf", format="%d"),
+    })
+
+
 def _pick_log() -> None:
     with st.expander("📝 Your pick log"):
         if "picks" not in st.session_state:
@@ -169,29 +190,31 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         st.info("Load data first (needs offensive & defensive numbers).")
         return
     season = config.CURRENT_SEASON
-    have = (schedule is not None and not schedule.empty and (schedule["season"] == season).any()
-            and schedule.loc[schedule["season"] == season, "spread_line"].notna().any())
-    if not have:
-        st.info("No market lines posted yet for the current season — the pick board needs lines to "
-                "measure edge. Check back once the week's lines are up.")
+    if schedule is None or schedule.empty or not (schedule["season"] == season).any():
+        st.info("Schedule not loaded for the current season yet.")
         _pick_log()
         return
-    s = schedule[(schedule["season"] == season) & schedule["spread_line"].notna()]
+    s = schedule[schedule["season"] == season]
     weeks = sorted(int(w) for w in s["week"].unique())
     default_wk = loaders.current_week(schedule, season) or weeks[0]
     wk = st.selectbox(f"Week ({season})", weeks,
                       index=weeks.index(default_wk) if default_wk in weeks else 0, key="picks_week")
     games = s[s["week"] == wk]
     gp = _games_played(extras)
-    board = _board(games, off, deff, extras, gp)
-    if board.empty:
-        st.info("No priced bets for this week yet.")
-        _pick_log()
-        return
-    _most_edge(board)
+    # game-market board needs posted lines; prop leans do not.
+    priced = games[games["spread_line"].notna()] if "spread_line" in games.columns else games.iloc[0:0]
+    board = _board(priced, off, deff, extras, gp) if not priced.empty else pd.DataFrame()
+
+    if not board.empty:
+        _most_edge(board)
+        st.divider()
+        _parlays(board)
+        st.divider()
+        _confidence(board, gp)
+    else:
+        st.info("No market lines posted for this week yet — spread/total/ML picks need lines to "
+                "measure edge. Player-prop leans (below) don't, so they're live now.")
     st.divider()
-    _parlays(board)
-    st.divider()
-    _confidence(board, gp)
+    _prop_leans(off, deff, extras, games, gp)
     st.divider()
     _pick_log()
