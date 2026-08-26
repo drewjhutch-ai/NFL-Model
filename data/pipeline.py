@@ -54,7 +54,14 @@ def build_frames():
         "ngs_rec": ngs.team_receiving(loaders.load_ngs_receiving()),
     }
     extras["drives_off"], extras["drives_def"] = drives.drive_efficiency(pbp_w)
-    extras["players"] = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
+    _weekly = players.player_stats(loaders.add_recency_weight(loaders.load_weekly_player()))
+    if _weekly is None or _weekly.empty:
+        # weekly endpoint unavailable — derive from pbp, which always loads
+        _rost = loaders.load_rosters()
+        _names = (dict(zip(_rost["player_id"], _rost["player_name"]))
+                  if not _rost.empty and "player_name" in _rost.columns else {})
+        _weekly = players.player_stats_from_pbp(pbp_w, posmap, _names)
+    extras["players"] = _weekly
     extras["form"] = form.team_form(pbp)
     extras["schedule"] = schedule  # for situational home/away splits
     extras["sos"] = betmodel.strength_of_schedule(schedule, betmodel.power_ratings(off, deff))

@@ -41,6 +41,82 @@ def player_stats(weekly_weighted: pd.DataFrame) -> pd.DataFrame:
     return m[m["pos"].isin(SKILL)] if "pos" in m.columns else m
 
 
+def player_stats_from_pbp(pbp_weighted: pd.DataFrame, posmap: dict,
+                          name_map: dict | None = None) -> pd.DataFrame:
+    """Per-player, per-game recency-weighted averages built straight from pbp.
+
+    A robust fallback for when the weekly-player endpoint is unavailable: pbp
+    always loads. Rolls passing/rushing/receiving from play rows keyed by the
+    passer/rusher/receiver ids, so the Players tab and props work from the same
+    reliable source the rest of the app uses.
+    """
+    if pbp_weighted is None or pbp_weighted.empty:
+        return pd.DataFrame()
+    df = pbp_weighted.copy()
+    for c in ("complete_pass", "touchdown", "yards_gained", "pass", "rush"):
+        if c not in df.columns:
+            df[c] = 0
+    name_map = name_map or {}
+
+    def per_game_avg(sub: pd.DataFrame, id_col: str, aggs: dict) -> pd.DataFrame:
+        sub = sub[sub[id_col].notna()]
+        if sub.empty:
+            return pd.DataFrame()
+        # per player+game totals (recency weight w is constant within a game)
+        g = sub.groupby([id_col, "game_id"]).agg(w=("w", "first"), posteam=("posteam", "last"),
+                                                 **aggs).reset_index()
+        rows = []
+        for pid, pg in g.groupby(id_col):
+            wsum = pg["w"].sum()
+            if not wsum:
+                continue
+            # games = real game count (not the weight sum, which collapses to ~0
+            # under the phantom-baseline weighting); stats stay weighted averages.
+            rec = {"player_id": pid, "team": pg["posteam"].iloc[-1], "games": float(len(pg))}
+            for stat in aggs:
+                rec[stat] = float((pg["w"] * pg[stat]).sum() / wsum)
+            rows.append(rec)
+        return pd.DataFrame(rows).set_index("player_id")
+
+    passes = df[df["pass"] == 1]
+    pass_df = per_game_avg(passes.assign(
+        _pyds=passes["yards_gained"] * (passes["complete_pass"] == 1),
+        _ptd=passes["touchdown"] * (passes["complete_pass"] == 1)),
+        "passer_player_id", {"attempts": ("pass", "sum"), "passing_yards": ("_pyds", "sum"),
+                             "passing_tds": ("_ptd", "sum")})
+    rushes = df[df["rush"] == 1]
+    rush_df = per_game_avg(rushes.assign(_rtd=rushes["touchdown"]),
+                           "rusher_player_id", {"carries": ("rush", "sum"),
+                                                "rushing_yards": ("yards_gained", "sum"),
+                                                "rushing_tds": ("_rtd", "sum")})
+    rec = df[(df["pass"] == 1) & df["receiver_player_id"].notna()]
+    rec_df = per_game_avg(rec.assign(
+        _ryds=rec["yards_gained"] * (rec["complete_pass"] == 1),
+        _rtd=rec["touchdown"] * (rec["complete_pass"] == 1),
+        _rec=(rec["complete_pass"] == 1).astype(float)),
+        "receiver_player_id", {"targets": ("pass", "sum"), "receptions": ("_rec", "sum"),
+                               "receiving_yards": ("_ryds", "sum"), "receiving_tds": ("_rtd", "sum")})
+
+    frames = [f for f in (pass_df, rush_df, rec_df) if not f.empty]
+    if not frames:
+        return pd.DataFrame()
+    out = pd.concat(frames, axis=1)
+    out = out.loc[:, ~out.columns.duplicated()]
+    # team & games: take from whichever role has the most involvement
+    team = pd.concat([f["team"] for f in frames], axis=1).bfill(axis=1).iloc[:, 0]
+    games = pd.concat([f["games"] for f in frames], axis=1).max(axis=1)
+    out["team"] = team
+    out["games"] = games
+    for s in _STATS:
+        if s not in out.columns:
+            out[s] = 0.0
+        out[s] = out[s].fillna(0.0)
+    out["pos"] = [posmap.get(pid, "") for pid in out.index]
+    out["name"] = [name_map.get(pid, pid) for pid in out.index]
+    out = out[out["pos"].isin(SKILL)]
+    return out
+
+
 def _factor(rank, spread: float = 0.14) -> float:
     """Rank 1 (tough D) -> below 1; rank 32 (soft) -> above 1."""
     if rank is None or pd.isna(rank):
