@@ -161,6 +161,21 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     return df
 
 
+def prop_bets_for_games(off, deff, extras: dict, games: pd.DataFrame,
+                        games_played: int = 0) -> list[dict]:
+    """One call → Bet-Engine rows for every prop lean across ``games``.
+
+    The single entry point every betting surface uses so player props compete on
+    the same board as spread/total/ML — edge boards, parlays, game breakdowns,
+    Game Bets, and Picks all draw from this.
+    """
+    stats = extras.get("players")
+    if stats is None or stats.empty or games is None or games.empty:
+        return []
+    leans = auto_prop_picks(stats, off, deff, extras, games, games_played=games_played)
+    return leans_to_bets(leans, games_played)
+
+
 def leans_to_bets(leans: pd.DataFrame, games_played: int = 0) -> list[dict]:
     """Convert auto prop leans into Bet-Engine rows so props compete on the board.
 

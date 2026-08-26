@@ -17,7 +17,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betengine, betting, loaders, simulation
+from data import betengine, betting, loaders, props, simulation
 from ui.components import fmt, ordinal
 
 
@@ -95,9 +95,12 @@ def _breakdown(off, deff, extras, row) -> None:
     from ui.betting import _games_played
     gp = _games_played(extras)
     no_lines = pd.isna(row.get("spread_line")) and pd.isna(row.get("total_line"))
-    bets = [] if no_lines else betengine.game_bets(row, off, deff, extras, gp)
+    game_list = [] if no_lines else betengine.game_bets(row, off, deff, extras, gp)
+    prop_list = props.prop_bets_for_games(off, deff, extras, pd.DataFrame([row]), gp)
+    bets = game_list + prop_list        # props compete in every bucket
+    if no_lines:
+        _model_read(off, deff, extras, row, away, home)  # projected-score context
     if not bets:
-        _model_read(off, deff, extras, row, away, home)
         _game_props(off, deff, extras, row)
         return
 

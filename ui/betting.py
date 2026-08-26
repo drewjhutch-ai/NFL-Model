@@ -15,7 +15,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betengine, betting, history, loaders
+from data import betengine, betting, history, loaders, props
 from data import odds_providers as op
 
 _BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
@@ -65,6 +65,8 @@ def _edge_board(games, off, deff, extras, live, gp) -> None:
         lg = live[(live["away"] == r["away_team"]) & (live["home"] == r["home_team"])] \
             if not live.empty else pd.DataFrame()
         rows.extend(betengine.game_bets(_effective_row(r, lg), off, deff, extras, gp))
+    # player props compete on the same board
+    rows.extend(props.prop_bets_for_games(off, deff, extras, games, gp))
     if not rows:
         st.info("No priced bets yet for this slate.")
         return
@@ -276,8 +278,29 @@ def _detail(row, off, deff, extras, live) -> None:
         else:
             st.caption("No obvious injury / rest / weather factors.")
     st.divider()
+    _game_props(off, deff, extras, row)
     _sharp_tracker(away, home, lg, a)
     _live_section(away, home, lg)
+
+
+def _game_props(off, deff, extras, row) -> None:
+    from ui.betting import _games_played  # local: reuse the helper above
+    bets = props.prop_bets_for_games(off, deff, extras, pd.DataFrame([row]),
+                                     _games_played(extras))
+    if not bets:
+        return
+    st.markdown("##### 🎯 Player props in this game")
+    top = sorted(bets, key=lambda b: (b["edge"] if pd.notna(b["edge"]) else -1), reverse=True)[:6]
+    show = pd.DataFrame({
+        "Prop": [b["selection"] for b in top],
+        "Model %": [round(b["model_prob"] * 100) for b in top],
+        "Fair": [betengine.fmt_odds(b["fair_odds"]) for b in top],
+        "Edge %": [round(b["edge"] * 100, 1) if pd.notna(b["edge"]) else None for b in top],
+        "Conf": [round(b["confidence"]) for b in top],
+    })
+    st.dataframe(show, width="stretch", hide_index=True)
+    st.caption("Projection-based leans at a baseline line — enter the book's number in "
+               "Players → Prop edge finder for exact edge.")
 
 
 def render(off, deff, schedule, extras) -> None:
