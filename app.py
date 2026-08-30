@@ -124,6 +124,18 @@ def sidebar(live: bool) -> None:
             st.rerun()
 
     st.sidebar.divider()
+    st.sidebar.markdown("### Live odds")
+    from data import odds_providers as _op
+    if _op.get_odds_provider().is_available():
+        st.sidebar.success("The Odds API key detected ✓")
+        st.sidebar.caption("Live multi-book odds, line shopping, the sharp tracker, "
+                           "CLV and prop lines are active.")
+    else:
+        st.sidebar.info("No odds key — using the schedule's lines.")
+        st.sidebar.caption("Add **ODDS_API_KEY** in Streamlit Secrets (from the-odds-api.com) "
+                           "to unlock live odds, line movement, CLV, and prop lines.")
+
+    st.sidebar.divider()
     st.sidebar.caption(
         "Data: nflverse + FTN charting (free). Coverage scheme: weekly "
         "auto-fetch blended with PFF + SumerSports + StatRankings."
