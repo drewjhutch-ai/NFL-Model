@@ -106,12 +106,12 @@ def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Seri
 # --- projection --------------------------------------------------------------
 def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
                    st: pd.Series | None = None, qb: pd.DataFrame | None = None,
-                   points: pd.Series | None = None) -> float:
+                   points: pd.Series | None = None, elo: pd.Series | None = None) -> float:
     """Projected home margin (points, + = home favored), matchup-aware.
 
-    Blends EPA efficiency with a stable points-differential signal, then adds the
-    special-teams edge, team-specific home field, and a QB-out adjustment (the
-    projection actually drops when a starter is ruled Out).
+    An ensemble: EPA efficiency blended with a stable points-differential signal
+    and an independent Elo power rating, then the special-teams edge, team home
+    field, and injury (QB-out) adjustment.
     """
     if home not in off.index or away not in off.index:
         return np.nan
@@ -132,6 +132,12 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
     if points is not None and len(points) and home in points.index and away in points.index:
         pm = float(points.get(home, 0.0) - points.get(away, 0.0))
         core = (1 - config.POINTS_WEIGHT) * core + config.POINTS_WEIGHT * pm
+    # blend in the independent Elo rating (ensemble + early-season prior)
+    if elo is not None and len(elo) and home in elo.index and away in elo.index:
+        from data.elo import expected_margin
+        em = expected_margin(elo, home, away)
+        if pd.notna(em):
+            core = (1 - config.ELO_WEIGHT) * core + config.ELO_WEIGHT * em
     margin = core + home_field(home)
     if st is not None and len(st):
         margin += st.get(home, 0.0) - st.get(away, 0.0)
@@ -260,7 +266,8 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
 def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> dict:
     home, away = row["home_team"], row["away_team"]
     st, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin = project_margin(off, deff, home, away, st, qb, extras.get("points_rtg"))  # + = home
+    margin = project_margin(off, deff, home, away, st, qb,
+                            extras.get("points_rtg"), extras.get("elo"))  # + = home
     wx = weather_effects(row)
     if pd.notna(margin):
         margin *= (1 - wx["margin_compression"])   # bad weather => closer game

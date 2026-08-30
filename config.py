@@ -115,6 +115,10 @@ MODEL_TRUST = 0.5
 # 0 = pure EPA efficiency, 1 = pure scoreboard. A modest points weight regresses
 # EPA noise toward what teams have actually done — validated to cut margin error.
 POINTS_WEIGHT = 0.55
+# Ensemble: blend an independent Elo power rating (results-based, orthogonal to
+# EPA) on top of the EPA+points margin. Elo also supplies the early-season prior
+# (season-start regression). 0 = no Elo; swept on the backtest.
+ELO_WEIGHT = 0.15
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 SIM_N = 20000                # Monte Carlo iterations per game

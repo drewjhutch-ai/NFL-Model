@@ -7,7 +7,7 @@ state. ``app.py`` wraps this in an ``@st.cache_data`` shim.
 from __future__ import annotations
 
 import config
-from data import (adjust, coaching, drives, form, injuries, loaders, ngs,
+from data import (adjust, coaching, drives, elo, form, injuries, loaders, ngs,
                   players, positional, pressure, qbvalue, rushing, situational,
                   tendencies, touchdowns, turnovers)
 from data import betting as betmodel
@@ -80,6 +80,7 @@ def build_frames():
                 if not rosters.empty and "player_name" in rosters.columns else {})
     extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)
     extras["rz_usage"] = touchdowns.redzone_usage(pbp_w, posmap, name_map)
-    # stable points-differential signal blended into projections (accuracy layer)
+    # accuracy layer: stable points-differential signal + Elo ensemble/prior
     extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
+    extras["elo"] = elo.elo_ratings(schedule)
     return off, deff, blitz, live, schedule, extras
