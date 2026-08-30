@@ -106,7 +106,8 @@ def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Seri
 # --- projection --------------------------------------------------------------
 def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
                    st: pd.Series | None = None, qb: pd.DataFrame | None = None,
-                   points: pd.Series | None = None, elo: pd.Series | None = None) -> float:
+                   points: pd.Series | None = None, elo: pd.Series | None = None,
+                   injuries: dict | None = None) -> float:
     """Projected home margin (points, + = home favored), matchup-aware.
 
     An ensemble: EPA efficiency blended with a stable points-differential signal
@@ -144,6 +145,9 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
     if qb is not None and not qb.empty:
         margin -= qb_adjustment(qb, home)   # home starter Out -> home worse
         margin += qb_adjustment(qb, away)   # away starter Out -> away worse
+    if injuries:                            # non-QB injuries (WR1, edge, OL, CB…)
+        margin -= injuries.get(home, 0.0)
+        margin += injuries.get(away, 0.0)
     return margin
 
 
@@ -250,6 +254,12 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
             flags.append(f"{team} QB {qb_out[0]['name']} is OUT{worth}")
         elif len(outs) >= 2:
             flags.append(f"{team} missing {len(outs)} starters (Out)")
+    # quantified non-QB injury impact (what our number has docked)
+    inj_pts = extras.get("injury_pts", {}) if extras else {}
+    for team in (away, home):
+        v = inj_pts.get(team, 0.0)
+        if v and v >= 0.5:
+            flags.append(f"{team} injuries worth ~{v:.1f} pts (docked from our number)")
     hr, ar = row.get("home_rest"), row.get("away_rest")
     if pd.notna(hr) and pd.notna(ar) and abs(hr - ar) >= 3:
         edge_team = home if hr > ar else away
@@ -266,8 +276,8 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
 def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> dict:
     home, away = row["home_team"], row["away_team"]
     st, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin = project_margin(off, deff, home, away, st, qb,
-                            extras.get("points_rtg"), extras.get("elo"))  # + = home
+    margin = project_margin(off, deff, home, away, st, qb, extras.get("points_rtg"),
+                            extras.get("elo"), extras.get("injury_pts"))  # + = home
     wx = weather_effects(row)
     if pd.notna(margin):
         margin *= (1 - wx["margin_compression"])   # bad weather => closer game

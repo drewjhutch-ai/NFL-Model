@@ -7,9 +7,9 @@ state. ``app.py`` wraps this in an ``@st.cache_data`` shim.
 from __future__ import annotations
 
 import config
-from data import (adjust, coaching, drives, elo, form, injuries, loaders, ngs,
-                  players, positional, pressure, qbvalue, rushing, situational,
-                  tendencies, touchdowns, turnovers)
+from data import (adjust, coaching, drives, elo, form, injuries, injury_value,
+                  loaders, ngs, players, positional, pressure, qbvalue, rushing,
+                  situational, tendencies, touchdowns, turnovers)
 from data import betting as betmodel
 
 
@@ -70,6 +70,7 @@ def build_frames():
         loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)
     extras["injuries"] = inj_map
     extras["injury_week"] = inj_week
+    extras["injury_pts"] = injury_value.team_injury_points(inj_map)  # non-QB spread impact
 
     # special teams + QB value (feed the betting projection)
     st_w = loaders.add_recency_weight(loaders.load_special_teams())
