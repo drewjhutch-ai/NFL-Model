@@ -167,11 +167,32 @@ def _sharp_tracker(away, home, live_game, a) -> None:
 
 
 # --- report card + performance ----------------------------------------------
+def _self_tuning() -> None:
+    from data import tuning
+    t = tuning.load()
+    st.markdown("**Self-tuning** — the model re-fits itself from results each week.")
+    if not t:
+        st.caption(f"Holding safe defaults · points-blend **{config.POINTS_WEIGHT:.2f}**. "
+                   "The weekly Action starts re-fitting once the season has enough graded games.")
+        return
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Points blend", f"{config.POINTS_WEIGHT:.2f}",
+              help="EPA↔scoreboard weight, learned from the backtest.")
+    c2.metric("Learned from", f"{t.get('graded_games','?')} games")
+    c3.metric("As of", str(t.get("as_of", "—")))
+    log = tuning.load_log()
+    if not log.empty:
+        st.caption("Tuning history:")
+        st.dataframe(log.tail(8), width="stretch", hide_index=True)
+
+
 def _report_card(extras) -> None:
     schedule = extras.get("schedule")
     proj = history.load_projections(config.CURRENT_SEASON)
     grade = history.grade_projections(proj, schedule) if not proj.empty else {}
-    with st.expander("Live report card & backtest (the learning loop)"):
+    with st.expander("Live report card, self-tuning & backtest (the learning loop)"):
+        _self_tuning()
+        st.divider()
         if grade:
             st.markdown("**This season — our graded picks:**")
             cols = st.columns(len(grade))

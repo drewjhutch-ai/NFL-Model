@@ -57,16 +57,25 @@ jobs:
           python scripts/snapshot.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Self-tune from results (learning loop)
+        id: tune
+        # Grades the season, re-fits POINTS_WEIGHT + facet weights toward what's
+        # predicting, and writes model_tuning.json. Exits 2 until enough games.
+        run: |
+          set +e
+          python scripts/tune.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f scheme_data/coverage_*.csv history/*.csv 2>/dev/null || true
+          git add -f scheme_data/coverage_*.csv history/*.csv model_tuning.json tuning_log.csv 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data change since last run."
           else
-            git commit -m "Auto-update coverage + weekly snapshot [skip ci]"
+            git commit -m "Auto-update: coverage + snapshot + self-tune [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
 

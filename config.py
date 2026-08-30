@@ -157,3 +157,34 @@ SCHEME_SOURCE_TRUST = {
 # Confidence buckets from how far apart the sources are on zone rate (in points).
 SCHEME_AGREE_HIGH = 0.04   # within 4 pts across sources -> High confidence
 SCHEME_AGREE_MED = 0.08    # within 8 pts -> Medium; wider -> Low
+
+
+# --- learned overrides (the self-tuning loop) --------------------------------
+# scripts/tune.py grades results each week and re-fits POINTS_WEIGHT and the
+# EDGE_WEIGHTS toward what's actually been predicting, writing model_tuning.json.
+# We overlay that here so the deployed model uses what it has learned, while the
+# values above remain the safe defaults if nothing has been learned yet.
+def _apply_tuning() -> dict:
+    import json
+    import os
+    path = os.path.join(os.path.dirname(__file__), "model_tuning.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path) as fh:
+            t = json.load(fh)
+    except Exception:  # noqa: BLE001 - a bad file must never break the app
+        return {}
+    global POINTS_WEIGHT, MODEL_TRUST
+    if isinstance(t.get("points_weight"), (int, float)):
+        POINTS_WEIGHT = float(min(max(t["points_weight"], 0.0), 0.85))
+    if isinstance(t.get("model_trust"), (int, float)):
+        MODEL_TRUST = float(min(max(t["model_trust"], 0.2), 0.9))
+    if isinstance(t.get("edge_weights"), dict):
+        for k, v in t["edge_weights"].items():
+            if k in EDGE_WEIGHTS and isinstance(v, (int, float)):
+                EDGE_WEIGHTS[k] = float(min(max(v, 0.2), 3.5))
+    return t
+
+
+TUNING = _apply_tuning()
