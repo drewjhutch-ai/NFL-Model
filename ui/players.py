@@ -33,18 +33,18 @@ def _script(off, deff, extras, team, opp, team_is_home) -> float:
 # --- section 1: auto prop picks ----------------------------------------------
 def _pick_card(col, r) -> None:
     conf = r["conf"]
-    color = "#2ecc71" if conf >= 50 else ("#f1c40f" if conf >= 32 else "#9aa0a6")
-    side_color = "#2ecc71" if r["Side"] == "Over" else "#e74c3c"
+    color = "#2dd4bf" if conf >= 50 else ("#5eb3f0" if conf >= 32 else "#8b98a5")
+    side_color = "#3fb950" if r["Side"] == "Over" else "#f85149"
     col.markdown(
-        f"<div style='border:1px solid #333;border-left:4px solid {color};border-radius:10px;"
-        f"padding:12px 14px;height:100%;'>"
+        f"<div style='border:1px solid #1e2732;border-left:4px solid {color};border-radius:12px;"
+        f"padding:13px 15px;height:100%;background:#141b23;'>"
         f"<div style='font-weight:700;font-size:1.02rem;'>{r['Player']} "
-        f"<span style='color:#8a8a8a;font-weight:400;font-size:0.85rem;'>{r['Pos']} · {r['Team']}</span></div>"
+        f"<span style='color:#8b98a5;font-weight:400;font-size:0.85rem;'>{r['Pos']} · {r['Team']}</span></div>"
         f"<div style='margin:4px 0;'><span style='color:{side_color};font-weight:700;'>{r['Side']} "
-        f"{r['Stat']}</span> <span style='color:#8a8a8a;'>· proj {r['Projection']:g} vs {r['Baseline']:g}</span></div>"
-        f"<div style='font-size:0.85rem;color:#9aa0a6;'>{r['Matchup']}</div>"
+        f"{r['Stat']}</span> <span style='color:#8b98a5;'>· proj {r['Projection']:g} vs {r['Baseline']:g}</span></div>"
+        f"<div style='font-size:0.85rem;color:#8b98a5;'>{r['Matchup']}</div>"
         f"<div style='margin-top:6px;'><span style='color:{color};font-weight:700;'>{r['Hit%']:.0f}% "
-        f"lean</span> <span style='color:#8a8a8a;font-size:0.8rem;'>· conf {conf:.0f}</span></div></div>",
+        f"lean</span> <span style='color:#8b98a5;font-size:0.8rem;'>· conf {conf:.0f}</span></div></div>",
         unsafe_allow_html=True)
 
 

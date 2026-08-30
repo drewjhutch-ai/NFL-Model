@@ -39,12 +39,12 @@ def _banner(away, home, row) -> None:
 
 def _bet_row(b, show_edge=True) -> str:
     conf = b["confidence"]
-    color = "#2ecc71" if conf >= 50 else ("#f1c40f" if conf >= 32 else "#9aa0a6")
-    edge = (f" · <span style='color:#2ecc71;'>{b['edge']*100:+.1f} pts edge</span>"
+    color = "#2dd4bf" if conf >= 50 else ("#5eb3f0" if conf >= 32 else "#8b98a5")
+    edge = (f" · <span style='color:#3fb950;'>{b['edge']*100:+.1f} pts edge</span>"
             if show_edge and pd.notna(b["edge"]) and b["edge"] > 0 else "")
     return (f"<div style='border-left:4px solid {color};padding:5px 0 5px 12px;margin:6px 0;'>"
             f"<span style='font-size:1.05rem;font-weight:700;'>{b['selection']}</span> "
-            f"<span style='color:#8a8a8a;'>· {b['market']}</span><br>"
+            f"<span style='color:#8b98a5;'>· {b['market']}</span><br>"
             f"<span style='color:{color};font-weight:600;'>{betengine.confidence_label(conf)} "
             f"({conf:.0f})</span> <span style='color:#9aa0a6;font-size:0.9rem;'>· "
             f"{b['model_prob']*100:.0f}% to hit · fair {betengine.fmt_odds(b['fair_odds'])}{edge}</span></div>")

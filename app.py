@@ -53,9 +53,22 @@ def _inject_css() -> None:
         div[data-testid="stExpander"]{ border:1px solid var(--line) !important;
             border-radius:12px !important; }
         hr{ border-color:var(--line); margin:1rem 0; }
+        /* inputs / selects / sliders */
+        div[data-baseweb="select"]>div, .stNumberInput input, .stTextInput input{
+            border-radius:9px !important; border-color:var(--line) !important;
+            background:var(--surf) !important; }
+        div[data-baseweb="select"]>div:focus-within{ border-color:var(--accent) !important; }
+        div[data-testid="stSlider"] [role="slider"]{ background:var(--accent) !important; }
+        label p{ color:var(--muted) !important; font-size:0.82rem !important; }
         /* sidebar */
         section[data-testid="stSidebar"]{ border-right:1px solid var(--line); }
         code{ font-family:'IBM Plex Mono',ui-monospace,monospace; }
+        /* brand header */
+        .brand{ display:flex; align-items:baseline; gap:12px; margin:0 0 6px;
+            padding-bottom:12px; border-bottom:1px solid var(--line); }
+        .brand b{ font-size:1.15rem; font-weight:800; letter-spacing:0.14em; }
+        .brand .accent{ color:var(--accent); }
+        .brand span{ color:var(--muted); font-size:0.8rem; letter-spacing:0.02em; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -127,6 +140,11 @@ def main() -> None:
         return
 
     sidebar(live)
+
+    st.markdown(
+        "<div class='brand'><b><span class='accent'>◆</span> NFL MODEL</b>"
+        "<span>analytics · projections · betting edge</span></div>",
+        unsafe_allow_html=True)
 
     (tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
      tab_betting, tab_picks) = st.tabs(
