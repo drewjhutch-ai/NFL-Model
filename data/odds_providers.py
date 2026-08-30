@@ -176,6 +176,60 @@ def consensus(df: pd.DataFrame) -> dict:
     return out
 
 
+# Our prop stat names -> The Odds API market keys.
+PROP_MARKETS = {
+    "Pass yds": "player_pass_yds", "Pass TD": "player_pass_tds",
+    "Rush yds": "player_rush_yds", "Rec yds": "player_reception_yds",
+    "Rec": "player_receptions",
+}
+
+
+def player_props(max_events: int = 16) -> pd.DataFrame:
+    """Player-prop lines from The Odds API (empty without a key or on any error).
+
+    Long frame: player, stat (our name), line, over, under, book. Props are a
+    per-event endpoint, so this fans out over the week's events. Best-of numbers
+    are taken per player/stat so the finder shows the sharpest available line.
+    """
+    key = _api_key()
+    if not key:
+        return pd.DataFrame()
+    try:
+        ev = requests.get(f"https://api.the-odds-api.com/v4/sports/{_SPORT}/events",
+                          params={"apiKey": key}, timeout=20)
+        ev.raise_for_status()
+        events = ev.json()[:max_events]
+        markets = ",".join(sorted(set(PROP_MARKETS.values())))
+        inv = {v: k for k, v in PROP_MARKETS.items()}
+        rows = []
+        for e in events:
+            eid = e.get("id")
+            r = requests.get(
+                f"https://api.the-odds-api.com/v4/sports/{_SPORT}/events/{eid}/odds",
+                params={"apiKey": key, "regions": "us", "markets": markets,
+                        "oddsFormat": "american"}, timeout=20)
+            if r.status_code != 200:
+                continue
+            for bk in r.json().get("bookmakers", []):
+                book = bk.get("title", "?")
+                for mkt in bk.get("markets", []):
+                    stat = inv.get(mkt.get("key"))
+                    if not stat:
+                        continue
+                    byplayer: dict = {}
+                    for o in mkt.get("outcomes", []):
+                        who, side = o.get("description"), o.get("name")
+                        d = byplayer.setdefault(who, {"line": o.get("point")})
+                        d["over" if side == "Over" else "under"] = o.get("price")
+                    for who, d in byplayer.items():
+                        rows.append({"player": who, "stat": stat, "line": d.get("line"),
+                                     "over": d.get("over"), "under": d.get("under"), "book": book})
+        return pd.DataFrame(rows)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[odds] player props unavailable: {exc}")
+        return pd.DataFrame()
+
+
 def get_odds_provider() -> LiveOddsProvider:
     p = TheOddsAPIProvider()
     return p if p.is_available() else NoLiveOdds()

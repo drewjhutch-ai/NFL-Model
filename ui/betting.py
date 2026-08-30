@@ -190,6 +190,9 @@ def _report_card(extras) -> None:
     schedule = extras.get("schedule")
     proj = history.load_projections(config.CURRENT_SEASON)
     grade = history.grade_projections(proj, schedule) if not proj.empty else {}
+    from data import clv as clvmod
+    roi = clvmod.grade_roi(proj, schedule) if not proj.empty else {}
+    clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
     with st.expander("Live report card, self-tuning & backtest (the learning loop)"):
         _self_tuning()
         st.divider()
@@ -201,6 +204,18 @@ def _report_card(extras) -> None:
         else:
             st.caption("The live report card fills in as the season's picks are graded "
                        "(the Evolution Engine logs projections each week).")
+        if roi.get("overall") or clv:
+            st.markdown("**Profit & closing-line value** — the scoreboard that matters:")
+            c = st.columns(3)
+            if roi.get("overall"):
+                o = roi["overall"]
+                c[0].metric("ROI", f"{o['roi']:+.1f}%", f"{o['units']:+.1f}u / {o['bets']} bets")
+            if clv:
+                c[1].metric("Avg CLV", f"{clv['avg_clv']:+.1f} pts",
+                            help="Points we beat the closing line by — the best sign of a real edge.")
+                c[2].metric("Beat the close", f"{clv['beat_pct']:.0f}%", f"{clv['n']} picks")
+            st.caption("ROI settles spread/total picks at -110. CLV compares the number we captured "
+                       "(logged at pick time) to the closing line. Both fill in as the season plays.")
         if _BACKTEST_FILE.exists():
             data = json.loads(_BACKTEST_FILE.read_text())
             s = data.get("summary", {})
