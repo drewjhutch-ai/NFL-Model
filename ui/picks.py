@@ -34,6 +34,28 @@ def _board(games, off, deff, extras, gp) -> pd.DataFrame:
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 
+def _most_likely(board) -> None:
+    st.markdown("### Favorites — most likely to hit")
+    st.caption("The model's highest win-probability plays this week, **regardless of price or value** "
+               "— purely what's most likely to cash. Any market.")
+    view = board.sort_values("model_prob", ascending=False).head(8)
+    if view.empty:
+        st.info("No priced bets to rank yet.")
+        return
+    show = pd.DataFrame({
+        "Bet": view["selection"], "Market": view["market"], "Game": view["game"],
+        "Hit %": (view["model_prob"] * 100).round(0),
+        "Fair": view["fair_odds"].map(betengine.fmt_odds),
+        "Line": view["market_odds"].map(betengine.fmt_odds),
+    })
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Hit %": st.column_config.NumberColumn("Hit %", format="%d%%",
+            help="Model probability the bet cashes — sorted highest first, value ignored."),
+    })
+    st.caption("These are chalk by design — high hit-rate, low payout. Great parlay anchors; "
+               "for value, see Most Edge below.")
+
+
 def _most_edge(board) -> None:
     st.markdown("### Most edge")
     st.caption("The pure +EV board — model probability minus the de-vigged market price, any market.")
@@ -208,6 +230,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         board = pd.concat([board, pd.DataFrame(prop_bets)], ignore_index=True)
 
     if not board.empty:
+        _most_likely(board)
+        st.divider()
         _most_edge(board)
         st.divider()
         _parlays(board)
