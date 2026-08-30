@@ -82,7 +82,8 @@ def team_expected_tds(off, deff, extras: dict, row: pd.Series) -> dict:
     """Projected offensive TDs for each team in a game (matchup + script + weather)."""
     home, away = row["home_team"], row["away_team"]
     total = betting.project_total(off, deff, home, away, extras.get("pace"))
-    margin = betting.project_margin(off, deff, home, away, extras.get("st_ppg"), extras.get("qb_value"))
+    margin = betting.project_margin(off, deff, home, away, extras.get("st_ppg"),
+                                    extras.get("qb_value"), extras.get("points_rtg"))
     wx = weather_effects(row)
     if pd.notna(total):
         total = total + wx.get("total_adj", 0)

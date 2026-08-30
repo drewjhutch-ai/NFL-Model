@@ -61,6 +61,30 @@ def home_field(home: str) -> float:
     return config.TEAM_HFA.get(home, config.HOME_FIELD_ADVANTAGE)
 
 
+def points_ratings(schedule: pd.DataFrame, season: int,
+                   before_week: int | None = None) -> pd.Series:
+    """Average point differential per team from played games (a stable, orthogonal
+    signal to EPA). Falls back to the prior season when the current one has no
+    results yet. ``before_week`` keeps the backtest honest (train on the past)."""
+    if schedule is None or schedule.empty or "result" not in schedule.columns:
+        return pd.Series(dtype=float)
+    s = schedule[(schedule["season"] == season) & schedule["result"].notna()]
+    if before_week is not None:
+        s = s[s["week"] < before_week]
+    if s.empty:
+        s = schedule[(schedule["season"] == season - 1) & schedule["result"].notna()]
+    if s.empty or "home_score" not in s.columns:
+        return pd.Series(dtype=float)
+    diff, games = {}, {}
+    for _, r in s.iterrows():
+        h, a, hs, as_ = r.get("home_team"), r.get("away_team"), r.get("home_score"), r.get("away_score")
+        if pd.isna(hs) or pd.isna(as_):
+            continue
+        diff[h] = diff.get(h, 0) + (hs - as_); games[h] = games.get(h, 0) + 1
+        diff[a] = diff.get(a, 0) + (as_ - hs); games[a] = games.get(a, 0) + 1
+    return pd.Series({t: diff[t] / games[t] for t in games if games[t]})
+
+
 def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Series:
     """Avg opponent net power rating over completed games (played SOS)."""
     if schedule is None or schedule.empty or power.empty or "net" not in power.columns:
@@ -81,11 +105,13 @@ def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Seri
 
 # --- projection --------------------------------------------------------------
 def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
-                   st: pd.Series | None = None, qb: pd.DataFrame | None = None) -> float:
+                   st: pd.Series | None = None, qb: pd.DataFrame | None = None,
+                   points: pd.Series | None = None) -> float:
     """Projected home margin (points, + = home favored), matchup-aware.
 
-    Includes special-teams edge, team-specific home field, and a QB-out
-    adjustment (the projection actually drops when a starter is ruled Out).
+    Blends EPA efficiency with a stable points-differential signal, then adds the
+    special-teams edge, team-specific home field, and a QB-out adjustment (the
+    projection actually drops when a starter is ruled Out).
     """
     if home not in off.index or away not in off.index:
         return np.nan
@@ -101,7 +127,12 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
     away_off = exp_off(away, home)
     if pd.isna(home_off) or pd.isna(away_off):
         return np.nan
-    margin = (home_off - away_off) * config.PLAYS_PER_TEAM + home_field(home)
+    core = (home_off - away_off) * config.PLAYS_PER_TEAM
+    # regress the noisier EPA margin toward actual point differential
+    if points is not None and len(points) and home in points.index and away in points.index:
+        pm = float(points.get(home, 0.0) - points.get(away, 0.0))
+        core = (1 - config.POINTS_WEIGHT) * core + config.POINTS_WEIGHT * pm
+    margin = core + home_field(home)
     if st is not None and len(st):
         margin += st.get(home, 0.0) - st.get(away, 0.0)
     if qb is not None and not qb.empty:
@@ -111,10 +142,10 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
 
 
 def win_prob(margin: float) -> float:
-    """Home win probability from projected margin (logistic)."""
+    """Home win probability from projected margin (normal CDF on the margin std)."""
     if pd.isna(margin):
         return np.nan
-    return 1.0 / (1.0 + math.exp(-margin * config.WINPROB_SLOPE))
+    return 0.5 * (1 + math.erf(margin / (config.MARGIN_STD * math.sqrt(2))))
 
 
 def project_total(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
@@ -229,7 +260,7 @@ def context_flags(row: pd.Series, home: str, away: str, extras: dict) -> list[st
 def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> dict:
     home, away = row["home_team"], row["away_team"]
     st, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin = project_margin(off, deff, home, away, st, qb)  # + = home favored
+    margin = project_margin(off, deff, home, away, st, qb, extras.get("points_rtg"))  # + = home
     wx = weather_effects(row)
     if pd.notna(margin):
         margin *= (1 - wx["margin_compression"])   # bad weather => closer game

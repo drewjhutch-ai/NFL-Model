@@ -2,40 +2,40 @@
   "season": 2024,
   "summary": {
     "games": 221,
-    "model_mae": 10.35792762861739,
+    "model_mae": 10.304856185027388,
     "market_mae": 9.427601809954751,
-    "ats_pct": 46.15384615384615,
+    "ats_pct": 50.678733031674206,
     "su_pct": 69.23076923076923,
     "calibration": [
       {
         "p_home": "(0.0, 0.35]",
-        "pred": "0.278",
-        "actual": "0.273",
-        "n": "44"
+        "pred": "0.281",
+        "actual": "0.275",
+        "n": "40"
       },
       {
         "p_home": "(0.35, 0.5]",
-        "pred": "0.421",
-        "actual": "0.286",
-        "n": "42"
+        "pred": "0.426",
+        "actual": "0.306",
+        "n": "49"
       },
       {
         "p_home": "(0.5, 0.65]",
-        "pred": "0.588",
-        "actual": "0.561",
-        "n": "57"
+        "pred": "0.577",
+        "actual": "0.576",
+        "n": "59"
       },
       {
         "p_home": "(0.65, 0.8]",
-        "pred": "0.725",
-        "actual": "0.855",
-        "n": "55"
+        "pred": "0.721",
+        "actual": "0.845",
+        "n": "58"
       },
       {
         "p_home": "(0.8, 1.0]",
-        "pred": "0.848",
-        "actual": "0.87",
-        "n": "23"
+        "pred": "0.858",
+        "actual": "0.933",
+        "n": "15"
       }
     ]
   },
@@ -43,7 +43,7 @@
     {
       "facet": "QB / Passing",
       "correlation": 0.54,
-      "suggested_weight": 1.75,
+      "suggested_weight": 1.74,
       "current_weight": 2.5
     },
     {
@@ -54,8 +54,8 @@
     },
     {
       "facet": "Rushing",
-      "correlation": 0.507,
-      "suggested_weight": 1.64,
+      "correlation": 0.509,
+      "suggested_weight": 1.65,
       "current_weight": 1.0
     },
     {

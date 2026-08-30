@@ -20,7 +20,8 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
     """Simulate a game n times; return distributions + probabilities."""
     n = n or config.SIM_N
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin_mean = betting.project_margin(off, deff, home, away, st_ppg, qb)  # + = home
+    margin_mean = betting.project_margin(off, deff, home, away, st_ppg, qb,
+                                         extras.get("points_rtg"))  # + = home
     total_mean = betting.project_total(off, deff, home, away, extras.get("pace"))
     if pd.isna(margin_mean) or pd.isna(total_mean):
         return {}

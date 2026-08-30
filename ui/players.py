@@ -25,7 +25,8 @@ def _games_played(extras) -> int:
 
 def _script(off, deff, extras, team, opp, team_is_home) -> float:
     home, away = (team, opp) if team_is_home else (opp, team)
-    margin = betting.project_margin(off, deff, home, away, extras.get("st_ppg"), extras.get("qb_value"))
+    margin = betting.project_margin(off, deff, home, away, extras.get("st_ppg"),
+                                    extras.get("qb_value"), extras.get("points_rtg"))
     return 0.0 if pd.isna(margin) else float(margin if team_is_home else -margin)
 
 

@@ -160,7 +160,7 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
 def _projection_verdict(away, home, off, deff, extras) -> None:
     """Fallback headline when there's no market line (custom matchup)."""
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin = betting.project_margin(off, deff, home, away, st_ppg, qb)  # + = home
+    margin = betting.project_margin(off, deff, home, away, st_ppg, qb, extras.get("points_rtg"))  # + = home
     if pd.notna(margin):
         winner = home if margin > 0 else away
         stars, label = _stars(margin)
@@ -600,7 +600,7 @@ def _angle_finder(away, home, off, deff, extras, assessment, sim) -> None:
 def _scouting(away, home, off, deff, extras) -> None:
     st.markdown("### Scouting notes")
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
-    margin = betting.project_margin(off, deff, home, away, st_ppg, qb)
+    margin = betting.project_margin(off, deff, home, away, st_ppg, qb, extras.get("points_rtg"))
     bullets = []
     if pd.notna(margin):
         w = home if margin > 0 else away

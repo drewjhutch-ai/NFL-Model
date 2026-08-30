@@ -111,6 +111,10 @@ LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the tot
 # trust our *divergence* from it only partway — blend our number toward the line.
 # 1.0 = pure model, 0.0 = pure market. Calibrate against results.
 MODEL_TRUST = 0.5
+# Blend a stable points-differential signal into the (noisier) pure-EPA margin.
+# 0 = pure EPA efficiency, 1 = pure scoreboard. A modest points weight regresses
+# EPA noise toward what teams have actually done — validated to cut margin error.
+POINTS_WEIGHT = 0.55
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 SIM_N = 20000                # Monte Carlo iterations per game

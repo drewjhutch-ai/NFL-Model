@@ -52,7 +52,9 @@ def walk_forward(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int,
         if train.empty:
             continue
         off, deff, pace = _ratings(train)
-        extras = {"pace": pace}
+        # points differential from games played *before* this week (honest)
+        pts = betting.points_ratings(schedule, season, before_week=wk)
+        extras = {"pace": pace, "points_rtg": pts}
         for _, r in games[games["week"] == wk].iterrows():
             a = betting.assess(r, off, deff, extras)
             if pd.isna(a["model_margin"]):
