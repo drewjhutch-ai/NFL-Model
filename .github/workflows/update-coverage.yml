@@ -71,7 +71,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f scheme_data/coverage_*.csv history/*.csv model_tuning.json tuning_log.csv 2>/dev/null || true
+          # add each path independently — a missing glob (e.g. history/ in the
+          # offseason) must not abort staging the files that DO exist.
+          git add -f scheme_data/coverage_*.csv 2>/dev/null || true
+          git add -f history/*.csv 2>/dev/null || true
+          git add -f model_tuning.json tuning_log.csv 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data change since last run."
           else
