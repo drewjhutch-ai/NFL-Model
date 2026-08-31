@@ -119,6 +119,10 @@ POINTS_WEIGHT = 0.55
 # EPA) on top of the EPA+points margin. Elo also supplies the early-season prior
 # (season-start regression). 0 = no Elo; swept on the backtest.
 ELO_WEIGHT = 0.15
+# Ensemble: blend Sharp Football's charted-EPA margin (an independent second
+# opinion) into the projection when that data is present. Conservative + gated;
+# 0 = off. The weekly review loop grades it and the tuner can adjust over time.
+SHARP_WEIGHT = 0.12
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 SIM_N = 20000                # Monte Carlo iterations per game
