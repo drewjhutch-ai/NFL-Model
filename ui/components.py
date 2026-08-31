@@ -231,6 +231,29 @@ def _rgba(color: str, alpha: float) -> str:
     return f"rgba({r},{g},{b},{alpha})"
 
 
+def _dist(a: str, b: str) -> float:
+    (r1, g1, b1), (r2, g2, b2) = _hex_rgb(a), _hex_rgb(b)
+    return ((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2) ** 0.5
+
+
+# vibrant, well-separated fallbacks for when two teams share a color family
+_ALT_PALETTE = ["#22d3ee", "#f59e0b", "#a78bfa", "#34d399", "#f472b6", "#60a5fa", "#facc15"]
+
+
+def _distinct_strokes(colors: list[str], min_sep: float = 110.0) -> list[str]:
+    """Brighten each color for a dark backdrop, and if two are too close (same
+    color family, e.g. ATL vs ARI red), reassign the later one to a distinct hue."""
+    out: list[str] = []
+    for c in colors:
+        stroke = _readable(c)
+        if any(_dist(stroke, prev) < min_sep for prev in out):
+            # pick the fallback farthest from everything already used
+            stroke = max(_ALT_PALETTE,
+                         key=lambda alt: min((_dist(alt, p) for p in out), default=999))
+        out.append(stroke)
+    return out
+
+
 def radar_chart(categories: list[str], series: list[tuple], title: str = ""):
     """Percentile radar ('pizza') chart. series = list of (name, values, color).
 
@@ -240,10 +263,11 @@ def radar_chart(categories: list[str], series: list[tuple], title: str = ""):
     """
     import plotly.graph_objects as go
     fig = go.Figure()
+    strokes = _distinct_strokes([c for _, _, c in series])
     for i, (name, values, color) in enumerate(series):
         vals = list(values) + [values[0]]
         cats = categories + [categories[0]]
-        stroke = _readable(color)
+        stroke = strokes[i]
         fig.add_trace(go.Scatterpolar(
             r=vals, theta=cats, name=name, mode="lines+markers",
             fill="toself", fillcolor=_rgba(stroke, 0.28 if i == 0 else 0.22),
