@@ -66,12 +66,32 @@ Built, tested, pushed this session (branch `claude/nfl-data-matchup-dashboard-hz
 
 App is now **11 tabs**. All imports clean.
 
-### REMAINING — gated on the Sharp fetch (needs the user to run the workflow once)
-The broad Sharp valuation (trenches OL-vs-DL, pace→totals, blitz-vs-pressure, ensemble O/D metrics) and the
-enriched Team Data/League facet cards need the real Sharp column names. **Action: user runs Actions →
-"Update model data" → Run workflow on the branch.** Then read the committed `sharp_data/*.csv` (or the
-fetch log) for column names and write the valuation in `data/sharp_value.py` + new `EDGE_WEIGHTS` facets +
-`data/betting.py` ensemble inputs. `data/sharp.py::column_map(season)` dumps the real columns to build against.
+### Valuation + UI — DONE (real columns confirmed from the Action log)
+- `data/sharp_value.py` — accessors keyed to the real columns: `sharp_margin` (charted-EPA ensemble),
+  `pace_factor`/`neutral_pass_rate`, `coverage_by_position` (YPT allowed, ranked), pass-rush/pass-pro ranks.
+- `data/betting.py` — Sharp charted-EPA margin blended into `project_margin` (`config.SHARP_WEIGHT=0.12`,
+  gated). Validated on fixtures with real columns.
+- `ui/sharp_panel.py` — Team Data → Advanced now shows the full Sharp profile (grouped, league-percentile
+  bars, auto edges/soft-spots). Matchup Advantage Grid already renders in Matchups.
+
+### Real Sharp columns (from run #4 log — build against these)
+- pace: Rank, Play Clock Used, Neutral, Neutral Pass Rate, Gear Change, No Huddle
+- off_personnel: 11, 12, 13, 21, 22, 2+ TE, 2+ RB, 3+ WR, Plays
+- def_line: Pressure Rate, No Blitz Pressure Rate, Yards Before Contact Per RB Rush, Rush Stuff Rate
+- def_tendencies: Blitz Rate, Light Box Rate, Heavy Box Rate, Sub Package Rate
+- coverage_schemes: Man Rate, Zone Rate, Middle Closed Rate, Middle Open Rate
+- def_metrics: EPA/Play, Yards Per Play Allowed, Y/PL Last 5, Points Per Drive Allowed, Explosive Play Rate Allowed, Down Conversion Rate Allowed
+- off_line: Pressure Rate Allowed, No Blitz Pressure Rate Allowed, Time to Throw, Yards Before Contact Per RB Rush, Rush Stuff Rate
+- coverage_by_pos: YPT Allowed WR/TE/RB/Outside/Slot
+- off_metrics: EPA/Play, Yards Per Play, Y/PL Last 5, Points Per Drive, Explosive Play Rate, Down Conversion Rate
+
+### ONLY REMAINING — operational
+1. **Re-run the Action once** (Actions → "Update model data" → Run workflow). Run #4 scraped 9/10 tables but
+   its push was rejected (branch moved mid-run); that's now fixed with a rebase-retry, so the next run commits
+   `sharp_data/*.csv` and everything lights up. Then the ensemble + Sharp panel show live data.
+2. **off_tendencies** (10th page) returned no parseable table — its URL/layout needs a look. Not blocking.
+3. Optional follow-ups: coverage-by-position → player-prop matchups; add Sharp facets to `EDGE_WEIGHTS` once
+   the review loop shows they add signal beyond the ensemble.
 
 ---
 
