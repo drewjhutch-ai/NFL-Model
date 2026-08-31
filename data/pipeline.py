@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import config
 from data import (adjust, coaching, drives, elo, form, injuries, injury_value,
-                  loaders, ngs, players, positional, pressure, qbvalue, rushing,
-                  sharp, situational, tendencies, touchdowns, turnovers)
+                  loaders, ngs, off_coverage, players, positional, pressure,
+                  qbvalue, rushing, sharp, situational, tendencies, touchdowns,
+                  turnovers)
 from data import betting as betmodel
 
 
@@ -89,4 +90,16 @@ def build_frames():
     # every consumer degrades gracefully. Season falls back to the prior year's
     # committed file during the offseason (data.sharp._resolve handles this).
     extras["sharp"] = sharp.load_all(config.CURRENT_SEASON)
+
+    # Scheme-fit: read the committed defensive coverage rates (no network — the
+    # GitHub Action does the scraping) and derive each offense's zone/man
+    # performance from pbp. Together they activate the coverage-scheme edge.
+    from data.providers.committed import CommittedCoverageProvider
+    from data.providers.base import SchemeUnavailable
+    try:
+        _cov = CommittedCoverageProvider().coverage_tendencies(config.CURRENT_SEASON)
+    except (SchemeUnavailable, Exception):  # noqa: BLE001 - never break the build
+        _cov = None
+    extras["coverage"] = _cov
+    extras["off_vs_cov"] = off_coverage.offense_vs_coverage(pbp_w, _cov)
     return off, deff, blitz, live, schedule, extras

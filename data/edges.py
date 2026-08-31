@@ -43,34 +43,40 @@ def _weight(label: str) -> float:
 
 
 def _coverage_edge(o_team: str, d_team: str, extras: dict) -> dict | None:
-    """Scheme-fit edge: does the offense exploit the coverage the D plays most?
+    """Scheme-fit edge: does the offense's scheme strength match what the D over-plays?
 
-    Dormant until PFF offense-vs-coverage data is present (extras['off_vs_cov'])
-    alongside defensive zone/man rates (extras['coverage']). Then a zone-beating
-    offense facing a zone-heavy defense earns a weighted edge, and vice versa.
+    Needs defensive zone/man rates (``extras['coverage']``) and derived
+    offense-vs-coverage (``extras['off_vs_cov']`` — see ``data/off_coverage.py``,
+    built from pbp cross-referenced with those same defensive rates).
+
+    The signal is the offense's *scheme affinity* (how much better it throws vs
+    zone than vs man, baseline-removed and z-scored) multiplied by how hard the
+    defense leans on one scheme. A zone-friendly offense facing a zone-heavy
+    defense earns a positive (offense) edge; facing a man-heavy defense, a
+    negative one. Baseline removal keeps this orthogonal to the QB/passing facet
+    (overall passing quality lives there, not here).
     """
     cov = extras.get("coverage")           # defense zone/man rates (blended)
-    ovc = extras.get("off_vs_cov")         # offense EPA vs zone / vs man (PFF)
+    ovc = extras.get("off_vs_cov")         # offense affinity vs zone/man (derived)
     if cov is None or ovc is None:
         return None
-    if getattr(cov, "empty", True) or d_team not in cov.index or o_team not in ovc.index:
+    if getattr(cov, "empty", True) or getattr(ovc, "empty", True):
+        return None
+    if d_team not in cov.index or o_team not in ovc.index:
         return None
     zone = cov.loc[d_team].get("zone_rate")
-    if pd.isna(zone):
+    az = ovc.loc[o_team].get("affinity_z")   # + = offense better vs zone than man
+    if pd.isna(zone) or pd.isna(az):
         return None
-    # offense's edge = how well it does against the scheme the D leans on
-    z_edge = ovc.loc[o_team].get("vs_zone_rank")   # 1 = best vs zone
-    m_edge = ovc.loc[o_team].get("vs_man_rank")
-    lean_rank = z_edge if zone >= 0.5 else m_edge
-    scheme = "zone" if zone >= 0.5 else "man"
-    if pd.isna(lean_rank):
-        return None
-    # more extreme scheme reliance => bigger swing; offense skill vs that scheme
-    reliance = abs(zone - 0.5) * 2  # 0..1
-    m = (16.5 - int(lean_rank)) * (0.5 + reliance)  # + = offense exploits it
+    reliance = (float(zone) - 0.5) * 2.0     # signed: + zone-heavy, − man-heavy
+    # ~±8 keeps the magnitude comparable to the rank-diff facets (-31..+31).
+    m = float(az) * reliance * 8.0
+    off_pref = "zone" if az >= 0 else "man"
+    d_scheme = "zone" if reliance >= 0 else "man"
     w = _weight("Coverage scheme")
-    return {"label": "Coverage scheme", "mag": float(m), "weight": w, "impact": float(m) * w,
-            "detail": f"{o_team} vs {scheme} ({_ord(lean_rank)}) · {d_team} {zone*100:.0f}% zone"}
+    return {"label": "Coverage scheme", "mag": m, "weight": w, "impact": m * w,
+            "detail": f"{o_team} {off_pref}-friendly vs {d_team} "
+                      f"{float(zone)*100:.0f}% {d_scheme}"}
 
 
 def facet_edges(o_team: str, d_team: str, off: pd.DataFrame, deff: pd.DataFrame,
