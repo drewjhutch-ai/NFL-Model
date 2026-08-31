@@ -154,6 +154,7 @@ INJURY_SNAP_THRESHOLD = 0.25
 SCHEME_SOURCE_TRUST = {
     "pff": 1.0,          # PFF ELITE/+ CSV export (manual drop)
     "committed": 0.85,   # auto-fetched weekly blend (GitHub Action)
+    "sharpfootball": 0.85,  # Sharp Football Analysis (free, public)
     "sumersports": 0.85,  # SumerSports (free)
     "statrankings": 0.75,  # StatRankings (free)
 }

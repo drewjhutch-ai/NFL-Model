@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import config  # noqa: E402
 from data.providers.base import SchemeUnavailable  # noqa: E402
 from data.providers.composite import CompositeSchemeProvider  # noqa: E402
+from data.providers.sharpfootball import SharpFootballProvider  # noqa: E402
 from data.providers.statrankings import StatRankingsProvider  # noqa: E402
 from data.providers.sumersports import SumerSportsProvider  # noqa: E402
 
@@ -38,6 +39,7 @@ _OUT_DIR = Path(__file__).resolve().parents[1] / "scheme_data"
 _KEEP = [
     "zone_rate", "man_rate", "snaps",
     "n_sources", "zone_spread", "confidence", "sources",
+    "zone_sharpfootball", "man_sharpfootball",
     "zone_sumersports", "man_sumersports",
     "zone_statrankings", "man_statrankings",
 ]
@@ -51,7 +53,7 @@ def main() -> int:
     # Only the free network sources — no PFF (no upload in CI) and no committed
     # provider (that would read the file we're about to write).
     provider = CompositeSchemeProvider(
-        providers=[SumerSportsProvider(), StatRankingsProvider()]
+        providers=[SharpFootballProvider(), SumerSportsProvider(), StatRankingsProvider()]
     )
 
     try:

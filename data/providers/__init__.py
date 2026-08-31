@@ -19,6 +19,7 @@ from .base import COVERAGE_SCHEMA, SchemeDataProvider, SchemeUnavailable
 from .committed import CommittedCoverageProvider
 from .composite import CompositeSchemeProvider
 from .pff_csv import PFFCoverageProvider
+from .sharpfootball import SharpFootballProvider
 from .statrankings import StatRankingsProvider
 from .sumersports import SumerSportsProvider
 
@@ -47,6 +48,7 @@ def get_provider(pff_buffer: bytes | None = None) -> SchemeDataProvider:
             # live scrapes below are blocked). Listed first among the free feeds
             # so it's the reliable path on Streamlit Cloud.
             CommittedCoverageProvider(),
+            SharpFootballProvider(),
             SumerSportsProvider(),
             StatRankingsProvider(),
         ]
