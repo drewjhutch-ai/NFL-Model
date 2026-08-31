@@ -186,6 +186,30 @@ def _self_tuning() -> None:
         st.dataframe(log.tail(8), width="stretch", hide_index=True)
 
 
+def _facet_review() -> None:
+    """The auditable half of the loop: which flagged mismatches actually hit."""
+    from data import review as reviewmod
+    rlog = reviewmod.load_review_log()
+    st.markdown("**Game review** — for every facet edge we flagged, did the flagged side win?")
+    if rlog.empty or "as_of" not in rlog.columns:
+        st.caption("Per-facet hit rates fill in after the weekly review Action runs on played games "
+                   "(cross-references each mismatch against the result).")
+        return
+    latest = rlog[rlog["as_of"] == rlog["as_of"].max()]
+    latest = latest.dropna(subset=["facet"]).sort_values("hit_rate", ascending=False)
+    if latest.empty:
+        st.caption("No graded facets in the latest review yet.")
+        return
+    show = latest[["facet", "n_flagged", "hit_rate", "correlation"]].rename(columns={
+        "facet": "Facet", "n_flagged": "Flagged", "hit_rate": "Hit %", "correlation": "r"})
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Hit %": st.column_config.NumberColumn("Hit %", format="%.0f%%",
+            help="Of games where this facet flagged a side, how often that side won."),
+    })
+    st.caption("This is how the loop stays honest — a facet that stops hitting gets down-weighted "
+               "automatically by the self-tuner. 50% = coin flip.")
+
+
 def _report_card(extras) -> None:
     schedule = extras.get("schedule")
     proj = history.load_projections(config.CURRENT_SEASON)
@@ -195,6 +219,8 @@ def _report_card(extras) -> None:
     clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
     with st.expander("Live report card, self-tuning & backtest (the learning loop)"):
         _self_tuning()
+        st.divider()
+        _facet_review()
         st.divider()
         if grade:
             st.markdown("**This season — our graded picks:**")

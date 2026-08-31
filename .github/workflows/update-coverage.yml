@@ -77,8 +77,17 @@ jobs:
           python scripts/tune.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Review games vs facets (auditable hit rates)
+        id: review
+        # Cross-references every flagged facet edge against the actual result and
+        # writes per-facet hit rates to review_log.csv. Exits 2 until games exist.
+        run: |
+          set +e
+          python scripts/review.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -87,7 +96,7 @@ jobs:
           git add -f scheme_data/coverage_*.csv 2>/dev/null || true
           git add -f sharp_data/*.csv 2>/dev/null || true
           git add -f history/*.csv 2>/dev/null || true
-          git add -f model_tuning.json tuning_log.csv 2>/dev/null || true
+          git add -f model_tuning.json tuning_log.csv review_log.csv 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data change since last run."
           else
