@@ -100,8 +100,22 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data change since last run."
           else
-            git commit -m "Auto-update: coverage + snapshot + self-tune [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
+            git commit -m "Auto-update: coverage + Sharp + snapshot + self-tune + review [skip ci]"
+            # The branch can move while this job runs (code pushes). Rebase the
+            # auto-commit onto the latest remote and retry so the data isn't lost
+            # to a non-fast-forward rejection.
+            pushed=0
+            for i in 1 2 3 4; do
+              if git push origin HEAD:${{ github.ref_name }}; then pushed=1; break; fi
+              echo "push rejected — rebasing onto latest remote (attempt $i)"
+              git fetch origin ${{ github.ref_name }}
+              git rebase origin/${{ github.ref_name }} || { git rebase --abort; break; }
+              sleep 3
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::Could not push refreshed data after rebase retries."
+              exit 1
+            fi
           fi
 
       - name: Report blocked coverage sources
