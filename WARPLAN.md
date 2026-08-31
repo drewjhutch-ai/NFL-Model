@@ -85,7 +85,18 @@ App is now **11 tabs**. All imports clean.
 - coverage_by_pos: YPT Allowed WR/TE/RB/Outside/Slot
 - off_metrics: EPA/Play, Yards Per Play, Y/PL Last 5, Points Per Drive, Explosive Play Rate, Down Conversion Rate
 
-### ONLY REMAINING — operational
+### NEXT SESSION — visual + UI overhaul (planned)
+Tomorrow is a **visual / UI overhaul** pass across the app (look & feel, polish, consistency). Phase 3 data
++ model work is done and live; this is the design layer on top of it.
+
+Carried-over follow-ups to fold in when it fits (not blocking):
+1. **`off_tendencies`** (10th Sharp page) returned no parseable table — different layout; needs its URL/
+   parser looked at to add PROE / play-action.
+2. **Coverage-by-position → player props** — `sharp_data/coverage_by_pos_2026.csv` is committed and
+   `sharp_value.coverage_by_position()` is ready; wire YPT-allowed by WR/TE/RB/slot into `data/props.py`
+   projections for a prop-accuracy boost.
+
+### DONE — operational (Sharp data is live)
 1. **Re-run the Action once** (Actions → "Update model data" → Run workflow). Run #4 scraped 9/10 tables but
    its push was rejected (branch moved mid-run); that's now fixed with a rebase-retry, so the next run commits
    `sharp_data/*.csv` and everything lights up. Then the ensemble + Sharp panel show live data.
