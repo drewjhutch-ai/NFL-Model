@@ -8,71 +8,11 @@ import streamlit as st
 
 import config
 from data import loaders, pipeline
-from ui import (betting, clv, gamebets, injuries, league, longodds, matchups,
-                picks, team_tendencies, touchdowns)
+from ui import (betting, clv, gamebets, home, injuries, kit, league, longodds,
+                matchups, picks, team_tendencies, touchdowns)
 from ui import players as ui_players
 
 st.set_page_config(page_title="NFL Model", page_icon="◆", layout="wide")
-
-
-def _inject_css() -> None:
-    """Global visual system — clean, dark, cutting-edge. Cosmetic only."""
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-        :root{ --accent:#2dd4bf; --line:#1e2732; --muted:#8b98a5; --surf:#141b23; }
-        html, body, .stApp, .stMarkdown, [class*="css"]{
-            font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; }
-        .block-container{ padding-top:2.4rem; padding-bottom:3rem; max-width:1300px; }
-        h1,h2,h3,h4{ font-weight:700; letter-spacing:-0.02em; }
-        h1{ font-size:1.85rem; } h2{ font-size:1.35rem; }
-        h3{ font-size:1.1rem; }
-        /* section headers get a quiet accent tick */
-        .stMarkdown h3{ border-left:3px solid var(--accent); padding-left:11px;
-            margin:0.5rem 0 0.7rem; }
-        [data-testid="stCaptionContainer"]{ color:var(--muted) !important; }
-        /* tabs → clean segmented bar */
-        div[data-baseweb="tab-list"]{ gap:4px; border-bottom:1px solid var(--line); }
-        button[data-baseweb="tab"]{ font-weight:600; font-size:0.92rem; color:var(--muted);
-            padding:9px 16px; }
-        button[data-baseweb="tab"][aria-selected="true"]{ color:#fff; }
-        div[data-baseweb="tab-highlight"]{ background-color:var(--accent); }
-        /* metrics → KPI tiles */
-        div[data-testid="stMetric"]{ background:var(--surf); border:1px solid var(--line);
-            border-radius:12px; padding:12px 15px; }
-        div[data-testid="stMetricLabel"] p{ color:var(--muted); font-size:0.8rem; }
-        div[data-testid="stMetricValue"]{ font-weight:700; letter-spacing:-0.01em; }
-        /* buttons */
-        .stButton>button{ border-radius:10px; border:1px solid var(--line); font-weight:600; }
-        .stButton>button:hover{ border-color:var(--accent); color:var(--accent); }
-        /* dataframes + bordered containers + expanders */
-        [data-testid="stDataFrame"]{ border:1px solid var(--line); border-radius:12px; }
-        div[data-testid="stVerticalBlockBorderWrapper"]{ border-color:var(--line) !important;
-            border-radius:14px; }
-        div[data-testid="stExpander"]{ border:1px solid var(--line) !important;
-            border-radius:12px !important; }
-        hr{ border-color:var(--line); margin:1rem 0; }
-        /* inputs / selects / sliders */
-        div[data-baseweb="select"]>div, .stNumberInput input, .stTextInput input{
-            border-radius:9px !important; border-color:var(--line) !important;
-            background:var(--surf) !important; }
-        div[data-baseweb="select"]>div:focus-within{ border-color:var(--accent) !important; }
-        div[data-testid="stSlider"] [role="slider"]{ background:var(--accent) !important; }
-        label p{ color:var(--muted) !important; font-size:0.82rem !important; }
-        /* sidebar */
-        section[data-testid="stSidebar"]{ border-right:1px solid var(--line); }
-        code{ font-family:'IBM Plex Mono',ui-monospace,monospace; }
-        /* brand header */
-        .brand{ display:flex; align-items:baseline; gap:12px; margin:0 0 6px;
-            padding-bottom:12px; border-bottom:1px solid var(--line); }
-        .brand b{ font-size:1.15rem; font-weight:800; letter-spacing:0.14em; }
-        .brand .accent{ color:var(--accent); }
-        .brand span{ color:var(--muted); font-size:0.8rem; letter-spacing:0.02em; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
 
 @st.cache_data(ttl=60 * 60, show_spinner="Crunching tendencies…")
@@ -142,8 +82,17 @@ def sidebar(live: bool) -> None:
     )
 
 
+def _week_label(schedule, live: bool) -> str:
+    season = config.CURRENT_SEASON
+    if live and schedule is not None and not schedule.empty:
+        wk = loaders.current_week(schedule, season)
+        if wk:
+            return f"Week {int(wk)} · {season}"
+    return f"{season} · offseason"
+
+
 def main() -> None:
-    _inject_css()
+    kit.inject()
     try:
         off, deff, blitz, live, schedule, extras = build_frames()
     except Exception as exc:  # noqa: BLE001
@@ -153,16 +102,16 @@ def main() -> None:
 
     sidebar(live)
 
-    st.markdown(
-        "<div class='brand'><b><span class='accent'>◆</span> NFL MODEL</b>"
-        "<span>analytics · projections · betting edge</span></div>",
-        unsafe_allow_html=True)
+    week_txt = _week_label(schedule, live)
+    st.markdown(kit.brand_header(week_txt, live), unsafe_allow_html=True)
 
-    (tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
+    (tab_home, tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
      tab_betting, tab_picks, tab_long, tab_clv, tab_inj) = st.tabs(
-        ["Team Data", "League", "Matchups", "Players", "Touchdowns",
+        ["This Week", "Team Data", "League", "Matchups", "Players", "Touchdowns",
          "Game Bets", "Betting", "Picks of the Week", "Long Odds", "CLV",
          "Injuries"])
+    with tab_home:
+        home.render(off, deff, schedule, extras, live)
     with tab_data:
         team_tendencies.render(off, deff, blitz, extras)
     with tab_league:
