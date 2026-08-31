@@ -22,6 +22,46 @@ _STATUSES = ("Out", "Doubtful", "Questionable")
 STATUS_ICON = {"Out": "OUT", "Doubtful": "DBT", "Questionable": "Q"}
 STATUS_ORDER = {"Out": 0, "Doubtful": 1, "Questionable": 2}
 
+# Practice participation is the tell behind a game-status designation — a
+# Questionable who DNP'd all week trends toward out; one who practiced Full
+# usually plays. Short labels + a read used by the Injuries tab.
+_PRACTICE_SHORT = {
+    "Did Not Participate In Practice": "DNP",
+    "Limited Participation in Practice": "LP",
+    "Full Participation in Practice": "FP",
+}
+
+
+def practice_short(practice: str) -> str:
+    return _PRACTICE_SHORT.get((practice or "").strip(), "")
+
+
+def practice_read(practice: str, status: str) -> tuple[str, str]:
+    """(‘lean’, tone) from practice participation + game status.
+
+    tone ∈ {"bad","warn","good","flat"} drives the tab's color coding.
+    """
+    p = practice_short(practice)
+    s = (status or "").strip()
+    if s == "Out":
+        return ("Ruled out", "bad")
+    if s == "Doubtful":
+        return ("Unlikely to play", "bad")
+    # Questionable (or unlisted game status) — practice is the signal
+    if p == "DNP":
+        return ("Trending out — DNP all week", "bad")
+    if p == "LP":
+        return ("Managing it — limited", "warn")
+    if p == "FP":
+        return ("Likely plays — full practice", "good")
+    return ("Watch the report", "flat")
+
+
+def is_watch(item: dict) -> bool:
+    """A heavy-snap Questionable whose availability swings the projection."""
+    return (item.get("status") == "Questionable"
+            and float(item.get("pct") or 0) >= 0.55)
+
 
 def _snap_share(snaps: pd.DataFrame) -> dict[str, dict]:
     """pfr_player_id -> {off, def} average snap share (latest season present)."""
@@ -74,6 +114,7 @@ def build(inj: pd.DataFrame, snaps: pd.DataFrame, rosters: pd.DataFrame,
             "pos": getattr(row, "position", ""),
             "status": row.report_status,
             "injury": getattr(row, "report_primary_injury", "") or "",
+            "practice": getattr(row, "practice_status", "") or "",
             "side": "offense" if off_pct >= def_pct else "defense",
             "pct": pct,
         })

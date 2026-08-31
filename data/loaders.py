@@ -312,7 +312,9 @@ def load_injuries(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
     if df.empty:
         return df
     keep = [c for c in ["season", "week", "team", "gsis_id", "full_name",
-                        "position", "report_status", "report_primary_injury"]
+                        "position", "report_status", "report_primary_injury",
+                        "report_secondary_injury", "practice_status",
+                        "practice_primary_injury"]
             if c in df.columns]
     return df[keep].copy()
 
