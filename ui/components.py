@@ -203,22 +203,65 @@ def injury_card_html(items: list[dict], week=None, has_report: bool = True) -> s
             f"<ul style='margin:4px 0 0;padding-left:18px;'>{lis}</ul></div>")
 
 
+def _hex_rgb(color: str):
+    c = str(color).lstrip("#")
+    if len(c) == 3:
+        c = "".join(ch * 2 for ch in c)
+    if len(c) != 6:
+        return (127, 127, 127)
+    try:
+        return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
+    except ValueError:
+        return (127, 127, 127)
+
+
+def _readable(color: str, min_lum: float = 0.55) -> str:
+    """Lighten a too-dark color toward white so it's visible on a dark backdrop."""
+    r, g, b = _hex_rgb(color)
+    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    if lum >= min_lum:
+        return f"#{r:02x}{g:02x}{b:02x}"
+    t = min(max((min_lum - lum) / (1 - lum + 1e-6), 0.0), 0.72)
+    r = int(r + (255 - r) * t); g = int(g + (255 - g) * t); b = int(b + (255 - b) * t)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _rgba(color: str, alpha: float) -> str:
+    r, g, b = _hex_rgb(color)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def radar_chart(categories: list[str], series: list[tuple], title: str = ""):
-    """Percentile radar ('pizza') chart. series = list of (name, values, color)."""
+    """Percentile radar ('pizza') chart. series = list of (name, values, color).
+
+    Dark team colors are auto-brightened for the stroke so they stay visible, the
+    fill stays translucent so overlaps read, and the plot sits on a subtle
+    backdrop with a visible grid.
+    """
     import plotly.graph_objects as go
     fig = go.Figure()
-    for name, values, color in series:
+    for i, (name, values, color) in enumerate(series):
         vals = list(values) + [values[0]]
         cats = categories + [categories[0]]
-        fig.add_trace(go.Scatterpolar(r=vals, theta=cats, fill="toself", name=name,
-                      line=dict(color=color), fillcolor=color, opacity=0.45))
+        stroke = _readable(color)
+        fig.add_trace(go.Scatterpolar(
+            r=vals, theta=cats, name=name, mode="lines+markers",
+            fill="toself", fillcolor=_rgba(stroke, 0.28 if i == 0 else 0.22),
+            line=dict(color=stroke, width=3),
+            marker=dict(color=stroke, size=6, line=dict(color="rgba(0,0,0,0.5)", width=1)),
+            hovertemplate="%{theta}: %{r:.0f}<extra>" + str(name) + "</extra>"))
+    grid = "rgba(255,255,255,0.16)"
     fig.update_layout(
         title=dict(text=title, font=dict(size=14)),
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100], showticklabels=False),
-                   bgcolor="rgba(0,0,0,0)"),
-        height=380, margin=dict(l=30, r=30, t=40, b=30),
+        polar=dict(
+            bgcolor="rgba(255,255,255,0.05)",     # subtle backdrop so dark teams show
+            radialaxis=dict(visible=True, range=[0, 100], showticklabels=False,
+                            gridcolor=grid, linecolor=grid),
+            angularaxis=dict(gridcolor=grid, linecolor=grid,
+                             tickfont=dict(size=11, color="#c9d3da"))),
+        height=390, margin=dict(l=30, r=30, t=40, b=40),
         paper_bgcolor="rgba(0,0,0,0)", showlegend=len(series) > 1,
-        legend=dict(orientation="h", y=-0.1))
+        legend=dict(orientation="h", y=-0.12, font=dict(size=12)))
     return fig
 
 
