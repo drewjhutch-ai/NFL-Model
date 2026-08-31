@@ -57,12 +57,17 @@ def _auto_picks(stats, off, deff, extras, games) -> None:
     if board.empty:
         st.info("No prop leans yet — needs player data for this slate.")
         return
-    f1, f2, f3 = st.columns([2, 2, 1])
+    f1, f2, f3 = st.columns([2, 2, 1.6])
     positions = sorted(board["Pos"].dropna().unique())
     pos_sel = f1.multiselect("Position", positions, default=positions, key="pp_pos")
     game_opts = ["All games"] + sorted(board["Game"].unique())
     game_sel = f2.selectbox("Game", game_opts, key="pp_game")
-    min_conf = f3.slider("Min conf", 0, 100, 0, 5, key="pp_conf")
+    # data-aware range: confidences are modest, so a fixed 0–100 slider would be
+    # mostly a dead zone. Cap it at the board's actual max so every step filters.
+    top_conf = max(5, int((int(board["conf"].max()) // 5 + 1) * 5))
+    if st.session_state.get("pp_conf", 0) > top_conf:   # a stale (wider-range) value
+        st.session_state["pp_conf"] = 0
+    min_conf = f3.slider("Min confidence", 0, top_conf, 0, 5, key="pp_conf")
     view = board[board["Pos"].isin(pos_sel) & (board["conf"] >= min_conf)]
     if game_sel != "All games":
         view = view[view["Game"] == game_sel]
