@@ -15,7 +15,6 @@ import streamlit as st
 import config
 from data import betting, history, loaders, profiles, tendencies
 from data.providers import load_coverage
-from ui.components import movement_arrow, unicode_spark
 
 _EPA_HELP = ("Expected Points Added per play. 0 = league average; elite offenses "
              "run +0.10 to +0.20. For defense it's points allowed/play — lower is better.")
@@ -89,7 +88,7 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
             "Move": move.get(team, np.nan),
             "Logo": m.get("logo", ""),
             "Team": m.get("name", team),
-            "Trend": unicode_spark(history.spark_series(weekly, team, "net")),
+            "Trend": [round(v * 100, 1) for v in history.spark_series(weekly, team, "net")],
             "Tier": _tier(int(r["power_rank"])),
             "Net EPA": round(r["net"] * 100, 1),
             "Off": int(off.loc[team, "epa_play_rank"]) if team in off.index else None,
@@ -110,7 +109,9 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
         "Logo": st.column_config.ImageColumn(" ", width="small"),
         "Move": st.column_config.NumberColumn("Δ Wk", format="%+d",
             help="Power-rank change since last week (+ = climbing)") if has_move else None,
-        "Trend": st.column_config.TextColumn("Trend", help="Weekly net-EPA trajectory this season"),
+        "Trend": st.column_config.AreaChartColumn(
+            "Trend", help="Weekly net-EPA trajectory — left = early season, right = recent. "
+            "Rising line = improving.", width="small"),
         "Net EPA": st.column_config.NumberColumn("Net/100", format="%+.1f",
             help="Opponent-adjusted net EPA per 100 plays (offense minus defense). 0 = average."),
         "Off": st.column_config.NumberColumn("Off", help="Offensive efficiency rank"),
