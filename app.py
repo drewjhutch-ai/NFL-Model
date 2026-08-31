@@ -8,8 +8,8 @@ import streamlit as st
 
 import config
 from data import loaders, pipeline
-from ui import (betting, gamebets, injuries, league, longodds, matchups, picks,
-                team_tendencies, touchdowns)
+from ui import (betting, clv, gamebets, injuries, league, longodds, matchups,
+                picks, team_tendencies, touchdowns)
 from ui import players as ui_players
 
 st.set_page_config(page_title="NFL Model", page_icon="◆", layout="wide")
@@ -159,9 +159,10 @@ def main() -> None:
         unsafe_allow_html=True)
 
     (tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
-     tab_betting, tab_picks, tab_long, tab_inj) = st.tabs(
+     tab_betting, tab_picks, tab_long, tab_clv, tab_inj) = st.tabs(
         ["Team Data", "League", "Matchups", "Players", "Touchdowns",
-         "Game Bets", "Betting", "Picks of the Week", "Long Odds", "Injuries"])
+         "Game Bets", "Betting", "Picks of the Week", "Long Odds", "CLV",
+         "Injuries"])
     with tab_data:
         team_tendencies.render(off, deff, blitz, extras)
     with tab_league:
@@ -180,6 +181,8 @@ def main() -> None:
         picks.render(off, deff, schedule, extras)
     with tab_long:
         longodds.render(off, deff, schedule, extras)
+    with tab_clv:
+        clv.render(off, deff, schedule, extras)
     with tab_inj:
         injuries.render(off, deff, schedule, extras)
 
