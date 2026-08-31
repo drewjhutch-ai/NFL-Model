@@ -371,6 +371,76 @@ def sparkline_fig(values: list[float], color: str = "#1f77b4", height: int = 44)
     return fig
 
 
+def matchup_advantage_grid(away: str, home: str, away_edges: list[dict],
+                           home_edges: list[dict]) -> str:
+    """A color-coded grid of every matchup facet, both offenses at a glance.
+
+    Rows = facets. Two columns: each offense attacking the other's defense. A
+    cell is green when that offense wins the facet (positive impact) and red when
+    the defense stuffs it, intensity scaled by how big the edge is. The right
+    column names which side owns the phase. This is the whole matchup in one look
+    — and it inherits any new facet (trenches, pace, scheme fit) automatically.
+    """
+    a_by = {e["label"]: e for e in away_edges}
+    h_by = {e["label"]: e for e in home_edges}
+    labels = list(dict.fromkeys(list(a_by) + list(h_by)))
+    if not labels:
+        return "<div style='opacity:.6;'>No facet edges to grid yet.</div>"
+
+    def _cell(e):
+        if not e:
+            return ("transparent", "#8b98a5", "—", "")
+        impact = e.get("impact", 0.0)
+        inten = min(abs(impact) / 40.0, 1.0)
+        base = "#2dd4bf" if impact >= 0 else "#e5544b"
+        bg = _rgba(base, 0.10 + 0.45 * inten)
+        txt = "#e9f0f1" if inten > 0.35 else "#b9c4c9"
+        return (bg, txt, e.get("detail", ""), f"{impact:+.0f}")
+
+    # biggest mismatches first
+    def _weight_row(lab):
+        ai = abs(a_by.get(lab, {}).get("impact", 0.0))
+        hi = abs(h_by.get(lab, {}).get("impact", 0.0))
+        return max(ai, hi)
+    labels.sort(key=_weight_row, reverse=True)
+
+    head = (f"<tr><th style='text-align:left;padding:7px 10px;color:#8b98a5;font-weight:600;'>Facet</th>"
+            f"<th style='padding:7px 10px;color:#e9f0f1;'>{away} attack</th>"
+            f"<th style='padding:7px 10px;color:#e9f0f1;'>{home} attack</th>"
+            f"<th style='padding:7px 10px;color:#8b98a5;font-weight:600;'>Edge</th></tr>")
+    body = []
+    for lab in labels:
+        ae, he = a_by.get(lab), h_by.get(lab)
+        abg, atx, adet, aimp = _cell(ae)
+        hbg, htx, hdet, himp = _cell(he)
+        ai = ae.get("impact", 0.0) if ae else 0.0
+        hi = he.get("impact", 0.0) if he else 0.0
+        # who owns the phase: the offense with the larger positive edge
+        if ai >= hi:
+            owner, own_val = (away, ai - hi)
+        else:
+            owner, own_val = (home, hi - ai)
+        own_col = "#2dd4bf" if own_val > 3 else "#8b98a5"
+        body.append(
+            f"<tr>"
+            f"<td style='text-align:left;padding:7px 10px;font-weight:600;'>{lab}</td>"
+            f"<td style='background:{abg};color:{atx};padding:7px 10px;font-size:0.82rem;'>"
+            f"<b>{aimp}</b> · {adet}</td>"
+            f"<td style='background:{hbg};color:{htx};padding:7px 10px;font-size:0.82rem;'>"
+            f"<b>{himp}</b> · {hdet}</td>"
+            f"<td style='padding:7px 10px;color:{own_col};font-weight:700;white-space:nowrap;'>"
+            f"{owner} +{abs(own_val):.0f}</td>"
+            f"</tr>")
+    return (
+        "<div style='overflow-x:auto;'><table style='width:100%;border-collapse:collapse;"
+        "font-size:0.9rem;border:1px solid #1e2732;border-radius:12px;overflow:hidden;'>"
+        f"<thead style='background:#141b23;'>{head}</thead>"
+        f"<tbody>{''.join(body)}</tbody></table></div>"
+        "<div style='color:#8b98a5;font-size:0.78rem;margin-top:6px;'>"
+        "Green = that offense wins the facet · red = the defense stuffs it · "
+        "intensity scales with the edge. ‘Edge’ names which side owns the phase.</div>")
+
+
 def fmt(x, kind: str = "num") -> str:
     """Format a metric value for display."""
     if x is None or pd.isna(x):

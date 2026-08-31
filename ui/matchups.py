@@ -28,8 +28,9 @@ from data import betting, edges, form as form_mod, history, injuries, loaders
 from data import positional, pressure, rushing, simulation
 from data.providers import load_coverage
 from data.weather import weather_effects
-from ui.components import (edge_bar_chart, edge_meter_html, fmt, movement_arrow,
-                           ordinal, rank_color, sparkline_fig, unicode_spark)
+from ui.components import (edge_bar_chart, edge_meter_html, fmt,
+                           matchup_advantage_grid, movement_arrow, ordinal,
+                           rank_color, sparkline_fig, unicode_spark)
 
 
 # --- banner ------------------------------------------------------------------
@@ -193,6 +194,9 @@ def _attack_meter(away, home, off, deff, extras) -> None:
     k2.metric(f"{home} attack", f"{h_net:+.1f}", help="Importance-weighted attack edge")
     diff = h_net - a_net
     k3.metric("Attack lean", home if diff > 0 else away, f"+{abs(diff):.1f}" if diff else None)
+    if ae or he:
+        st.markdown("##### Matchup advantage grid")
+        st.markdown(matchup_advantage_grid(away, home, ae, he), unsafe_allow_html=True)
 
 
 # --- 2. tale of the tape -----------------------------------------------------
