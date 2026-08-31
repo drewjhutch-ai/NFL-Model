@@ -44,7 +44,38 @@ Branch: `claude/nfl-data-matchup-dashboard-hzoeir` · deploys on Streamlit Cloud
 
 ---
 
-## TONIGHT'S WAR PLAN — Sharp Football Analysis data expansion
+## PHASE 3 BUILD — progress (updated)
+
+Built, tested, pushed this session (branch `claude/nfl-data-matchup-dashboard-hzoeir`):
+
+- **Sharp scraper framework** — `data/providers/sharp_tables.py` (config-driven, all 10 pages,
+  discovery-first: captures every column), `scripts/fetch_sharp.py`, `data/sharp.py` (reads committed
+  `sharp_data/*.csv`, graceful empty), wired into `data/pipeline.py` (`extras['sharp']`) + the Action.
+- **Scheme-fit edge ACTIVATED** — `data/off_coverage.py` derives each offense's zone/man EPA
+  (exposure-weighted, shrunk, z-scored affinity) from pbp × committed coverage rates; `edges._coverage_edge`
+  rewritten to use it, orthogonal to QB quality. Validated (TB+ vs CAR, MIN− vs CAR).
+- **Long Odds tab** (`ui/longodds.py`) — +200 with a hard EV guardrail, cross-facet reads, long parlays.
+- **Injuries tab** (`ui/injuries.py`) — nflverse + practice signal (`loaders` now keeps `practice_status`)
+  + ESPN feed (`data/providers/espn_injuries.py`) + manual intel. Point-values feed the projection.
+- **CLV tab** (`ui/clv.py`) — live multi-book line-shopping, discrepancy board, book grid, de-vig value,
+  single-bet lookup, `st.fragment` auto-refresh (pin bumped to streamlit>=1.37).
+- **Matchup Advantage Grid** — `components.matchup_advantage_grid`, rendered in Matchups; inherits new
+  facets automatically.
+- **Automated review loop** — `data/review.py` (per-facet hit rates + `review_log.csv`), `scripts/review.py`,
+  Action step, surfaced in the Betting report card. Validated on 2025 (QB 73% … RB rec 54%).
+
+App is now **11 tabs**. All imports clean.
+
+### REMAINING — gated on the Sharp fetch (needs the user to run the workflow once)
+The broad Sharp valuation (trenches OL-vs-DL, pace→totals, blitz-vs-pressure, ensemble O/D metrics) and the
+enriched Team Data/League facet cards need the real Sharp column names. **Action: user runs Actions →
+"Update model data" → Run workflow on the branch.** Then read the committed `sharp_data/*.csv` (or the
+fetch log) for column names and write the valuation in `data/sharp_value.py` + new `EDGE_WEIGHTS` facets +
+`data/betting.py` ensemble inputs. `data/sharp.py::column_map(season)` dumps the real columns to build against.
+
+---
+
+## ORIGINAL WAR PLAN — Sharp Football Analysis data expansion
 
 Goal: pull **a lot more data** from sharpfootballanalysis.com and wire it into the model. It's free,
 public, and proven reachable from the Action, so the same scrape→commit→read pipeline applies.
