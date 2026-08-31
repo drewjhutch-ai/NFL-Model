@@ -354,4 +354,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
         st.divider()
         _ngs_section(team, extras)
         st.divider()
+        from ui import sharp_panel
+        sharp_panel.render_team(extras.get("sharp", {}), team)
+        st.divider()
         _compare_section(off, deff, extras, team, teams)
