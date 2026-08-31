@@ -9,7 +9,7 @@ from __future__ import annotations
 import config
 from data import (adjust, coaching, drives, elo, form, injuries, injury_value,
                   loaders, ngs, players, positional, pressure, qbvalue, rushing,
-                  situational, tendencies, touchdowns, turnovers)
+                  sharp, situational, tendencies, touchdowns, turnovers)
 from data import betting as betmodel
 
 
@@ -84,4 +84,9 @@ def build_frames():
     # accuracy layer: stable points-differential signal + Elo ensemble/prior
     extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
     extras["elo"] = elo.elo_ratings(schedule)
+    # Sharp Football lifeblood: charted team tables (pace, personnel, trenches,
+    # tendencies, coverage, metrics). Empty dict until the Action commits them;
+    # every consumer degrades gracefully. Season falls back to the prior year's
+    # committed file during the offseason (data.sharp._resolve handles this).
+    extras["sharp"] = sharp.load_all(config.CURRENT_SEASON)
     return off, deff, blitz, live, schedule, extras

@@ -1,9 +1,11 @@
-name: Update coverage data
+name: Update model data
 
-# Auto-fetches team zone/man coverage from the free sources (SumerSports,
-# StatRankings) and commits the blend to scheme_data/coverage_<season>.csv,
-# which the deployed app reads automatically. Runs from GitHub's network, which
-# usually isn't blocked the way Streamlit Cloud's servers are.
+# Auto-fetches the model's external data from GitHub's network (which usually
+# isn't blocked the way Streamlit Cloud's servers are) and commits it for the
+# deployed app to read:
+#   * team zone/man coverage  -> scheme_data/coverage_<season>.csv
+#   * Sharp Football tables    -> sharp_data/<key>_<season>.csv (the lifeblood)
+# It also snapshots the model state (Evolution Engine) and self-tunes weekly.
 
 on:
   schedule:
@@ -48,6 +50,15 @@ jobs:
           python scripts/fetch_coverage.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Fetch Sharp Football tables (the data lifeblood)
+        id: sharp
+        # Scrapes all 10 Sharp Football stat pages into sharp_data/*.csv. Same
+        # deal: exit 2 if every page was blocked, and we just skip its commit.
+        run: |
+          set +e
+          python scripts/fetch_sharp.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Snapshot model state (Evolution Engine)
         id: snapshot
         # Freezes this week's ranks + projections into history/. Exits 2 in the
@@ -67,13 +78,14 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # add each path independently — a missing glob (e.g. history/ in the
           # offseason) must not abort staging the files that DO exist.
           git add -f scheme_data/coverage_*.csv 2>/dev/null || true
+          git add -f sharp_data/*.csv 2>/dev/null || true
           git add -f history/*.csv 2>/dev/null || true
           git add -f model_tuning.json tuning_log.csv 2>/dev/null || true
           if git diff --cached --quiet; then
