@@ -21,10 +21,10 @@ import streamlit as st
 
 # Palette exposed to Plotly and any chart code so graphics match the CSS.
 PALETTE = {
-    "ground": "#0b1116", "surface": "#121d21", "surface2": "#18262b", "line": "#25353c",
-    "ink": "#e9f0f1", "ink_dim": "#93a6ad", "ink_faint": "#607277",
-    "accent": "#35d0ba", "sharp": "#f2b544", "violet": "#a794f0",
-    "edge": "#3fbf6f", "fade": "#e5544b",
+    "ground": "#080d14", "surface": "#0f1824", "surface2": "#152232", "line": "#233246",
+    "ink": "#eef5fb", "ink_dim": "#8ba0b4", "ink_faint": "#566a7d",
+    "accent": "#22d3ee", "sharp": "#ffb43d", "violet": "#b39bff",
+    "edge": "#2fe0a0", "fade": "#ff5468",
 }
 
 _CSS = """
@@ -32,11 +32,13 @@ _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root{
-  --ground:#0b1116; --surface:#121d21; --surface-2:#18262b; --line:#25353c; --line-soft:#1c2a30;
-  --ink:#e9f0f1; --ink-dim:#93a6ad; --ink-faint:#607277;
-  --accent:#35d0ba; --sharp:#f2b544; --violet:#a794f0; --edge:#3fbf6f; --fade:#e5544b;
-  --accent-wash:rgba(53,208,186,.12); --sharp-wash:rgba(242,181,68,.13);
-  --edge-wash:rgba(63,191,111,.14); --fade-wash:rgba(229,84,75,.14); --violet-wash:rgba(167,148,240,.13);
+  --ground:#080d14; --surface:#0f1824; --surface-2:#152232; --line:#233246; --line-soft:#18222f;
+  --ink:#eef5fb; --ink-dim:#8ba0b4; --ink-faint:#566a7d;
+  --accent:#22d3ee; --accent-bright:#67e8ff; --sharp:#ffb43d; --violet:#b39bff;
+  --edge:#2fe0a0; --fade:#ff5468;
+  --accent-wash:rgba(34,211,238,.13); --sharp-wash:rgba(255,180,61,.14);
+  --edge-wash:rgba(47,224,160,.15); --fade-wash:rgba(255,84,104,.15); --violet-wash:rgba(179,155,255,.14);
+  --glow:0 0 18px rgba(34,211,238,.45);
 }
 
 /* ---- base typography ---- */
@@ -44,30 +46,33 @@ html, body, .stApp, [class*="css"]{
   font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; }
 .stApp{ background:var(--ground); }
 .block-container{ padding-top:2.2rem; padding-bottom:3rem; max-width:1320px; }
-h1,h2,h3,h4{ font-family:'Archivo',system-ui,sans-serif; letter-spacing:-.02em; }
-h1{ font-size:1.9rem; font-weight:900; } h2{ font-size:1.4rem; font-weight:800; }
-h3{ font-size:1.12rem; font-weight:700; }
+h1,h2,h3,h4{ font-family:'Archivo',system-ui,sans-serif; letter-spacing:-.03em; }
+h1{ font-size:2.1rem; font-weight:900; } h2{ font-size:1.55rem; font-weight:900; }
+h3{ font-size:1.18rem; font-weight:800; }
 .mono, .stMarkdown code{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
 [data-testid="stCaptionContainer"]{ color:var(--ink-dim) !important; }
 
-/* section headers get a quiet accent tick */
-.stMarkdown h3{ border-left:3px solid var(--accent); padding-left:11px; margin:.6rem 0 .7rem; }
+/* section headers get a bold accent tick */
+.stMarkdown h3{ border-left:3px solid var(--accent); padding-left:12px; margin:.6rem 0 .7rem;
+  box-shadow:-3px 0 12px -6px var(--accent); }
 
 /* ---- tabs: segmented terminal bar ---- */
 div[data-baseweb="tab-list"]{ gap:2px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-button[data-baseweb="tab"]{ font-weight:600; font-size:.9rem; color:var(--ink-faint); padding:9px 15px; }
+button[data-baseweb="tab"]{ font-weight:700; font-size:.9rem; color:var(--ink-faint); padding:9px 15px;
+  letter-spacing:.005em; }
 button[data-baseweb="tab"]:hover{ color:var(--ink-dim); }
-button[data-baseweb="tab"][aria-selected="true"]{ color:var(--ink); }
-div[data-baseweb="tab-highlight"]{ background-color:var(--accent); height:2px; }
+button[data-baseweb="tab"][aria-selected="true"]{ color:var(--accent-bright); }
+div[data-baseweb="tab-highlight"]{ background-color:var(--accent); height:3px; box-shadow:var(--glow); }
 
 /* ---- metrics → KPI tiles ---- */
 div[data-testid="stMetric"]{ background:var(--surface); border:1px solid var(--line);
   border-radius:12px; padding:13px 16px; position:relative; overflow:hidden; }
 div[data-testid="stMetric"]::before{ content:""; position:absolute; left:0; top:0; bottom:0;
-  width:3px; background:var(--accent); }
-div[data-testid="stMetricLabel"] p{ color:var(--ink-dim); font-size:.78rem; letter-spacing:.01em; }
+  width:3px; background:var(--accent); box-shadow:var(--glow); }
+div[data-testid="stMetricLabel"] p{ color:var(--ink-dim); font-size:.76rem; letter-spacing:.03em;
+  text-transform:uppercase; }
 div[data-testid="stMetricValue"]{ font-family:'IBM Plex Mono',monospace; font-weight:600;
-  letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+  letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--ink); }
 div[data-testid="stMetricDelta"]{ font-family:'IBM Plex Mono',monospace; font-size:.8rem; }
 
 /* ---- buttons / inputs ---- */
@@ -92,8 +97,8 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
 /* ---- brand header ---- */
 .k-brand{ display:flex; align-items:center; gap:13px; margin:0 0 4px; padding-bottom:12px;
   border-bottom:1px solid var(--line); }
-.k-brand .mark{ font-size:1.15rem; color:var(--accent); }
-.k-brand b{ font-family:'Archivo'; font-size:1.05rem; font-weight:800; letter-spacing:.16em; }
+.k-brand .mark{ font-size:1.2rem; color:var(--accent); text-shadow:var(--glow); }
+.k-brand b{ font-family:'Archivo'; font-size:1.08rem; font-weight:900; letter-spacing:.2em; }
 .k-brand .sep{ flex:1; }
 .k-brand .stat{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--ink-faint);
   border:1px solid var(--line); border-radius:7px; padding:4px 9px; }
@@ -104,8 +109,9 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
   padding:12px 14px; position:relative; overflow:hidden; height:100%; }
 .k-kpi::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--kaccent,var(--accent)); }
 .k-kpi .l{ font-size:.74rem; color:var(--ink-dim); }
-.k-kpi .v{ font-family:'IBM Plex Mono',monospace; font-size:1.6rem; font-weight:600; letter-spacing:-.02em;
-  line-height:1.25; font-variant-numeric:tabular-nums; }
+.k-kpi::before{ box-shadow:0 0 14px -2px var(--kaccent,var(--accent)); }
+.k-kpi .v{ font-family:'IBM Plex Mono',monospace; font-size:1.7rem; font-weight:600; letter-spacing:-.02em;
+  line-height:1.22; font-variant-numeric:tabular-nums; color:var(--ink); }
 .k-kpi .d{ font-family:'IBM Plex Mono',monospace; font-size:.74rem; font-weight:600; }
 .up{ color:var(--edge); } .down{ color:var(--fade); } .flat{ color:var(--ink-faint); }
 
