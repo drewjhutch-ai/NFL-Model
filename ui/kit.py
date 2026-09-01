@@ -195,6 +195,26 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
   border-left:4px solid var(--kbet,var(--accent)); margin-bottom:8px; }
 .k-bet .sel{ font-weight:700; font-size:1rem; } .k-bet .meta{ color:var(--ink-faint); font-size:.78rem; }
 .k-bet .row{ display:flex; align-items:center; gap:10px; margin-top:5px; font-size:.8rem; }
+
+/* ---- situational splits (diverging bars) ---- */
+.k-splits{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.k-srow{ display:grid; grid-template-columns:1.3fr 2fr 2fr; gap:14px; align-items:center; }
+.k-srow .sl{ font-size:.85rem; color:var(--ink); font-weight:500; }
+.k-shead span{ font-family:'IBM Plex Mono',monospace; font-size:.58rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-faint); }
+.k-cell{ display:flex; align-items:center; gap:9px; }
+.k-cell .track{ flex:1; height:15px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:5px; position:relative; overflow:hidden; }
+.k-cell .mid{ position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--ink-faint); opacity:.5; }
+.k-cell .fill{ position:absolute; top:0; bottom:0; border-radius:4px; }
+.k-cell .sn{ font-family:'IBM Plex Mono',monospace; font-size:.75rem; width:44px; text-align:right;
+  color:var(--ink); flex:none; }
+
+/* ---- stat tile mini (NGS etc.) ---- */
+.k-mini{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+.k-mini .l{ font-size:.7rem; color:var(--ink-dim); }
+.k-mini .v{ font-family:'IBM Plex Mono',monospace; font-size:1.15rem; font-weight:600; color:var(--ink); }
+.k-mini .r{ font-size:.68rem; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
 </style>
 """
 

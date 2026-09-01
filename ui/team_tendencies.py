@@ -358,27 +358,45 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
 
 
 # --- advanced: splits + NGS --------------------------------------------------
+def _split_cell(v, higher_good: bool) -> str:
+    """One diverging bar: value scaled to per-100, green when good, red when bad."""
+    if v is None or pd.isna(v):
+        return '<div class="k-cell"><div class="track"><span class="mid"></span></div>' \
+               '<span class="sn">—</span></div>'
+    per100 = v * 100
+    good = per100 if higher_good else -per100
+    mag = min(abs(per100) / 12.0 * 50.0, 50.0)
+    color = "var(--edge)" if good >= 0 else "var(--fade)"
+    side = f"left:50%;width:{mag:.0f}%" if per100 >= 0 else f"right:50%;width:{mag:.0f}%"
+    return (f'<div class="k-cell"><div class="track"><span class="mid"></span>'
+            f'<span class="fill" style="{side};background:{color}"></span></div>'
+            f'<span class="sn">{per100:+.1f}</span></div>')
+
+
 def _splits_section(team: str, extras: dict) -> None:
     st.markdown("### Situational splits")
     sp = splits.team_splits(extras.get("pbp"), extras.get("schedule"), team)
     if sp.empty:
         st.info("Splits need play-by-play for the current season — they populate once games are played.")
         return
-    sp = sp.rename(columns={"Off EPA/play": "Off /100", "Def EPA/play": "Def /100"})
-    num_cols = [c for c in sp.columns if c != "Split"]
-    try:
-        sty = sp.style.background_gradient(cmap="RdYlGn", subset=["Off /100"])
-        if "Def /100" in sp.columns:
-            sty = sty.background_gradient(cmap="RdYlGn_r", subset=["Def /100"])
-        sty = sty.format({c: (lambda v: "—" if pd.isna(v) else f"{v * 100:+.1f}") for c in num_cols},
-                         na_rep="—")
-        st.dataframe(sty, width="stretch", hide_index=True)
-    except Exception:  # noqa: BLE001 - styling needs matplotlib; fall back to plain
-        for c in num_cols:
-            sp[c] = (sp[c] * 100).round(1)
-        st.dataframe(sp, width="stretch", hide_index=True)
-    st.caption("Points per **100 plays** by situation (0 = average). A team much better on early "
-               "downs or at home is an edge the season number hides.")
+    html = ['<div class="k-splits">',
+            '<div class="k-srow k-shead"><span></span><span>Offense · pts/100</span>'
+            '<span>Defense allowed · pts/100</span></div>']
+    for _, r in sp.iterrows():
+        html.append(
+            f'<div class="k-srow"><span class="sl">{r["Split"]}</span>'
+            f'{_split_cell(r.get("Off EPA/play"), True)}'
+            f'{_split_cell(r.get("Def EPA/play"), False)}</div>')
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+    st.caption("Points per **100 plays** by situation (bar from center; 0 = league average). "
+               "Green = good for that team, red = bad — offense wants the bar right, defense wants it green. "
+               "A team much better on early downs or at home is an edge the season number hides.")
+
+
+def _mini(label: str, value: str, rank=None) -> str:
+    r = f'<div class="r">{ordinal(rank)}</div>' if rank is not None and pd.notna(rank) else '<div class="r">&nbsp;</div>'
+    return f'<div class="k-mini"><div class="l">{label}</div><div class="v">{value}</div>{r}</div>'
 
 
 def _ngs_section(team: str, extras: dict) -> None:
@@ -389,22 +407,24 @@ def _ngs_section(team: str, extras: dict) -> None:
         st.markdown("**Passing (QB)**")
         if npass is not None and not npass.empty and team in npass.index:
             r = npass.loc[team]
-            st.caption(f"⏱ Time to throw: **{fmt(r.get('avg_time_to_throw'), 'num1')}s** "
-                       f"({ordinal(r.get('ttt_rank'))})")
-            st.caption(f"CPOE: **{fmt(r.get('completion_percentage_above_expectation'), 'num1')}** "
-                       f"({ordinal(r.get('cpoe_rank'))})")
-            st.caption(f"Aggressiveness: **{fmt(r.get('aggressiveness'), 'num1')}%** "
-                       f"({ordinal(r.get('aggr_rank'))})")
+            t = st.columns(3)
+            t[0].markdown(_mini("Time to throw", f"{fmt(r.get('avg_time_to_throw'), 'num1')}s",
+                                r.get("ttt_rank")), unsafe_allow_html=True)
+            t[1].markdown(_mini("CPOE", fmt(r.get('completion_percentage_above_expectation'), 'num1'),
+                                r.get("cpoe_rank")), unsafe_allow_html=True)
+            t[2].markdown(_mini("Aggressive", f"{fmt(r.get('aggressiveness'), 'num1')}%",
+                                r.get("aggr_rank")), unsafe_allow_html=True)
         else:
             st.caption("_NGS passing not available for this season yet._")
     with c2:
         st.markdown("**Receiving (targets-weighted)**")
         if nrec is not None and not nrec.empty and team in nrec.index:
             r = nrec.loc[team]
-            st.caption(f"↔ Separation: **{fmt(r.get('avg_separation'), 'num1')} yds** "
-                       f"({ordinal(r.get('sep_rank'))})")
-            st.caption(f"YAC over expected: **{fmt(r.get('avg_yac_above_expectation'), 'num1')}** "
-                       f"({ordinal(r.get('yac_rank'))})")
+            t = st.columns(2)
+            t[0].markdown(_mini("Separation", f"{fmt(r.get('avg_separation'), 'num1')} yd",
+                                r.get("sep_rank")), unsafe_allow_html=True)
+            t[1].markdown(_mini("YAC over exp", fmt(r.get('avg_yac_above_expectation'), 'num1'),
+                                r.get("yac_rank")), unsafe_allow_html=True)
             if pd.notna(r.get("top_separation")):
                 st.caption(f"Top target: **{r.get('top_target')}** "
                            f"({fmt(r.get('top_separation'), 'num1')} yds separation)")
