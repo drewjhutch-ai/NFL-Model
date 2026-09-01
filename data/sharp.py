@@ -60,7 +60,27 @@ def load_table(key: str, season: int) -> pd.DataFrame:
         else:
             return pd.DataFrame()
     raw["team"] = raw["team"].astype(str).str.upper().str.strip()
-    return raw.dropna(subset=["team"]).drop_duplicates("team").set_index("team")
+    out = raw.dropna(subset=["team"]).drop_duplicates("team").set_index("team")
+    return _normalize(key, out)
+
+
+# Rate columns (values must be a 0–100 percentage) that the scraper sometimes
+# captures with the decimal dropped, i.e. ~1000x too large (58.6% -> 58601).
+# Any value >100 in one of these can only be that artifact, so we rescale it.
+_RATE_COLS = {
+    "off_personnel": ["11", "12", "13", "21", "22", "2+ TE", "2+ RB", "3+ WR"],
+}
+
+
+def _normalize(key: str, df: pd.DataFrame) -> pd.DataFrame:
+    cols = _RATE_COLS.get(key)
+    if not cols or df.empty:
+        return df
+    for c in cols:
+        if c in df.columns:
+            s = pd.to_numeric(df[c], errors="coerce")
+            df[c] = s.where(s <= 100, s / 1000.0)
+    return df
 
 
 def load_all(season: int) -> dict[str, pd.DataFrame]:

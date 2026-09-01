@@ -215,6 +215,16 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
 .k-mini .l{ font-size:.7rem; color:var(--ink-dim); }
 .k-mini .v{ font-family:'IBM Plex Mono',monospace; font-size:1.15rem; font-weight:600; color:var(--ink); }
 .k-mini .r{ font-size:.68rem; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+
+/* ---- spec list (labeled detail rows) ---- */
+.k-speclist{ display:flex; flex-direction:column; }
+.k-spec{ display:flex; gap:12px; align-items:baseline; padding:6px 0; border-bottom:1px solid var(--line-soft); }
+.k-spec:last-child{ border-bottom:none; }
+.k-spec .sk{ font-family:'IBM Plex Mono',monospace; font-size:.6rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); width:104px; flex:none; padding-top:2px; }
+.k-spec .sv{ font-size:.87rem; color:var(--ink-dim); line-height:1.45; }
+.k-spec .sv b{ color:var(--ink); font-weight:600; }
+.k-spec .sv .mono{ font-family:'IBM Plex Mono',monospace; }
 </style>
 """
 

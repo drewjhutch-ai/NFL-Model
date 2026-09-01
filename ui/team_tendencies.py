@@ -198,54 +198,59 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
         cf.caption("↕ Week-over-week movement arrows appear once the season logs two weeks.")
 
 
-# --- Sharp caption helpers (surface the new data in the glance layer) --------
-def _sharp_off_caption(team: str, extras: dict) -> None:
+# --- spec-list helpers (clean labeled detail rows) ---------------------------
+def _speclist(rows: list[tuple[str, str]]) -> str:
+    """rows = [(LABEL, value_html), ...] → one styled spec block. Skips empties."""
+    items = "".join(
+        f'<div class="k-spec"><span class="sk">{k}</span><span class="sv">{v}</span></div>'
+        for k, v in rows if v)
+    return f'<div class="k-speclist">{items}</div>' if items else ""
+
+
+def _sharp_off_value(team: str, extras: dict) -> str:
     sharp = extras.get("sharp") or {}
     if not sv.available(sharp):
-        return
+        return ""
     bits = []
     pp = sv.pass_pro_ranks(sharp)
     if not pp.empty and team in pp.index:
-        bits.append(f"pass pro **{ordinal(int(pp.loc[team]))}**")
+        bits.append(f"pass pro <b>{ordinal(int(pp.loc[team]))}</b>")
     ol = sharp.get("off_line")
     if ol is not None and team in ol.index:
         ttt = sv._series(ol, "time to throw")
         if ttt is not None and team in ttt.index and pd.notna(ttt.loc[team]):
-            bits.append(f"TTT {ttt.loc[team]:.2f}s")
+            bits.append(f"TTT <b>{ttt.loc[team]:.2f}s</b>")
     pers = sharp.get("off_personnel")
     if pers is not None and team in pers.index:
         p11 = sv._series(pers, "11")
         if p11 is not None and team in p11.index and pd.notna(p11.loc[team]):
             v = p11.loc[team]
-            bits.append(f"11-personnel {v:.0f}%" if v > 1.5 else f"11-personnel {v*100:.0f}%")
-    if bits:
-        st.caption("**Sharp charting:** " + " · ".join(bits))
+            bits.append(f"11-pers <b>{v:.0f}%</b>" if v > 1.5 else f"11-pers <b>{v*100:.0f}%</b>")
+    return " · ".join(bits)
 
 
-def _sharp_def_caption(team: str, extras: dict) -> None:
+def _sharp_def_value(team: str, extras: dict) -> str:
     sharp = extras.get("sharp") or {}
     if not sv.available(sharp):
-        return
+        return ""
     bits = []
     pr = sv.pass_rush_ranks(sharp)
     if not pr.empty and team in pr.index:
-        bits.append(f"pass rush **{ordinal(int(pr.loc[team]))}**")
+        bits.append(f"pass rush <b>{ordinal(int(pr.loc[team]))}</b>")
     dt = sharp.get("def_tendencies")
     if dt is not None and team in dt.index:
         bl = sv._series(dt, "blitz")
         if bl is not None and team in bl.index and pd.notna(bl.loc[team]):
             v = bl.loc[team]
-            bits.append(f"blitz {v:.0f}%" if v > 1.5 else f"blitz {v*100:.0f}%")
+            bits.append(f"blitz <b>{v:.0f}%</b>" if v > 1.5 else f"blitz <b>{v*100:.0f}%</b>")
     cbp = sv.coverage_by_position(sharp)
     if not cbp.empty and team in cbp.index:
-        # name the softest position coverage (highest YPT rank) as a warning
         rank_cols = {c: cbp.loc[team, c] for c in cbp.columns if c.endswith("_rank")}
         if rank_cols:
             worst = max(rank_cols, key=lambda c: rank_cols[c])
             pos = worst.replace("ypt_", "").replace("_rank", "")
-            bits.append(f"softest vs **{pos}** ({ordinal(int(rank_cols[worst]))})")
-    if bits:
-        st.caption("**Sharp charting:** " + " · ".join(bits))
+            bits.append(f"softest vs <b>{pos}</b> ({ordinal(int(rank_cols[worst]))})")
+    return " · ".join(bits)
 
 
 def _team_radar(team: str, off, deff, extras, side: str, title: str) -> None:
@@ -273,44 +278,44 @@ def _offense_section(off: pd.DataFrame, deff: pd.DataFrame, team: str, extras: d
         st.plotly_chart(percentile_chart(rows, "Offense percentiles"), width="stretch")
     with cr:
         _team_radar(team, off, deff, extras, "offense", "Offense fingerprint")
-    if True:
-        with st.container(border=True):
-            pi = profiles.pass_identity(team, off)
-            st.markdown("**Run / Pass identity**")
-            st.markdown(gauge_bar_html(pi["npr_pct"]), unsafe_allow_html=True)
-            pct_txt = f"{pi['npr_pct']:.0f}th pct" if pd.notna(pi["npr_pct"]) else "—"
-            st.caption(f"**{pi['base']}** · neutral pass {fmt(pi['neutral_pass_rate'], 'pct')} "
-                       f"({pct_txt}) · PROE {fmt(pi['proe'], 'num1')} — {pi['tendency']}")
-            qb = extras.get("qb")
-            if qb is not None and not qb.empty and team in qb.index:
-                q = qb.loc[team]
-                st.caption(f"**QB:** {q.get('qb_style', '—')} ({fmt(q['qb_rush_rate'], 'pct')} rush rate)")
-            rush = extras.get("rush")
-            if rush is not None and not rush.empty and team in rush.index:
-                r = rush.loc[team]
-                st.caption(f"**Ground game:** {rushing.rushing_label(r.get('ryoe_rank'))} "
-                           f"({r.get('ryoe_per_att', float('nan')):+.2f} yds over exp/att)")
-            ovb = extras.get("ovb")
-            if ovb is not None and not ovb.empty and team in ovb.index:
-                b = ovb.loc[team]
-                st.caption(f"**vs Blitz:** {b.get('resilience', '—')} — "
-                           f"{fmt(b['epa_vs_blitz'], 'epa')} EPA blitzed vs {fmt(b['epa_no_blitz'], 'epa')} not")
-            dro = extras.get("drives_off")
-            if dro is not None and not dro.empty and team in dro.index:
-                r = dro.loc[team]
-                st.caption(f"**Drives:** {r['pts_per_drive']:.2f} pts/drive ({ordinal(r['ppd_rank'])}) · "
-                           f"score {fmt(r['score_rate'], 'pct')} · TD {fmt(r['td_rate'], 'pct')}")
-            to = extras.get("turnovers")
-            if to is not None and not to.empty and team in to.index:
-                t = to.loc[team]
-                st.caption(f"**Turnovers:** {t['margin']:+.2f}/gm (regressed {t['reg_margin']:+.2f}) · "
-                           f"give {t['giveaways']:.2f} · take {t['takeaways']:.2f}")
-            co = extras.get("coaching")
-            if co is not None and not co.empty and team in co.index:
-                c = co.loc[team]
-                st.caption(f"**Scheme:** {c.get('pa_label', '—')} "
-                           f"(PA {fmt(c['play_action_rate'], 'pct')} · motion {fmt(c['motion_rate'], 'pct')})")
-            _sharp_off_caption(team, extras)
+    with st.container(border=True):
+        pi = profiles.pass_identity(team, off)
+        st.markdown("**Run / pass identity**")
+        st.markdown(gauge_bar_html(pi["npr_pct"]), unsafe_allow_html=True)
+        pct_txt = f"{pi['npr_pct']:.0f}th pct" if pd.notna(pi["npr_pct"]) else "—"
+        rows = [("Identity", f"<b>{pi['base']}</b> · neutral pass {fmt(pi['neutral_pass_rate'], 'pct')} "
+                             f"({pct_txt}) · PROE {fmt(pi['proe'], 'num1')} — {pi['tendency']}")]
+        qb = extras.get("qb")
+        if qb is not None and not qb.empty and team in qb.index:
+            q = qb.loc[team]
+            rows.append(("QB", f"<b>{q.get('qb_style', '—')}</b> · {fmt(q['qb_rush_rate'], 'pct')} rush rate"))
+        rush = extras.get("rush")
+        if rush is not None and not rush.empty and team in rush.index:
+            r = rush.loc[team]
+            rows.append(("Ground game", f"<b>{rushing.rushing_label(r.get('ryoe_rank'))}</b> · "
+                                        f"{r.get('ryoe_per_att', float('nan')):+.2f} yds over exp/att"))
+        ovb = extras.get("ovb")
+        if ovb is not None and not ovb.empty and team in ovb.index:
+            b = ovb.loc[team]
+            rows.append(("vs Blitz", f"<b>{b.get('resilience', '—')}</b> · "
+                                     f"{fmt(b['epa_vs_blitz'], 'epa')} blitzed vs {fmt(b['epa_no_blitz'], 'epa')} not"))
+        dro = extras.get("drives_off")
+        if dro is not None and not dro.empty and team in dro.index:
+            r = dro.loc[team]
+            rows.append(("Drives", f"<b>{r['pts_per_drive']:.2f}</b> pts/drive ({ordinal(r['ppd_rank'])}) · "
+                                   f"score {fmt(r['score_rate'], 'pct')} · TD {fmt(r['td_rate'], 'pct')}"))
+        to = extras.get("turnovers")
+        if to is not None and not to.empty and team in to.index:
+            t = to.loc[team]
+            rows.append(("Turnovers", f"<b>{t['margin']:+.2f}/gm</b> (regressed {t['reg_margin']:+.2f}) · "
+                                      f"give {t['giveaways']:.2f} · take {t['takeaways']:.2f}"))
+        co = extras.get("coaching")
+        if co is not None and not co.empty and team in co.index:
+            c = co.loc[team]
+            rows.append(("Scheme", f"<b>{c.get('pa_label', '—')}</b> · "
+                                   f"PA {fmt(c['play_action_rate'], 'pct')} · motion {fmt(c['motion_rate'], 'pct')}"))
+        rows.append(("Sharp", _sharp_off_value(team, extras)))
+        st.markdown(_speclist(rows), unsafe_allow_html=True)
     _strengths_struggles(profiles.offense_facets(team, off, extras))
 
 
@@ -331,29 +336,31 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
         st.plotly_chart(percentile_chart(rows, "Defense percentiles (100 = stingiest)"), width="stretch")
     with cr:
         _team_radar(team, None, deff, extras, "defense", "Defense fingerprint")
-    if True:
-        with st.container(border=True):
-            prs = extras.get("pressure")
-            if prs is not None and not prs.empty and team in prs.index:
-                p = prs.loc[team]
-                st.caption(f"**Pass rush:** {pressure.pressure_label(p['pressure_rate_rank'])} — "
-                           f"pressure {fmt(p['pressure_rate'], 'pct')} ({ordinal(p['pressure_rate_rank'])}), "
-                           f"sacks {fmt(p['sack_rate'], 'pct')}")
-            if not blitz.empty and team in blitz.index:
-                b = blitz.loc[team]
-                st.caption(f"**Blitz:** {fmt(b['blitz_rate'], 'pct')} of dropbacks "
-                           f"({b.get('blitz_tendency', '—')})")
-            else:
-                st.caption("**Blitz:** FTN charting not loaded for these seasons.")
-            if scheme_row is not None:
-                st.caption(f"**Coverage:** zone {fmt(scheme_row['zone_rate'], 'pct')} · "
-                           f"man {fmt(scheme_row['man_rate'], 'pct')} · "
-                           f"confidence **{scheme_row.get('confidence', '—')}**")
-                _per_source_expander(scheme_row)
-            else:
-                st.caption("**Coverage (zone/man):** _auto-fetch pending or offseason_ ")
-            st.caption("_Upload PFF (sidebar) → Cover 0–6 shells & situational man/zone._")
-            _sharp_def_caption(team, extras)
+    with st.container(border=True):
+        rows = []
+        prs = extras.get("pressure")
+        if prs is not None and not prs.empty and team in prs.index:
+            p = prs.loc[team]
+            rows.append(("Pass rush", f"<b>{pressure.pressure_label(p['pressure_rate_rank'])}</b> · "
+                                      f"pressure {fmt(p['pressure_rate'], 'pct')} ({ordinal(p['pressure_rate_rank'])}) · "
+                                      f"sacks {fmt(p['sack_rate'], 'pct')}"))
+        if not blitz.empty and team in blitz.index:
+            b = blitz.loc[team]
+            rows.append(("Blitz", f"<b>{fmt(b['blitz_rate'], 'pct')}</b> of dropbacks "
+                                  f"({b.get('blitz_tendency', '—')})"))
+        else:
+            rows.append(("Blitz", "FTN charting not loaded for these seasons"))
+        if scheme_row is not None:
+            rows.append(("Coverage", f"zone <b>{fmt(scheme_row['zone_rate'], 'pct')}</b> · "
+                                     f"man <b>{fmt(scheme_row['man_rate'], 'pct')}</b> · "
+                                     f"conf {scheme_row.get('confidence', '—')}"))
+        else:
+            rows.append(("Coverage", "<i>auto-fetch pending or offseason</i>"))
+        rows.append(("Sharp", _sharp_def_value(team, extras)))
+        st.markdown(_speclist(rows), unsafe_allow_html=True)
+        if scheme_row is not None:
+            _per_source_expander(scheme_row)
+        st.caption("_Upload PFF (sidebar) → Cover 0–6 shells & situational man/zone._")
     _strengths_struggles(profiles.defense_facets(team, deff, extras))
 
 
