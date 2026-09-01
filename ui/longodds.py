@@ -105,6 +105,39 @@ def _conviction(pool: pd.DataFrame) -> None:
                "here, not the payout.")
 
 
+def _ev_scatter(pool: pd.DataFrame) -> None:
+    """Risk/reward map: market-implied chance vs our model chance. Above the line = value."""
+    if pool.empty:
+        return
+    import plotly.graph_objects as go
+    from ui import kit
+    P = kit.PALETTE
+    st.markdown("### Risk / reward map")
+    st.caption("Each play: the market's implied chance (x) vs our model's chance (y). Points **above the "
+               "line** are ones we think hit more often than the price implies — the value is up and to the left.")
+    xs = [betengine.implied_prob(o) * 100 for o in pool["market_odds"]]
+    ys = [p * 100 for p in pool["model_prob"]]
+    labels = [str(s).split(" ")[0] for s in pool["selection"]]
+    hover = [f"{r.selection} · {betengine.fmt_odds(r.market_odds)} · EV {r.ev*100:+.0f}%"
+             for r in pool.itertuples()]
+    hi = max(xs + ys + [40]) + 6
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0, hi], y=[0, hi], mode="lines", hoverinfo="skip",
+                             line=dict(color=P["ink_faint"], dash="dash"), showlegend=False))
+    fig.add_trace(go.Scatter(
+        x=xs, y=ys, mode="markers+text", text=labels, textposition="top center",
+        textfont=dict(color=P["ink_dim"], size=10), hovertext=hover, hoverinfo="text",
+        marker=dict(size=[max(9, min(30, e * 120)) for e in pool["ev"]],
+                    color=P["accent"], opacity=.85, line=dict(color=P["accent_bright"], width=1)),
+        showlegend=False))
+    fig.update_layout(height=380, margin=dict(l=6, r=6, t=6, b=6),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      font=dict(color=P["ink_dim"]),
+                      xaxis=dict(title="Market implied %", gridcolor=P["line"], zeroline=False),
+                      yaxis=dict(title="Model %", gridcolor=P["line"], zeroline=False))
+    st.plotly_chart(fig, width="stretch")
+
+
 def _between_lines(pool: pd.DataFrame, off, deff, extras) -> None:
     st.markdown("### Reading between the lines")
     st.caption("For the game-level dogs above, the matchup facets that argue for the upset — scheme fit, "
@@ -240,6 +273,9 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     c3.metric("Longest price", betengine.fmt_odds(pool["market_odds"].max()) if not pool.empty else "—")
     st.divider()
     _conviction(pool)
+    if not pool.empty:
+        st.divider()
+        _ev_scatter(pool)
     st.divider()
     _between_lines(pool, off, deff, extras)
     st.divider()

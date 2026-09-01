@@ -19,7 +19,7 @@ import streamlit as st
 from data import injuries as injmod
 from data import injury_value, loaders
 
-_TONE = {"bad": "#e5544b", "warn": "#f1c40f", "good": "#3fbf6f", "flat": "#8b98a5"}
+_TONE = {"bad": "#ff5468", "warn": "#ffb43d", "good": "#2fe0a0", "flat": "#566a7d"}
 
 
 @st.cache_data(ttl=900, show_spinner="Checking the ESPN injury feed…")
@@ -77,10 +77,10 @@ def _team_drill(inj_map: dict, espn: dict) -> None:
             share = f"{float(p.get('pct') or 0)*100:.0f}% snaps"
             st.markdown(
                 f"<div style='border-left:4px solid {color};padding:5px 0 5px 12px;margin:6px 0;'>"
-                f"<b>{p['name']}</b> <span style='color:#8b98a5;'>{p.get('pos','')} · {share}"
+                f"<b>{p['name']}</b> <span style='color:var(--ink-faint);'>{p.get('pos','')} · {share}"
                 f"{pts_txt}</span><br>"
                 f"<span style='color:{color};font-weight:600;'>{p['status']} — {lean}</span>"
-                f"<span style='color:#8b98a5;font-size:0.9rem;'> · {p.get('injury','') or '—'}"
+                f"<span style='color:var(--ink-faint);font-size:0.9rem;'> · {p.get('injury','') or '—'}"
                 f"{prac_txt}{watch}</span></div>",
                 unsafe_allow_html=True)
     else:

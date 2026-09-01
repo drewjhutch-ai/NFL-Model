@@ -75,6 +75,12 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
     weekly = history.weekly_epa(extras.get("pbp"))
     hist = history.load_history(config.CURRENT_SEASON)
     move = history.rank_movement(hist, "power_rank")
+    # Sharp's independent power rank (charted EPA) as a cross-check on ours.
+    from data import sharp_value as sv
+    sharp_rt = sv.epa_ratings(extras.get("sharp") or {})
+    sharp_rank = None
+    if not sharp_rt.empty and "off_epa" in sharp_rt.columns and "def_epa" in sharp_rt.columns:
+        sharp_rank = (sharp_rt["off_epa"] - sharp_rt["def_epa"]).rank(ascending=False, method="min")
     rows = []
     for team, r in pr.sort_values("power_rank").iterrows():
         m = meta.get(team, {})
@@ -93,6 +99,7 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
             "Net EPA": round(r["net"] * 100, 1),
             "Off": int(off.loc[team, "epa_play_rank"]) if team in off.index else None,
             "Def": int(deff.loc[team, "epa_play_rank"]) if team in deff.index else None,
+            "Sharp": int(sharp_rank.get(team)) if sharp_rank is not None and team in sharp_rank.index else None,
             "ST": round(float(st_ppg.get(team)), 1) if st_ppg is not None and team in st_ppg.index else None,
             "SOS": round(float(sos.get(team)), 3) if sos is not None and team in sos.index else None,
             "Strength": s,
@@ -105,8 +112,12 @@ def _power_rankings(off, deff, extras, conf_filter, div_filter) -> None:
     has_move = df["Move"].notna().any()
     if not has_move:
         df = df.drop(columns=["Move"])
+    if "Sharp" in df.columns and not df["Sharp"].notna().any():
+        df = df.drop(columns=["Sharp"])
     st.dataframe(df, width="stretch", hide_index=True, column_config={
         "Logo": st.column_config.ImageColumn(" ", width="small"),
+        "Sharp": st.column_config.NumberColumn("Sharp", help="Sharp Football's independent power rank "
+            "(charted EPA) — a cross-check on ours. Big gaps flag disagreement worth a look."),
         "Move": st.column_config.NumberColumn("Δ Wk", format="%+d",
             help="Power-rank change since last week (+ = climbing)") if has_move else None,
         "Trend": st.column_config.AreaChartColumn(

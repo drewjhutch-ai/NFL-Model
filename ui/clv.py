@@ -112,7 +112,7 @@ def _book_grid(df: pd.DataFrame) -> None:
         target = best.get(name)
         if target is None:
             return ["" for _ in col]
-        return ["background-color: rgba(45,212,191,0.18); font-weight:700"
+        return ["background-color: rgba(34,211,238,0.18); font-weight:700"
                 if pd.notna(v) and float(v) == float(target) else "" for v in col]
 
     sty = grid.style.apply(_hi, subset=["Home spread", "Home ML", "Away ML"])

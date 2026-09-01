@@ -23,7 +23,7 @@ import streamlit as st
 PALETTE = {
     "ground": "#080d14", "surface": "#0f1824", "surface2": "#152232", "line": "#233246",
     "ink": "#eef5fb", "ink_dim": "#8ba0b4", "ink_faint": "#566a7d",
-    "accent": "#22d3ee", "sharp": "#ffb43d", "violet": "#b39bff",
+    "accent": "#22d3ee", "accent_bright": "#67e8ff", "sharp": "#ffb43d", "violet": "#b39bff",
     "edge": "#2fe0a0", "fade": "#ff5468",
 }
 
