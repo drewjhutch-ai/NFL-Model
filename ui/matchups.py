@@ -69,9 +69,9 @@ def _injuries_row(away, home, extras) -> None:
 
 # --- 1. model vs market ------------------------------------------------------
 def _lean_chip(text: str, kind: str = "neutral") -> str:
-    palette = {"value": ("#2ecc71", "rgba(46,204,113,0.14)"),
-               "fade": ("#e74c3c", "rgba(231,76,60,0.14)"),
-               "neutral": ("#9aa0a6", "rgba(154,160,166,0.14)")}
+    palette = {"value": ("var(--edge)", "var(--edge-wash)"),
+               "fade": ("var(--fade)", "var(--fade-wash)"),
+               "neutral": ("var(--ink-faint)", "var(--surface-2)")}
     c, bg = palette.get(kind, palette["neutral"])
     return (f"<span style='color:{c};background:{bg};border-radius:6px;padding:2px 9px;"
             f"font-weight:700;font-size:0.85rem;'>{text}</span>")
@@ -80,16 +80,18 @@ def _lean_chip(text: str, kind: str = "neutral") -> str:
 def _mkt_card(col, title, model_val, mkt_val, lean_html, sub) -> None:
     with col:
         st.markdown(
-            f"<div style='border:1px solid #333;border-radius:12px;padding:12px 14px;'>"
-            f"<div style='font-size:0.72rem;letter-spacing:.12em;text-transform:uppercase;"
-            f"color:#8a8a8a;'>{title}</div>"
+            f"<div style='border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;'>"
+            f"<div style='font-family:\"IBM Plex Mono\",monospace;font-size:0.62rem;letter-spacing:.14em;"
+            f"text-transform:uppercase;color:var(--ink-faint);'>{title}</div>"
             f"<div style='display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 2px;'>"
-            f"<div><div style='font-size:1.35rem;font-weight:700;line-height:1;'>{model_val}</div>"
-            f"<div style='font-size:0.7rem;color:#8a8a8a;'>our number</div></div>"
-            f"<div style='text-align:right;'><div style='font-size:1.05rem;color:#bbb;line-height:1;'>{mkt_val}</div>"
-            f"<div style='font-size:0.7rem;color:#8a8a8a;'>market</div></div></div>"
+            f"<div><div style='font-family:\"IBM Plex Mono\",monospace;font-size:1.4rem;font-weight:600;"
+            f"line-height:1;color:var(--ink);'>{model_val}</div>"
+            f"<div style='font-size:0.7rem;color:var(--ink-faint);'>our number</div></div>"
+            f"<div style='text-align:right;'><div style='font-family:\"IBM Plex Mono\",monospace;font-size:1.05rem;"
+            f"color:var(--ink-dim);line-height:1;'>{mkt_val}</div>"
+            f"<div style='font-size:0.7rem;color:var(--ink-faint);'>market</div></div></div>"
             f"<div style='margin-top:6px;'>{lean_html}</div>"
-            f"<div style='font-size:0.78rem;color:#9aa0a6;margin-top:5px;'>{sub}</div>"
+            f"<div style='font-size:0.78rem;color:var(--ink-dim);margin-top:5px;'>{sub}</div>"
             f"</div>", unsafe_allow_html=True)
 
 
@@ -182,6 +184,57 @@ def _stars(margin: float) -> tuple[str, str]:
     if m >= 1.5:
         return "★☆☆", "Slight lean"
     return "☆☆☆", "Coin flip"
+
+
+def _component_margins(away, home, off, deff, extras) -> dict:
+    """Each ensemble signal's raw home-margin read (pre home-field), for the council."""
+    import numpy as np
+    comps: dict[str, float] = {}
+    if home in off.index and away in off.index:
+        ho = np.nanmean([off.loc[home, "epa_play"], deff.loc[away, "epa_play"]])
+        ao = np.nanmean([off.loc[away, "epa_play"], deff.loc[home, "epa_play"]])
+        if pd.notna(ho) and pd.notna(ao):
+            comps["EPA efficiency"] = (ho - ao) * config.PLAYS_PER_TEAM
+    pts = extras.get("points_rtg")
+    if pts is not None and len(pts) and home in pts.index and away in pts.index:
+        comps["Points differential"] = float(pts.get(home, 0.0) - pts.get(away, 0.0))
+    elo = extras.get("elo")
+    if elo is not None and len(elo) and home in elo.index and away in elo.index:
+        from data.elo import expected_margin
+        em = expected_margin(elo, home, away)
+        if pd.notna(em):
+            comps["Elo power"] = float(em)
+    if extras.get("sharp"):
+        from data import sharp_value
+        sm = sharp_value.sharp_margin(extras["sharp"], home, away)
+        if sm is not None and pd.notna(sm):
+            comps["Sharp charted EPA"] = float(sm)
+    return comps
+
+
+def _model_council(away, home, off, deff, extras) -> None:
+    """Show each independent signal's read — agreement is conviction, clash is where value/risk hides."""
+    comps = _component_margins(away, home, off, deff, extras)
+    if not comps:
+        return
+    st.markdown("### The model council")
+    st.caption("Each independent signal's read on this game — home-positive, before home field. "
+               "When they agree it's conviction; when they split, that's where the edge (or the trap) is.")
+    maxabs = max(10.0, max(abs(v) for v in comps.values()))
+    rows = ['<div style="margin-top:6px">']
+    for name, val in comps.items():
+        mag = abs(val) / maxabs * 50.0
+        if val >= 0:
+            fill = f"left:50%;width:{mag:.0f}%;background:var(--accent)"
+            num = f'<span style="color:var(--accent);font-family:\'IBM Plex Mono\',monospace;font-size:.76rem;font-weight:600;min-width:78px;text-align:left">{home} +{val:.1f}</span>'
+        else:
+            fill = f"right:50%;width:{mag:.0f}%;background:var(--violet)"
+            num = f'<span style="color:var(--violet);font-family:\'IBM Plex Mono\',monospace;font-size:.76rem;font-weight:600;min-width:78px;text-align:left">{away} +{abs(val):.1f}</span>'
+        rows.append(f'<div class="k-ebar"><span class="nm">{name}</span>'
+                    f'<div class="track"><span class="mid"></span>'
+                    f'<span class="fill" style="{fill}"></span></div>{num}</div>')
+    rows.append("</div>")
+    st.markdown("".join(rows), unsafe_allow_html=True)
 
 
 def _attack_meter(away, home, off, deff, extras) -> None:
@@ -655,6 +708,9 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     st.markdown("### Tale of the tape")
     _tale_of_the_tape(away, home, off, deff, extras)
     _attack_meter(away, home, off, deff, extras)
+
+    st.divider()
+    _model_council(away, home, off, deff, extras)
 
     st.divider()
     sim = _simulation(away, home, off, deff, extras, game_row)
