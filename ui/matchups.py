@@ -67,6 +67,115 @@ def _injuries_row(away, home, extras) -> None:
     c2.markdown(f"**{home}** {injuries.summary_line(imap.get(home, []))}")
 
 
+def _record(extras, team) -> str:
+    sched = extras.get("schedule")
+    if sched is None or getattr(sched, "empty", True):
+        return ""
+    need = {"season", "result", "home_score", "away_score", "home_team", "away_team"}
+    if not need.issubset(sched.columns):
+        return ""
+    g = sched[(sched["season"] == config.CURRENT_SEASON) & sched["result"].notna()
+              & sched["home_score"].notna()]
+    w = l = t = 0
+    for _, r in g.iterrows():
+        if team not in (r["home_team"], r["away_team"]):
+            continue
+        mine = r["home_score"] if team == r["home_team"] else r["away_score"]
+        opp = r["away_score"] if team == r["home_team"] else r["home_score"]
+        if mine > opp:
+            w += 1
+        elif opp > mine:
+            l += 1
+        else:
+            t += 1
+    if w + l + t == 0:
+        return ""
+    return f"{w}-{l}" + (f"-{t}" if t else "")
+
+
+def _broadcast_header(away, home, off, deff, extras, row) -> None:
+    """A broadcast-style hero: logos, records, projected score, and the headline KPIs."""
+    from ui import kit
+    meta = loaders.team_meta()
+    sim = simulation.simulate(off, deff, home, away, extras, row)
+    am, hm = meta.get(away, {}), meta.get(home, {})
+    a_logo = f'<img src="{am["logo"]}" alt="{away}">' if am.get("logo") else ""
+    h_logo = f'<img src="{hm["logo"]}" alt="{home}">' if hm.get("logo") else ""
+    a_rec, h_rec = _record(extras, away), _record(extras, home)
+    if sim:
+        score = f'<div class="sc">{sim["proj_away"]:.0f} <span class="at">–</span> {sim["proj_home"]:.0f}</div><div class="lb">projected score</div>'
+    else:
+        score = '<div class="sc"><span class="at">@</span></div><div class="lb">matchup</div>'
+    st.markdown(
+        f'<div class="k-vs">'
+        f'<div class="side">{a_logo}<div><div class="nm">{am.get("name", away)}</div>'
+        f'<div class="rc">{a_rec}</div></div></div>'
+        f'<div class="mid">{score}</div>'
+        f'<div class="side right"><div><div class="nm">{hm.get("name", home)}</div>'
+        f'<div class="rc">{h_rec}</div></div>{h_logo}</div></div>',
+        unsafe_allow_html=True)
+    # headline KPI tiles
+    if sim:
+        margin = sim["margin_mean"]
+        fav = home if margin > 0 else away
+        k = st.columns(4)
+        k[0].markdown(kit.kpi("Model line", betting.fmt_line(fav, abs(margin)),
+                              None, None, "accent"), unsafe_allow_html=True)
+        k[1].markdown(kit.kpi("Proj. total", f"{sim['total_mean']:.1f}", None, None, "sharp"),
+                      unsafe_allow_html=True)
+        win = max(sim["home_win"], 1 - sim["home_win"])
+        wteam = home if sim["home_win"] >= 0.5 else away
+        k[2].markdown(kit.kpi(f"{wteam} win", f"{win*100:.0f}%", None, None, "edge"),
+                      unsafe_allow_html=True)
+        if row is not None and pd.notna(row.get("spread_line")):
+            a = betting.assess(row, off, deff, extras)
+            ep = a.get("edge_pts")
+            if pd.notna(ep) and a.get("value_side"):
+                k[3].markdown(kit.kpi("Model edge", f"{a['value_side']} {ep:+.1f}",
+                                      "vs market", "up" if ep > 0 else "down", "violet"),
+                              unsafe_allow_html=True)
+            else:
+                k[3].markdown(kit.kpi("Model edge", "none", "≈ market", None, "mute"),
+                              unsafe_allow_html=True)
+        else:
+            k[3].markdown(kit.kpi("Market", "—", "no line posted", None, "mute"),
+                          unsafe_allow_html=True)
+
+
+def _sharp_matchup(away, home, extras) -> None:
+    """New Sharp charting reads: coverage-by-position mismatches, pace→total, trenches."""
+    from data import sharp_value as sv
+    sharp = extras.get("sharp") or {}
+    if not sv.available(sharp):
+        return
+    st.markdown("### Sharp charting edges")
+    st.caption("Straight from the Sharp Football feed — the matchup reads the base efficiency numbers miss.")
+    cbp = sv.coverage_by_position(sharp)
+    pr = sv.pass_rush_ranks(sharp); pp = sv.pass_pro_ranks(sharp)
+    pace = extras.get("pace")
+    c1, c2 = st.columns(2)
+    for col, (o, d) in ((c1, (away, home)), (c2, (home, away))):
+        bits = []
+        # trenches: o pass pro vs d pass rush
+        if not pp.empty and o in pp.index and not pr.empty and d in pr.index:
+            bits.append(("Trenches", f"{o} pass-pro <b>{ordinal(int(pp.loc[o]))}</b> vs "
+                                     f"{d} pass-rush <b>{ordinal(int(pr.loc[d]))}</b>"))
+        # coverage-by-position: d's softest spot
+        if not cbp.empty and d in cbp.index:
+            rank_cols = {c: cbp.loc[d, c] for c in cbp.columns if c.endswith("_rank")}
+            if rank_cols:
+                worst = max(rank_cols, key=lambda c: rank_cols[c])
+                pos = worst.replace("ypt_", "").replace("_rank", "")
+                bits.append(("Coverage soft spot", f"{d} softest vs <b>{pos}</b> "
+                                                    f"({ordinal(int(rank_cols[worst]))})"))
+        if pace is not None and o in pace.index:
+            bits.append(("Pace", f"{o} <b>{pace.get(o):.0f}</b> plays/gm"))
+        rows = "".join(f'<div class="k-spec"><span class="sk">{k}</span>'
+                       f'<span class="sv">{v}</span></div>' for k, v in bits)
+        col.markdown(f'<div class="k-lbl" style="margin-bottom:4px">{o} OFFENSE</div>'
+                     f'<div class="k-speclist">{rows}</div>', unsafe_allow_html=True)
+
+
 # --- 1. model vs market ------------------------------------------------------
 def _lean_chip(text: str, kind: str = "neutral") -> str:
     palette = {"value": ("var(--edge)", "var(--edge-wash)"),
@@ -323,11 +432,11 @@ def _tale_of_the_tape(away, home, off, deff, extras) -> None:
         badge = f"<span style='color:{rank_color(rk)};font-size:0.75rem;'> {ordinal(rk)}</span>" if pd.notna(rk) and kind != "rankonly" else ""
         return disp, badge
 
-    a_color = meta.get(away, {}).get("color") or "#1f77b4"
-    h_color = meta.get(home, {}).get("color") or "#e74c3c"
+    a_color = meta.get(away, {}).get("color") or "var(--accent)"
+    h_color = meta.get(home, {}).get("color") or "var(--violet)"
     html = ["<table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>"]
     html.append(f"<tr><th style='text-align:left;color:{a_color};padding:6px 8px;'>{away}</th>"
-                f"<th style='text-align:center;color:#8a8a8a;font-weight:500;'>matchup</th>"
+                f"<th style='text-align:center;color:var(--ink-faint);font-weight:500;'>matchup</th>"
                 f"<th style='text-align:right;color:{h_color};padding:6px 8px;'>{home}</th></tr>")
     for label, kind, out in rows:
         (av, ar), (hv, hr) = out[away], out[home]
@@ -336,12 +445,12 @@ def _tale_of_the_tape(away, home, off, deff, extras) -> None:
         # winner = better (lower) rank
         awin = pd.notna(ar) and pd.notna(hr) and ar < hr
         hwin = pd.notna(ar) and pd.notna(hr) and hr < ar
-        aw = "background:rgba(46,204,113,0.12);border-radius:6px;" if awin else ""
-        hw = "background:rgba(46,204,113,0.12);border-radius:6px;" if hwin else ""
+        aw = "background:var(--edge-wash);border-radius:6px;" if awin else ""
+        hw = "background:var(--edge-wash);border-radius:6px;" if hwin else ""
         html.append(
-            f"<tr style='border-top:1px solid rgba(128,128,128,0.15);'>"
+            f"<tr style='border-top:1px solid var(--line);'>"
             f"<td style='text-align:left;padding:5px 8px;{aw}'>{adisp}{ab}</td>"
-            f"<td style='text-align:center;color:#9aa0a6;font-size:0.8rem;'>{label}</td>"
+            f"<td style='text-align:center;color:var(--ink-dim);font-size:0.8rem;'>{label}</td>"
             f"<td style='text-align:right;padding:5px 8px;{hw}'>{hb and hb+' '}{hdisp}</td></tr>")
     html.append("</table>")
     st.markdown("".join(html), unsafe_allow_html=True)
@@ -373,7 +482,7 @@ def _simulation(away, home, off, deff, extras, row) -> dict | None:
     if not sim:
         return None
     st.markdown("### Simulation "
-                f"<span style='color:#888;font-size:0.9rem'>({sim['n']:,} runs)</span>",
+                f"<span style='color:var(--ink-faint);font-size:0.9rem'>({sim['n']:,} runs)</span>",
                 unsafe_allow_html=True)
     k = st.columns(4)
     k[0].metric(f"{home} win", f"{sim['home_win']*100:.0f}%")
@@ -397,17 +506,19 @@ def _simulation(away, home, off, deff, extras, row) -> dict | None:
 
 def _margin_hist(sim) -> None:
     import plotly.graph_objects as go
+    from ui import kit
+    P = kit.PALETTE
     m = sim["margins"]
-    fig = go.Figure(go.Histogram(x=m, nbinsx=40, marker_color="#1f77b4", opacity=0.85))
-    fig.add_vline(x=0, line_color="rgba(200,200,200,0.6)")
+    fig = go.Figure(go.Histogram(x=m, nbinsx=40, marker_color=P["accent"], opacity=0.8))
+    fig.add_vline(x=0, line_color=P["ink_faint"])
     if "mkt_spread" in sim:
-        fig.add_vline(x=sim["mkt_spread"], line_dash="dot", line_color="#e74c3c",
-                      annotation_text="market", annotation_font_color="#e74c3c")
+        fig.add_vline(x=sim["mkt_spread"], line_dash="dot", line_color=P["fade"],
+                      annotation_text="market", annotation_font_color=P["fade"])
     fig.update_layout(height=240, margin=dict(l=10, r=10, t=10, b=28),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      showlegend=False,
+                      showlegend=False, font=dict(color=P["ink_dim"]),
                       xaxis=dict(title=f"{sim['home']} margin (+ = {sim['home']} wins)",
-                                 gridcolor="rgba(128,128,128,0.12)"),
+                                 gridcolor=P["line"]),
                       yaxis=dict(visible=False))
     st.plotly_chart(fig, width="stretch")
 
@@ -447,7 +558,7 @@ def _box_score(sim, away, home, extras) -> None:
 # --- 4. attack breakdowns + drill-downs (existing, lightly kept) --------------
 def _direction(o_team, d_team, off, deff, blitz, extras) -> None:
     meta = loaders.team_meta().get(o_team, {})
-    color = meta.get("color") or "#1f77b4"
+    color = meta.get("color") or "var(--accent)"
     st.markdown(f"<div style='border-left:5px solid {color};padding-left:10px;'>"
                 f"<b>{o_team} offense → {d_team} defense</b></div>", unsafe_allow_html=True)
     fe = edges.facet_edges(o_team, d_team, off, deff, extras)
@@ -695,7 +806,7 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
         st.info("Pick two different teams.")
         return
     extras = {**extras, "_game_row": game_row}
-    _banner(away, home, game_row)
+    _broadcast_header(away, home, off, deff, extras, game_row)
     _injuries_row(away, home, extras)
 
     assessment = None
@@ -708,6 +819,9 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     st.markdown("### Tale of the tape")
     _tale_of_the_tape(away, home, off, deff, extras)
     _attack_meter(away, home, off, deff, extras)
+
+    st.divider()
+    _sharp_matchup(away, home, extras)
 
     st.divider()
     _model_council(away, home, off, deff, extras)
