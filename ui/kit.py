@@ -216,6 +216,32 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
 .k-mini .v{ font-family:'IBM Plex Mono',monospace; font-size:1.15rem; font-weight:600; color:var(--ink); }
 .k-mini .r{ font-size:.68rem; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
 
+/* ---- power board (League) ---- */
+.k-pw{ display:flex; flex-direction:column; gap:5px; }
+.k-pwh, .k-pwrow{ display:grid;
+  grid-template-columns:30px 26px 1.5fr 1.15fr 1.35fr 1.15fr 52px 64px; gap:11px; align-items:center; }
+.k-pwrow{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:7px 12px; }
+.k-pwrow:hover{ border-color:var(--accent); }
+.k-pwh{ padding:0 12px 2px; }
+.k-pwh span{ font-family:'IBM Plex Mono',monospace; font-size:.56rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); }
+.k-pw .rk{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink-faint); font-size:.9rem; }
+.k-pw img{ width:24px; height:24px; object-fit:contain; }
+.k-pw .tm{ font-weight:700; font-size:.92rem; }
+.k-pw .rec{ color:var(--ink-faint); font-size:.7rem; font-family:'IBM Plex Mono',monospace; margin-left:6px; }
+.k-pw .ods{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--ink-dim); }
+.k-pw .ods b{ color:var(--ink); }
+.k-pw .pd{ font-family:'IBM Plex Mono',monospace; font-size:.78rem; text-align:right; }
+.k-pw .mv{ font-family:'IBM Plex Mono',monospace; font-size:.74rem; text-align:center; }
+.k-pw .spark{ font-family:'IBM Plex Mono',monospace; color:var(--accent); font-size:.82rem;
+  letter-spacing:-1px; text-align:right; }
+.k-nb{ height:15px; background:var(--surface-2); border:1px solid var(--line); border-radius:5px;
+  position:relative; overflow:hidden; }
+.k-nb .mid{ position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--ink-faint); opacity:.5; }
+.k-nb .fill{ position:absolute; top:0; bottom:0; border-radius:4px; }
+.k-nb .nv{ position:absolute; right:5px; top:50%; transform:translateY(-50%); font-family:'IBM Plex Mono',monospace;
+  font-size:.66rem; color:var(--ink); }
+
 /* ---- spec list (labeled detail rows) ---- */
 .k-speclist{ display:flex; flex-direction:column; }
 .k-spec{ display:flex; gap:12px; align-items:baseline; padding:6px 0; border-bottom:1px solid var(--line-soft); }
