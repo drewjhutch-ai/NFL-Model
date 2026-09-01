@@ -82,6 +82,17 @@ def sidebar(live: bool) -> None:
     )
 
 
+def _safe(render_fn, *args) -> None:
+    """Render one tab in isolation — a failure shows in that tab, never crashes
+    the whole app (an exception used to blank every tab)."""
+    try:
+        render_fn(*args)
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"This tab hit an error: {type(exc).__name__}. The rest of the app is unaffected.")
+        with st.expander("Details"):
+            st.exception(exc)
+
+
 def _week_label(schedule, live: bool) -> str:
     season = config.CURRENT_SEASON
     if live and schedule is not None and not schedule.empty:
@@ -111,29 +122,29 @@ def main() -> None:
          "Game Bets", "Betting", "Picks of the Week", "Long Odds", "CLV",
          "Injuries"])
     with tab_home:
-        home.render(off, deff, schedule, extras, live)
+        _safe(home.render, off, deff, schedule, extras, live)
     with tab_data:
-        team_tendencies.render(off, deff, blitz, extras)
+        _safe(team_tendencies.render, off, deff, blitz, extras)
     with tab_league:
-        league.render(off, deff, blitz, extras)
+        _safe(league.render, off, deff, blitz, extras)
     with tab_matchups:
-        matchups.render(off, deff, blitz, schedule, extras)
+        _safe(matchups.render, off, deff, blitz, schedule, extras)
     with tab_players:
-        ui_players.render(off, deff, schedule, extras)
+        _safe(ui_players.render, off, deff, schedule, extras)
     with tab_td:
-        touchdowns.render(off, deff, blitz, schedule, extras)
+        _safe(touchdowns.render, off, deff, blitz, schedule, extras)
     with tab_gamebets:
-        gamebets.render(off, deff, blitz, schedule, extras)
+        _safe(gamebets.render, off, deff, blitz, schedule, extras)
     with tab_betting:
-        betting.render(off, deff, schedule, extras)
+        _safe(betting.render, off, deff, schedule, extras)
     with tab_picks:
-        picks.render(off, deff, schedule, extras)
+        _safe(picks.render, off, deff, schedule, extras)
     with tab_long:
-        longodds.render(off, deff, schedule, extras)
+        _safe(longodds.render, off, deff, schedule, extras)
     with tab_clv:
-        clv.render(off, deff, schedule, extras)
+        _safe(clv.render, off, deff, schedule, extras)
     with tab_inj:
-        injuries.render(off, deff, schedule, extras)
+        _safe(injuries.render, off, deff, schedule, extras)
 
 
 if __name__ == "__main__":

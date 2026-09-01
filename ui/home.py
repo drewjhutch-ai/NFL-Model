@@ -100,8 +100,7 @@ def _slate(off, deff, schedule, extras, meta, games) -> None:
         ep = a["edge_pts"]
         edge_chip = (kit.chip(f"{ep:+.1f} {a['value_side']}", "edge" if ep > 0 else "fade")
                      if pd.notna(ep) and a.get("value_side") else kit.chip("no edge", "mute"))
-        conf = a["confidence"]
-        pin = max(3, min(97, conf))
+        pin = {"High": 86, "Medium": 58, "Low": 32}.get(a["confidence"], 10)
         matchup = (f'<div class="mu">{_logo(meta, away)} {away} '
                    f'<span class="at">@</span> {_logo(meta, home)} {home}</div>')
         html.append(
