@@ -17,10 +17,20 @@ import streamlit as st
 import config
 from data import form as form_mod
 from data import history, loaders, pressure, profiles, rushing, splits
+from data import sharp_value as sv
 from data.providers import load_coverage
+from ui import kit
 from ui.components import (facet_html, fmt, gauge_bar_html, injury_card_html,
                            movement_arrow, ordinal, percentile_chart, radar_chart,
                            sparkline_fig, sw_card_html, unicode_spark)
+
+
+def _sharp_power_rank(extras) -> pd.Series | None:
+    """Sharp Football's independent charted-EPA power rank (1 = best), or None."""
+    rt = sv.epa_ratings(extras.get("sharp") or {})
+    if rt.empty or "off_epa" not in rt.columns or "def_epa" not in rt.columns:
+        return None
+    return (rt["off_epa"] - rt["def_epa"]).rank(ascending=False, method="min")
 
 
 def _pct(rank, total: int = 32) -> float:
@@ -98,56 +108,75 @@ def _strengths_struggles(facets: list[dict]) -> None:
 
 
 # --- grade + thesis header ---------------------------------------------------
-def _metric_move(label, rank, delta, help_txt) -> str:
-    arrow = movement_arrow(delta)
-    move = f" {arrow}" if arrow else ""
-    return (f"<div style='font-size:0.8rem;color:#8a8a8a;'>{label}</div>"
-            f"<div style='font-size:1.5rem;font-weight:700;line-height:1.1;'>{ordinal(rank)}{move}</div>")
+def _rank_tile(label: str, rank, delta=None, help_accent="accent") -> str:
+    val = ordinal(int(rank)) if rank is not None and pd.notna(rank) else "—"
+    direction = None
+    dtxt = None
+    if delta is not None and pd.notna(delta) and delta != 0:
+        direction = "up" if delta > 0 else "down"
+        dtxt = f"{abs(int(delta))} wk"
+    # rank accent: top-10 green, bottom-10 red, else neutral
+    acc = help_accent
+    if rank is not None and pd.notna(rank):
+        acc = "edge" if int(rank) <= 10 else ("fade" if int(rank) >= 23 else "accent")
+    return kit.kpi(label, val, dtxt, direction, acc)
 
 
 def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> None:
     meta = loaders.team_meta().get(team, {})
-    color = meta.get("color") or "#1f77b4"
+    color = meta.get("color") or kit.PALETTE["accent"]
     from data import betting
     power = betting.power_ratings(off, deff)
     prank = int(power.loc[team, "power_rank"]) if team in power.index and pd.notna(power.loc[team, "power_rank"]) else None
+    net = float(power.loc[team, "net"]) if team in power.index and pd.notna(power.loc[team, "net"]) else None
     grade = profiles.team_grade(prank)
     thesis = profiles.team_thesis(team, off, deff, extras) if team in off.index else ""
 
-    # week-over-week movement from persisted snapshots (empty until weeks accrue)
     hist = history.load_history(config.CURRENT_SEASON)
     mv = {k: history.rank_movement(hist, f"{k}_rank") for k in ("power", "off", "def")}
+    sharp_rank = _sharp_power_rank(extras)
+    sos = extras.get("sos")
+    pace = extras.get("pace")
+    pace_rank = pace.rank(ascending=False, method="min") if pace is not None and len(pace) else None
 
     c_logo, c_name, c_grade = st.columns([1, 7, 2])
     if meta.get("logo"):
-        c_logo.image(meta["logo"], width=58)
+        c_logo.image(meta["logo"], width=60)
+    pi = profiles.pass_identity(team, off) if team in off.index else None
+    qb = extras.get("qb")
+    qlab = qb.loc[team].get("qb_style", "—") if qb is not None and not qb.empty and team in qb.index else "—"
+    ident = f"{pi['base']} · {qlab}" if pi else qlab
     c_name.markdown(
-        f"<div style='border-left:6px solid {color};padding:2px 0 2px 12px;'>"
+        f"<div style='border-left:6px solid {color};padding:2px 0 2px 13px;'>"
         f"<h2 style='margin:0;'>{meta.get('name', team)}</h2>"
-        f"<span style='color:#9aa0a6;font-size:0.9rem;'>{thesis}</span></div>",
+        f"<div style='color:var(--ink-dim);font-size:0.92rem;'>{thesis}</div>"
+        f"<div style='color:var(--ink-faint);font-size:0.78rem;margin-top:2px;'>{ident}</div></div>",
         unsafe_allow_html=True)
     c_grade.markdown(
-        f"<div style='text-align:center;border:1px solid {color};border-radius:12px;padding:4px;'>"
-        f"<div style='font-size:0.65rem;letter-spacing:.14em;color:#8a8a8a;'>GRADE</div>"
-        f"<div style='font-size:2rem;font-weight:800;line-height:1;color:{color};'>{grade}</div></div>",
+        f"<div style='text-align:center;border:1px solid {color};border-radius:12px;padding:6px 4px;"
+        f"box-shadow:0 0 18px -6px {color};'>"
+        f"<div style='font-family:\"IBM Plex Mono\",monospace;font-size:0.6rem;letter-spacing:.16em;"
+        f"color:var(--ink-faint);'>GRADE</div>"
+        f"<div style='font-family:\"Archivo\";font-size:2.1rem;font-weight:900;line-height:1;"
+        f"color:{color};'>{grade}</div></div>",
         unsafe_allow_html=True)
 
     o = off.loc[team] if team in off.index else None
     d = deff.loc[team] if team in deff.index else None
-    k1, k2, k3, k4 = st.columns(4)
-    k1.markdown(_metric_move("Offense", o["epa_play_rank"] if o is not None else None,
-                             mv["off"].get(team), "Offensive EPA/play rank"), unsafe_allow_html=True)
-    k2.markdown(_metric_move("Defense", d["epa_play_rank"] if d is not None else None,
-                             mv["def"].get(team), "Defensive EPA/play rank"), unsafe_allow_html=True)
-    pi = profiles.pass_identity(team, off) if team in off.index else None
-    k3.markdown(f"<div style='font-size:0.8rem;color:#8a8a8a;'>Identity</div>"
-                f"<div style='font-size:1.1rem;font-weight:600;margin-top:6px;'>{pi['base'] if pi else '—'}</div>",
-                unsafe_allow_html=True)
-    qb = extras.get("qb")
-    qlab = qb.loc[team].get("qb_style", "—") if qb is not None and not qb.empty and team in qb.index else "—"
-    k4.markdown(f"<div style='font-size:0.8rem;color:#8a8a8a;'>QB style</div>"
-                f"<div style='font-size:1.1rem;font-weight:600;margin-top:6px;'>{qlab}</div>",
-                unsafe_allow_html=True)
+    cols = st.columns(6)
+    cols[0].markdown(_rank_tile("Offense", o["epa_play_rank"] if o is not None else None,
+                                mv["off"].get(team)), unsafe_allow_html=True)
+    cols[1].markdown(_rank_tile("Defense", d["epa_play_rank"] if d is not None else None,
+                                mv["def"].get(team)), unsafe_allow_html=True)
+    net_acc = "edge" if (net or 0) > 0.02 else ("fade" if (net or 0) < -0.02 else "accent")
+    cols[2].markdown(kit.kpi("Net EPA/100", f"{net*100:+.1f}" if net is not None else "—",
+                             None, None, net_acc), unsafe_allow_html=True)
+    cols[3].markdown(_rank_tile("Sharp power", sharp_rank.get(team) if sharp_rank is not None else None,
+                                help_accent="violet"), unsafe_allow_html=True)
+    cols[4].markdown(_rank_tile("Pace", pace_rank.get(team) if pace_rank is not None else None,
+                                help_accent="sharp"), unsafe_allow_html=True)
+    sos_val = f"{float(sos.get(team)):+.3f}" if sos is not None and team in sos.index else "—"
+    cols[5].markdown(kit.kpi("Sched (SOS)", sos_val, None, None, "accent"), unsafe_allow_html=True)
 
     # EPA-trajectory sparkline + recent form
     weekly = history.weekly_epa(extras.get("pbp"))
@@ -169,11 +198,69 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
         cf.caption("↕ Week-over-week movement arrows appear once the season logs two weeks.")
 
 
-# --- offense / defense sections (kept) ---------------------------------------
-def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
+# --- Sharp caption helpers (surface the new data in the glance layer) --------
+def _sharp_off_caption(team: str, extras: dict) -> None:
+    sharp = extras.get("sharp") or {}
+    if not sv.available(sharp):
+        return
+    bits = []
+    pp = sv.pass_pro_ranks(sharp)
+    if not pp.empty and team in pp.index:
+        bits.append(f"pass pro **{ordinal(int(pp.loc[team]))}**")
+    ol = sharp.get("off_line")
+    if ol is not None and team in ol.index:
+        ttt = sv._series(ol, "time to throw")
+        if ttt is not None and team in ttt.index and pd.notna(ttt.loc[team]):
+            bits.append(f"TTT {ttt.loc[team]:.2f}s")
+    pers = sharp.get("off_personnel")
+    if pers is not None and team in pers.index:
+        p11 = sv._series(pers, "11")
+        if p11 is not None and team in p11.index and pd.notna(p11.loc[team]):
+            v = p11.loc[team]
+            bits.append(f"11-personnel {v:.0f}%" if v > 1.5 else f"11-personnel {v*100:.0f}%")
+    if bits:
+        st.caption("**Sharp charting:** " + " · ".join(bits))
+
+
+def _sharp_def_caption(team: str, extras: dict) -> None:
+    sharp = extras.get("sharp") or {}
+    if not sv.available(sharp):
+        return
+    bits = []
+    pr = sv.pass_rush_ranks(sharp)
+    if not pr.empty and team in pr.index:
+        bits.append(f"pass rush **{ordinal(int(pr.loc[team]))}**")
+    dt = sharp.get("def_tendencies")
+    if dt is not None and team in dt.index:
+        bl = sv._series(dt, "blitz")
+        if bl is not None and team in bl.index and pd.notna(bl.loc[team]):
+            v = bl.loc[team]
+            bits.append(f"blitz {v:.0f}%" if v > 1.5 else f"blitz {v*100:.0f}%")
+    cbp = sv.coverage_by_position(sharp)
+    if not cbp.empty and team in cbp.index:
+        # name the softest position coverage (highest YPT rank) as a warning
+        rank_cols = {c: cbp.loc[team, c] for c in cbp.columns if c.endswith("_rank")}
+        if rank_cols:
+            worst = max(rank_cols, key=lambda c: rank_cols[c])
+            pos = worst.replace("ypt_", "").replace("_rank", "")
+            bits.append(f"softest vs **{pos}** ({ordinal(int(rank_cols[worst]))})")
+    if bits:
+        st.caption("**Sharp charting:** " + " · ".join(bits))
+
+
+def _team_radar(team: str, off, deff, extras, side: str, title: str) -> None:
+    cats, vals = _radar_values(team, off, deff, extras, side)
+    if not cats:
+        return
+    color = loaders.team_meta().get(team, {}).get("color") or kit.PALETTE["accent"]
+    st.plotly_chart(radar_chart(cats, [(team, vals, color)], title), width="stretch")
+
+
+# --- offense / defense sections ----------------------------------------------
+def _offense_section(off: pd.DataFrame, deff: pd.DataFrame, team: str, extras: dict) -> None:
     o = off.loc[team]
     st.markdown("### Offense")
-    cc, cn = st.columns([3, 2])
+    cc, cr = st.columns(2)
     with cc:
         rows = [
             ("Overall (pts/100)", fmt(o["epa_play"], "epa"), o["epa_play_rank"]),
@@ -184,7 +271,9 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
             ("Explosive", fmt(o["explosive_rate"], "pct"), o["explosive_rate_rank"]),
         ]
         st.plotly_chart(percentile_chart(rows, "Offense percentiles"), width="stretch")
-    with cn:
+    with cr:
+        _team_radar(team, off, deff, extras, "offense", "Offense fingerprint")
+    if True:
         with st.container(border=True):
             pi = profiles.pass_identity(team, off)
             st.markdown("**Run / Pass identity**")
@@ -221,6 +310,7 @@ def _offense_section(off: pd.DataFrame, team: str, extras: dict) -> None:
                 c = co.loc[team]
                 st.caption(f"**Scheme:** {c.get('pa_label', '—')} "
                            f"(PA {fmt(c['play_action_rate'], 'pct')} · motion {fmt(c['motion_rate'], 'pct')})")
+            _sharp_off_caption(team, extras)
     _strengths_struggles(profiles.offense_facets(team, off, extras))
 
 
@@ -228,7 +318,7 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
                      extras: dict, scheme_row) -> None:
     d = deff.loc[team]
     st.markdown("### Defense")
-    cc, cn = st.columns([3, 2])
+    cc, cr = st.columns(2)
     with cc:
         rows = [
             ("Overall allowed", fmt(d["epa_play"], "epa"), d["epa_play_rank"]),
@@ -239,7 +329,9 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             ("Explosive allowed", fmt(d["explosive_rate"], "pct"), d["explosive_rate_rank"]),
         ]
         st.plotly_chart(percentile_chart(rows, "Defense percentiles (100 = stingiest)"), width="stretch")
-    with cn:
+    with cr:
+        _team_radar(team, None, deff, extras, "defense", "Defense fingerprint")
+    if True:
         with st.container(border=True):
             prs = extras.get("pressure")
             if prs is not None and not prs.empty and team in prs.index:
@@ -261,6 +353,7 @@ def _defense_section(deff: pd.DataFrame, blitz: pd.DataFrame, team: str,
             else:
                 st.caption("**Coverage (zone/man):** _auto-fetch pending or offseason_ ")
             st.caption("_Upload PFF (sidebar) → Cover 0–6 shells & situational man/zone._")
+            _sharp_def_caption(team, extras)
     _strengths_struggles(profiles.defense_facets(team, deff, extras))
 
 
@@ -345,7 +438,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     overview, advanced = st.tabs(["Overview", "Advanced"])
     with overview:
         if team in off.index:
-            _offense_section(off, team, extras)
+            _offense_section(off, deff, team, extras)
         st.divider()
         if team in deff.index:
             _defense_section(deff, blitz, team, extras, scheme_row)
