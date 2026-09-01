@@ -46,7 +46,7 @@ def offense_facets(team: str, off: pd.DataFrame, extras: dict) -> list[dict]:
         _f("Pass protection", "sacks allowed rate", _get(extras.get("protection"), team, "protection_rank")),
         _f("vs Blitz", "efficiency when blitzed", _get(extras.get("ovb"), team, "vs_blitz_rank")),
     ]
-    return [f for f in facets if f]
+    return [dict(f, side="offense") for f in facets if f]
 
 
 def defense_facets(team: str, deff: pd.DataFrame, extras: dict) -> list[dict]:
@@ -65,7 +65,7 @@ def defense_facets(team: str, deff: pd.DataFrame, extras: dict) -> list[dict]:
         _f("Coverage", "covering TEs", _get(dvp.get("TE"), team, "def_rank")),
         _f("Coverage", "covering the slot / WR3", _get(wr_def.get(3), team, "def_rank")),
     ]
-    return [f for f in facets if f]
+    return [dict(f, side="defense") for f in facets if f]
 
 
 def strengths_and_struggles(facets: list[dict], n: int = 3
@@ -103,10 +103,16 @@ def team_thesis(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     ident = pass_identity(team, off)["base"] if team in off.index else ""
     lead = f"{ident} offense" if ident and ident != "—" else "Balanced attack"
     if s:
-        core = f"{lead} that leans on {s[0]['unit'].lower()} ({_ordinal(s[0]['rank'])})"
+        core = f"{lead} that leans on {s[0]['detail']} ({_ordinal(s[0]['rank'])})"
     else:
         core = f"{lead} with no standout unit"
-    weak = f"exploitable at {w[0]['unit'].lower()} ({_ordinal(w[0]['rank'])})" if w else "few clear holes"
+    if w:
+        # be specific + side-aware: a defensive hole is "exploitable"; an
+        # offensive one is a "struggle" — and always name the exact metric.
+        verb = "exploitable in" if w[0].get("side") == "defense" else "struggles with"
+        weak = f"{verb} {w[0]['detail']} ({_ordinal(w[0]['rank'])})"
+    else:
+        weak = "few clear holes"
     return f"{core}; {weak}."
 
 
