@@ -17,17 +17,17 @@ from data import loaders, touchdowns as td
 
 def _card(col, r) -> None:
     a = r["Anytime%"]
-    color = "#2dd4bf" if a >= 55 else ("#5eb3f0" if a >= 38 else "#8b98a5")
+    color = "var(--edge)" if a >= 55 else ("var(--accent)" if a >= 38 else "var(--ink-faint)")
     col.markdown(
-        f"<div style='border:1px solid #1e2732;border-left:4px solid {color};border-radius:12px;"
-        f"padding:13px 15px;height:100%;background:#141b23;'>"
+        f"<div style='border:1px solid var(--line);border-left:4px solid {color};border-radius:12px;"
+        f"padding:13px 15px;height:100%;background:var(--surface);'>"
         f"<div style='font-weight:700;font-size:1.04rem;'>{r['Player']} "
-        f"<span style='color:#8b98a5;font-weight:400;font-size:0.82rem;'>{r['Pos']} · {r['Team']} vs {r['Opp']}</span></div>"
+        f"<span style='color:var(--ink-faint);font-weight:400;font-size:0.82rem;'>{r['Pos']} · {r['Team']} vs {r['Opp']}</span></div>"
         f"<div style='display:flex;gap:16px;align-items:baseline;margin:8px 0 4px;'>"
         f"<div><span style='font-size:1.5rem;font-weight:800;color:{color};'>{a:.0f}%</span>"
-        f"<span style='color:#8b98a5;font-size:0.78rem;'> anytime</span></div>"
-        f"<div style='color:#8b98a5;font-size:0.85rem;'>fair {r['fair']:+d} · {r['xTD']:.2f} xTD · 2+ {r['2+%']:.0f}%</div></div>"
-        f"<div style='font-size:0.82rem;color:#8b98a5;'>{r['Driver']} · {int(r['GL touches'])} GL touches · "
+        f"<span style='color:var(--ink-faint);font-size:0.78rem;'> anytime</span></div>"
+        f"<div style='color:var(--ink-dim);font-size:0.85rem;'>fair {r['fair']:+d} · {r['xTD']:.2f} xTD · 2+ {r['2+%']:.0f}%</div></div>"
+        f"<div style='font-size:0.82rem;color:var(--ink-dim);'>{r['Driver']} · {int(r['GL touches'])} GL touches · "
         f"team total {r['TeamTotal']:.0f}{(' · ' + r['Weather']) if r['Weather'] else ''}</div></div>",
         unsafe_allow_html=True)
 

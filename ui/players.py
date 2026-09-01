@@ -33,19 +33,46 @@ def _script(off, deff, extras, team, opp, team_is_home) -> float:
 # --- section 1: auto prop picks ----------------------------------------------
 def _pick_card(col, r) -> None:
     conf = r["conf"]
-    color = "#2dd4bf" if conf >= 50 else ("#5eb3f0" if conf >= 32 else "#8b98a5")
-    side_color = "#3fb950" if r["Side"] == "Over" else "#f85149"
+    color = "var(--edge)" if conf >= 50 else ("var(--accent)" if conf >= 32 else "var(--ink-faint)")
+    side_color = "var(--edge)" if r["Side"] == "Over" else "var(--fade)"
     col.markdown(
-        f"<div style='border:1px solid #1e2732;border-left:4px solid {color};border-radius:12px;"
-        f"padding:13px 15px;height:100%;background:#141b23;'>"
+        f"<div style='border:1px solid var(--line);border-left:4px solid {color};border-radius:12px;"
+        f"padding:13px 15px;height:100%;background:var(--surface);'>"
         f"<div style='font-weight:700;font-size:1.02rem;'>{r['Player']} "
-        f"<span style='color:#8b98a5;font-weight:400;font-size:0.85rem;'>{r['Pos']} · {r['Team']}</span></div>"
+        f"<span style='color:var(--ink-faint);font-weight:400;font-size:0.85rem;'>{r['Pos']} · {r['Team']}</span></div>"
         f"<div style='margin:4px 0;'><span style='color:{side_color};font-weight:700;'>{r['Side']} "
-        f"{r['Stat']}</span> <span style='color:#8b98a5;'>· proj {r['Projection']:g} vs {r['Baseline']:g}</span></div>"
-        f"<div style='font-size:0.85rem;color:#8b98a5;'>{r['Matchup']}</div>"
+        f"{r['Stat']}</span> <span style='color:var(--ink-dim);'>· proj {r['Projection']:g} vs {r['Baseline']:g}</span></div>"
+        f"<div style='font-size:0.85rem;color:var(--ink-dim);'>{r['Matchup']}</div>"
         f"<div style='margin-top:6px;'><span style='color:{color};font-weight:700;'>{r['Hit%']:.0f}% "
-        f"lean</span> <span style='color:#8b98a5;font-size:0.8rem;'>· conf {conf:.0f}</span></div></div>",
+        f"lean</span> <span style='color:var(--ink-faint);font-size:0.8rem;'>· conf {conf:.0f}</span></div></div>",
         unsafe_allow_html=True)
+
+
+def _coverage_matchups(extras) -> None:
+    """Sharp coverage-by-position — which defenses are soft vs each position (prop targets)."""
+    from data import sharp_value as sv
+    from ui import kit
+    cbp = sv.coverage_by_position(extras.get("sharp") or {})
+    if cbp.empty:
+        return
+    st.markdown("### Defense coverage by position")
+    st.caption("Yards allowed per target to each position (Sharp charting). "
+               "Green = tough coverage, **red = soft — target the red cells** for that position's props.")
+    order = ["WR", "TE", "RB", "Slot", "Outside"]
+    val_cols = {f"ypt_{p}": p for p in order if f"ypt_{p}" in cbp.columns}
+    disp = cbp[list(val_cols)].rename(columns=val_cols)
+    ranks = {p: cbp[f"ypt_{p}_rank"] for p in val_cols.values() if f"ypt_{p}_rank" in cbp.columns}
+    disp = disp.sort_index()
+
+    def _style(colseries):
+        rk = ranks.get(colseries.name)
+        if rk is None:
+            return [""] * len(colseries)
+        # rank 1 = lowest YPT = tough coverage = green; rank 32 = soft = red (a target)
+        return [f"background-color:{kit.heat_bg(rk.loc[i])}" for i in colseries.index]
+
+    sty = disp.style.apply(_style).format("{:.1f}")
+    st.dataframe(sty, width="stretch")
 
 
 def _auto_picks(stats, off, deff, extras, games) -> None:
@@ -197,5 +224,7 @@ def render(off, deff, schedule, extras) -> None:
     else:
         st.info("Schedule not loaded — showing the finder and usage. Auto picks return with the schedule.")
     _finder(stats, off, deff, extras, schedule)
+    st.divider()
+    _coverage_matchups(extras)
     st.divider()
     _usage(stats, teams)
