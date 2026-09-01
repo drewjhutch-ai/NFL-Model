@@ -48,13 +48,14 @@ def over_prob(mean: float, line: float, stat: str) -> float:
 
 
 def project_player(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
-                   script: float = 0.0) -> dict:
+                   script: float = 0.0, cov: pd.DataFrame | None = None) -> dict:
     """Matchup-adjusted projected means, optionally nudged by game script.
 
     ``script`` is the team's projected margin (+ = favored). A favored team runs
     more late (bump carries, trim pass volume); an underdog throws more.
+    ``cov`` is Sharp's coverage-by-position frame, blended into the receiving matchup.
     """
-    proj = players.project(player, opp, deff, dvp)
+    proj = players.project(player, opp, deff, dvp, cov)
     if script and proj:
         pass_bump = 1 - min(max(script, -14), 14) / 100.0   # dog throws more
         rush_bump = 1 + min(max(script, -14), 14) / 120.0   # favorite runs more
@@ -119,6 +120,8 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
         return pd.DataFrame()
     dvp = extras.get("dvp", {})
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
+    from data import sharp_value
+    cov = sharp_value.coverage_by_position(extras.get("sharp") or {})
     rows = []
     for _, g in games.iterrows():
         home, away = g["home_team"], g["away_team"]
@@ -127,7 +130,7 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
             script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
             tp = P.team_players(stats, team).head(per_team)
             for _, pl in tp.iterrows():
-                proj = project_player(pl, opp, deff, dvp, script=script)
+                proj = project_player(pl, opp, deff, dvp, script=script, cov=cov)
                 for stat, mean in proj.items():
                     # TD/count props need a real half-point line (0.5/1.5) to read
                     # sensibly — leave those to the finder, not the auto board.

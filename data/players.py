@@ -124,8 +124,14 @@ def _factor(rank, spread: float = 0.14) -> float:
     return 1.0 + (int(rank) - 16.5) / 16.5 * spread
 
 
-def project(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict) -> dict:
-    """Matchup-adjusted projection for a player vs opponent ``opp``."""
+def project(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
+            cov: pd.DataFrame | None = None) -> dict:
+    """Matchup-adjusted projection for a player vs opponent ``opp``.
+
+    ``cov`` (optional) is Sharp Football's coverage-by-position frame (YPT
+    allowed, ranked). When present it's blended into the receiving matchup factor
+    so props also see the charted coverage strength, not just nflverse dvp.
+    """
     pos = player.get("pos", "")
     out = {}
     # passing (QB) vs opp pass defense
@@ -145,6 +151,11 @@ def project(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict) -> dict:
     if pos in ("RB", "WR", "TE"):
         dfp = dvp.get(pos)
         cf = _factor(dfp.loc[opp, "def_rank"]) if dfp is not None and opp in dfp.index else 1.0
+        # blend in Sharp's charted YPT-allowed-by-position vs this defense
+        if cov is not None and not cov.empty and opp in cov.index:
+            rc = cov.loc[opp].get(f"ypt_{pos}_rank")
+            if pd.notna(rc):
+                cf = (cf + _factor(rc)) / 2.0
         if player.get("targets", 0) >= 1.5:
             out["Rec yds"] = player.get("receiving_yards", 0) * cf
             out["Rec"] = player.get("receptions", 0) * cf
