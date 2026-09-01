@@ -112,43 +112,51 @@ def _sharp_power(extras) -> pd.Series | None:
     return (rt["off_epa"] - rt["def_epa"]).rank(ascending=False, method="min")
 
 
-# --- state of the league (KPI strip) ----------------------------------------
-def _state_of_league(off, deff, extras, pr, recs) -> None:
-    meta = loaders.team_meta()
+# --- state of the league (leader strip) -------------------------------------
+def _leader_card(label: str, team: str | None, value: str, metric: str, accent: str) -> str:
+    meta = loaders.team_meta().get(team, {}) if team else {}
+    logo = f'<img src="{meta["logo"]}" alt="{team}">' if meta.get("logo") else ""
+    abbr = team or "—"
+    return (f'<div class="k-lead" style="--la:var(--{accent})">'
+            f'<div class="ll">{label}</div><div class="lv">{value}</div>'
+            f'<div class="lt">{logo} <b>{abbr}</b> · {metric}</div></div>')
 
-    def name(t):
-        return meta.get(t, {}).get("name", t) if t else "—"
 
+def _state_of_league(off, deff, extras, pr) -> None:
     def top(df, col, ascending):
         if df is None or getattr(df, "empty", True) or col not in df.columns:
-            return None
+            return None, None
         s = pd.to_numeric(df[col], errors="coerce").dropna()
-        return s.sort_values(ascending=ascending).index[0] if not s.empty else None
+        if s.empty:
+            return None, None
+        t = s.sort_values(ascending=ascending).index[0]
+        return t, float(s.loc[t])
 
     best_net = pr.sort_values("power_rank").index[0] if not pr.empty else None
-    top_off = top(off, "epa_play", False)
-    top_def = top(deff, "epa_play", True)
-    # biggest riser (movement)
-    move = history.rank_movement(history.load_history(config.CURRENT_SEASON), "power_rank")
-    riser = max(move.items(), key=lambda kv: kv[1]) if any(move.to_dict().values()) else None
-    # fastest pace (Sharp neutral pace → plays)
+    net_v = pr.loc[best_net, "net"] * 100 if best_net else None
+    to_t, to_v = top(off, "epa_play", False)
+    td_t, td_v = top(deff, "epa_play", True)
+    po_t, po_v = top(off, "pass_epa", False)
+    pd_t, pd_v = top(deff, "pass_epa", True)
     pace = extras.get("pace")
-    fastest = pace.sort_values(ascending=False).index[0] if pace is not None and len(pace) else None
-    # most explosive offense
-    expl = top(off, "explosive_rate", False)
+    fast_t = pace.sort_values(ascending=False).index[0] if pace is not None and len(pace) else None
+    fast_v = float(pace.loc[fast_t]) if fast_t is not None else None
 
-    tiles = [
-        ("Model #1", name(best_net), f"net {pr.loc[best_net,'net']*100:+.1f}/100" if best_net else "", "accent"),
-        ("Top offense", name(top_off), "EPA/play", "edge"),
-        ("Top defense", name(top_def), "EPA allowed", "edge"),
-        ("Biggest riser", name(riser[0]) if riser else "—",
-         f"+{int(riser[1])} spots" if riser else "in-season", "sharp"),
-        ("Fastest pace", name(fastest), "plays/game", "violet"),
-        ("Most explosive", name(expl), "big-play rate", "accent"),
+    cards = [
+        _leader_card("Model #1", best_net, f"{net_v:+.1f}" if net_v is not None else "—",
+                     "net EPA / 100", "accent"),
+        _leader_card("Top offense", to_t, f"{to_v*100:+.1f}" if to_v is not None else "—",
+                     "EPA / 100", "edge"),
+        _leader_card("Top defense", td_t, f"{td_v*100:+.1f}" if td_v is not None else "—",
+                     "EPA / 100 allowed", "edge"),
+        _leader_card("Best pass O", po_t, f"{po_v*100:+.1f}" if po_v is not None else "—",
+                     "pass EPA / 100", "accent"),
+        _leader_card("Best pass D", pd_t, f"{pd_v*100:+.1f}" if pd_v is not None else "—",
+                     "pass EPA / 100 allow", "violet"),
+        _leader_card("Fastest pace", fast_t, f"{fast_v:.1f}" if fast_v is not None else "—",
+                     "plays / game", "sharp"),
     ]
-    cols = st.columns(6)
-    for col, (label, val, sub, acc) in zip(cols, tiles):
-        col.markdown(kit.kpi(label, val, sub or None, None, acc), unsafe_allow_html=True)
+    st.markdown(f'<div class="k-leads">{"".join(cards)}</div>', unsafe_allow_html=True)
 
 
 # --- power board (sleek rows) ------------------------------------------------
@@ -164,56 +172,81 @@ def _netbar(net_per100: float, maxabs: float) -> str:
             f'<span class="nv">{net_per100:+.1f}</span></div>')
 
 
+def _rank_cell(rank) -> str:
+    if rank is None or pd.isna(rank):
+        return '<span class="rc">—</span>'
+    r = int(rank)
+    cls = "rc hi" if r <= 8 else ("rc lo" if r >= 25 else "rc")
+    return f'<span class="{cls}">{r}</span>'
+
+
+def _spark_svg(vals: list[float], color: str, w: int = 58, h: int = 18) -> str:
+    vals = [v for v in vals if v == v]  # drop NaN
+    if len(vals) < 2:
+        return '<span style="color:var(--ink-faint);font-size:.7rem">–</span>'
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+    pts = []
+    for i, v in enumerate(vals):
+        x = i / (n - 1) * (w - 3) + 1.5
+        y = (h - 2) - (v - lo) / rng * (h - 4) + 1
+        pts.append((x, y))
+    poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    lx, ly = pts[-1]
+    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+            f'<polyline points="{poly}" fill="none" stroke="{color}" stroke-width="1.5" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="1.9" fill="{color}"/></svg>')
+
+
 def _power_board(off, deff, extras, teams_filter, recs) -> None:
     pr = betting.power_ratings(off, deff)
     meta = loaders.team_meta()
     weekly = history.weekly_epa(extras.get("pbp"))
     move = history.rank_movement(history.load_history(config.CURRENT_SEASON), "power_rank")
-    sharp_rank = _sharp_power(extras)
+    sos = extras.get("sos")
+    accent = kit.PALETTE["accent"]
     ordered = [t for t in pr.sort_values("power_rank").index if t in teams_filter]
     if not ordered:
         st.info("No teams match that filter.")
         return
     maxabs = max(10.0, max(abs(pr.loc[t, "net"] * 100) for t in ordered))
 
-    head = ('<div class="k-pwh"><span>#</span><span></span><span>Team</span>'
-            '<span>Tier</span><span>Net EPA / 100</span><span>Off · Def · Sharp</span>'
-            '<span>Move</span><span>Trend</span></div>')
+    head = ('<div class="k-pwh"><span>#</span><span></span><span class="l">Team</span>'
+            '<span>Net EPA / 100</span><span>Off</span><span>Def</span><span>Pass O</span>'
+            '<span>Pass D</span><span>SOS</span><span>Δ</span><span>Trend</span></div>')
     rows = ['<div class="k-pw">', head]
     for t in ordered:
         r = pr.loc[t]
         m = meta.get(t, {})
-        rank = int(r["power_rank"])
-        tier_lbl, tier_kind = _tier(rank)
         logo = f'<img src="{m["logo"]}" alt="{t}">' if m.get("logo") else ""
         rec = _rec_text(recs.get(t))
         rec_html = f'<span class="rec">{rec}</span>' if rec else ""
-        o = int(off.loc[t, "epa_play_rank"]) if t in off.index else None
-        d = int(deff.loc[t, "epa_play_rank"]) if t in deff.index else None
-        sh = int(sharp_rank.get(t)) if sharp_rank is not None and t in sharp_rank.index else None
-        ods = (f'O<b>{o or "—"}</b> · D<b>{d or "—"}</b>'
-               + (f' · S<b>{sh}</b>' if sh else ""))
+        o = off.loc[t, "epa_play_rank"] if t in off.index else None
+        d = deff.loc[t, "epa_play_rank"] if t in deff.index else None
+        po = off.loc[t, "pass_epa_rank"] if t in off.index else None
+        pdf = deff.loc[t, "pass_epa_rank"] if t in deff.index else None
+        sos_v = f"{float(sos.get(t)):+.2f}" if sos is not None and t in sos.index else "—"
         mv = move.get(t, 0)
-        mv_html = (f'<span style="color:var(--edge)">▲{int(mv)}</span>' if mv > 0
-                   else f'<span style="color:var(--fade)">▼{abs(int(mv))}</span>' if mv < 0
-                   else '<span style="color:var(--ink-faint)">–</span>')
-        spark = unicode_spark([v * 100 for v in history.spark_series(weekly, t, "net")]) or "·"
+        mv_html = (f'<span class="mv" style="color:var(--edge)">▲{int(mv)}</span>' if mv > 0
+                   else f'<span class="mv" style="color:var(--fade)">▼{abs(int(mv))}</span>' if mv < 0
+                   else '<span class="mv" style="color:var(--ink-faint)">–</span>')
+        spark = _spark_svg([v * 100 for v in history.spark_series(weekly, t, "net")], accent)
         rows.append(
-            f'<div class="k-pwrow"><span class="rk">{rank}</span>{logo}'
+            f'<div class="k-pwrow"><span class="rk">{int(r["power_rank"])}</span>{logo}'
             f'<span><span class="tm">{m.get("name", t)}</span>{rec_html}</span>'
-            f'{kit.chip(tier_lbl, tier_kind)}'
             f'{_netbar(r["net"] * 100, maxabs)}'
-            f'<span class="ods">{ods}</span>'
-            f'<span class="mv">{mv_html}</span>'
-            f'<span class="spark">{spark}</span></div>')
+            f'{_rank_cell(o)}{_rank_cell(d)}{_rank_cell(po)}{_rank_cell(pdf)}'
+            f'<span class="rc">{sos_v}</span>{mv_html}'
+            f'<span class="spk">{spark}</span></div>')
     rows.append("</div>")
     st.markdown("".join(rows), unsafe_allow_html=True)
-    if not any(move.to_dict().values()):
-        st.caption("↕ Movement + trend fill in once the season logs two weeks. Net EPA/100 is "
-                   "opponent-adjusted (offense − defense). Tier by model rank.")
+    st.caption("Net EPA/100 is opponent-adjusted (offense − defense). Off/Def/Pass ranks: 1 = best "
+               "(green top-8, red bottom-8). SOS = avg opponent net rating. Δ and trend fill in weekly.")
 
-    with st.expander("Full sortable table — every column"):
-        _power_table(off, deff, extras, teams_filter, recs, sharp_rank, move)
+    with st.expander("Full sortable table — records, point differential, Sharp cross-check & more"):
+        _power_table(off, deff, extras, teams_filter, recs, _sharp_power(extras), move)
 
 
 def _power_table(off, deff, extras, teams_filter, recs, sharp_rank, move) -> None:
@@ -580,7 +613,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
     recs = _records(schedule, config.CURRENT_SEASON)
     pr = betting.power_ratings(off, deff)
 
-    _state_of_league(off, deff, extras, pr, recs)
+    _state_of_league(off, deff, extras, pr)
     st.divider()
     _confidence_banner(extras)
 
