@@ -141,14 +141,14 @@ def _confidence(board, gp) -> None:
     for _, b in view.iterrows():
         conf = b["confidence"]
         label = betengine.confidence_label(conf)
-        color = "#2ecc71" if conf >= 50 else ("#f1c40f" if conf >= 32 else "#9aa0a6")
+        color = "var(--edge)" if conf >= 50 else ("var(--sharp)" if conf >= 32 else "var(--ink-faint)")
         edge_txt = f"{b['edge']*100:+.1f} pts edge" if pd.notna(b["edge"]) else ""
         st.markdown(
             f"<div style='border-left:4px solid {color};padding:6px 0 6px 12px;margin:7px 0;'>"
             f"<span style='font-size:1.05rem;font-weight:700;'>{b['selection']}</span> "
-            f"<span style='color:#8a8a8a;'>· {b['market']} · {b['game']}</span><br>"
+            f"<span style='color:var(--ink-faint);'>· {b['market']} · {b['game']}</span><br>"
             f"<span style='color:{color};font-weight:600;'>{label} ({conf:.0f})</span> "
-            f"<span style='color:#9aa0a6;font-size:0.9rem;'>· {b['model_prob']*100:.0f}% "
+            f"<span style='color:var(--ink-dim);font-size:0.9rem;'>· {b['model_prob']*100:.0f}% "
             f"· fair {betengine.fmt_odds(b['fair_odds'])} · {edge_txt} · {b['rationale']}</span></div>",
             unsafe_allow_html=True)
     st.caption("Not chosen for odds — a −180 favorite and a +150 dog can both rank high. "

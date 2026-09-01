@@ -29,24 +29,24 @@ def _banner(away, home, row) -> None:
         with col:
             if m.get("logo"):
                 st.image(m["logo"], width=52)
-            st.markdown(f"<b style='border-left:5px solid {m.get('color') or '#1f77b4'};"
+            st.markdown(f"<b style='border-left:5px solid {m.get('color') or 'var(--accent)'};"
                         f"padding-left:8px;'>{m.get('name', t)}</b>", unsafe_allow_html=True)
-    cm.markdown("<div style='text-align:center;font-size:1.4rem;margin-top:14px;color:#888;'>@</div>",
-                unsafe_allow_html=True)
+    cm.markdown("<div style='text-align:center;font-size:1.4rem;margin-top:14px;"
+                "color:var(--ink-faint);'>@</div>", unsafe_allow_html=True)
     if row is not None and pd.notna(row.get("gameday")):
         st.caption(f"{row['gameday']} · Week {int(row['week'])}")
 
 
 def _bet_row(b, show_edge=True) -> str:
     conf = b["confidence"]
-    color = "#2dd4bf" if conf >= 50 else ("#5eb3f0" if conf >= 32 else "#8b98a5")
-    edge = (f" · <span style='color:#3fb950;'>{b['edge']*100:+.1f} pts edge</span>"
+    color = "var(--edge)" if conf >= 50 else ("var(--accent)" if conf >= 32 else "var(--ink-faint)")
+    edge = (f" · <span style='color:var(--edge);'>{b['edge']*100:+.1f} pts edge</span>"
             if show_edge and pd.notna(b["edge"]) and b["edge"] > 0 else "")
     return (f"<div style='border-left:4px solid {color};padding:5px 0 5px 12px;margin:6px 0;'>"
             f"<span style='font-size:1.05rem;font-weight:700;'>{b['selection']}</span> "
-            f"<span style='color:#8b98a5;'>· {b['market']}</span><br>"
+            f"<span style='color:var(--ink-faint);'>· {b['market']}</span><br>"
             f"<span style='color:{color};font-weight:600;'>{betengine.confidence_label(conf)} "
-            f"({conf:.0f})</span> <span style='color:#9aa0a6;font-size:0.9rem;'>· "
+            f"({conf:.0f})</span> <span style='color:var(--ink-dim);font-size:0.9rem;'>· "
             f"{b['model_prob']*100:.0f}% to hit · fair {betengine.fmt_odds(b['fair_odds'])}{edge}</span></div>")
 
 
@@ -88,9 +88,21 @@ def _game_props(off, deff, extras, row) -> None:
     })
 
 
+def _advantage(off, deff, extras, away, home) -> None:
+    from data import edges as _edges
+    from ui.components import matchup_advantage_grid
+    ae = _edges.facet_edges(away, home, off, deff, extras)
+    he = _edges.facet_edges(home, away, off, deff, extras)
+    if ae or he:
+        st.markdown("##### Matchup advantage grid")
+        st.markdown(matchup_advantage_grid(away, home, ae, he), unsafe_allow_html=True)
+
+
 def _breakdown(off, deff, extras, row) -> None:
     away, home = row["away_team"], row["home_team"]
     _banner(away, home, row)
+    st.divider()
+    _advantage(off, deff, extras, away, home)
     st.divider()
     from ui.betting import _games_played
     gp = _games_played(extras)
