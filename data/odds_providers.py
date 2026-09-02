@@ -30,6 +30,49 @@ _SNAP_DIR = Path(__file__).resolve().parents[1] / "odds_snapshots"
 # Books widely regarded as sharp (they move on sharp money, not public).
 SHARP_BOOKS = {"pinnacle", "circa", "circa sports", "betonline.ag", "bookmaker", "betcris"}
 
+# The Odds API bills regions × markets per request. US books are all a US bettor
+# can act on, so default to the two US regions (DK/FD/MGM/Caesars + Fanatics/ESPN
+# BET/etc.) — 2 regions × 3 markets = 6 credits/pull. Override with the
+# ODDS_API_REGIONS secret (e.g. "us" for the leanest 3-credit pull, or add
+# uk,au,eu only if you truly want offshore numbers).
+_DEFAULT_REGIONS = "us,us2"
+
+# Last quota the API reported (from response headers), for the UI to surface.
+LAST_QUOTA: dict = {}
+
+
+def _regions() -> str:
+    r = os.environ.get("ODDS_API_REGIONS")
+    if r:
+        return r
+    try:
+        import streamlit as st
+        return st.secrets.get("ODDS_API_REGIONS") or _DEFAULT_REGIONS
+    except Exception:  # noqa: BLE001
+        return _DEFAULT_REGIONS
+
+
+def _record_quota(resp) -> None:
+    """Stash the API's remaining/used credits from the response headers."""
+    try:
+        h = resp.headers
+        rem = h.get("x-requests-remaining")
+        used = h.get("x-requests-used")
+        last = h.get("x-requests-last")
+        if rem is not None:
+            LAST_QUOTA.update({
+                "remaining": int(float(rem)),
+                "used": int(float(used)) if used is not None else None,
+                "last_cost": int(float(last)) if last is not None else None,
+            })
+    except Exception:  # noqa: BLE001 - quota headers are best-effort
+        pass
+
+
+def quota() -> dict:
+    """Most recent {remaining, used, last_cost} the API reported, or empty."""
+    return dict(LAST_QUOTA)
+
 
 class LiveOddsProvider(ABC):
     name: str = "unnamed"
@@ -82,11 +125,13 @@ class TheOddsAPIProvider(LiveOddsProvider):
 
     def current(self) -> pd.DataFrame:
         url = f"https://api.the-odds-api.com/v4/sports/{_SPORT}/odds"
-        # All free-tier regions for maximum book coverage (a single request covers
-        # every region — one credit per market, not per region).
-        params = {"apiKey": self.api_key, "regions": "us,us2,uk,au,eu",
+        # Cost = regions × markets. Default us,us2 (6 credits) keeps every book a
+        # US bettor can use without paying for offshore lines. Configurable via
+        # the ODDS_API_REGIONS secret.
+        params = {"apiKey": self.api_key, "regions": _regions(),
                   "markets": "spreads,totals,h2h", "oddsFormat": "american"}
         resp = requests.get(url, params=params, timeout=20)
+        _record_quota(resp)
         resp.raise_for_status()
         df = self._normalize(resp.json())
         if not df.empty:

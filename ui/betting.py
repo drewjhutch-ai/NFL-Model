@@ -29,16 +29,10 @@ def _games_played(extras) -> int:
     return int(cur["week"].nunique()) if not cur.empty and "week" in cur.columns else 0
 
 
-@st.cache_data(ttl=300, show_spinner="Fetching live odds…")
 def _live_odds() -> pd.DataFrame:
-    prov = op.get_odds_provider()
-    if not prov.is_available():
-        return pd.DataFrame()
-    try:
-        return prov.current()
-    except Exception as exc:  # noqa: BLE001
-        print(f"[betting] live odds unavailable: {exc}")
-        return pd.DataFrame()
+    from data import odds_feed
+    df, _status = odds_feed.fetch()   # shared cache with the CLV tab — one pull, both tabs
+    return df
 
 
 def _effective_row(row: pd.Series, live_game: pd.DataFrame) -> pd.Series:
@@ -428,6 +422,19 @@ def _desk_header(scan, live) -> None:
     else:
         k[3].markdown(kit.kpi("Top move", "—", "stable board", None, "mute"),
                       unsafe_allow_html=True)
+    _quota_caption()
+
+
+def _quota_caption() -> None:
+    q = op.quota()
+    rem = q.get("remaining")
+    if rem is None:
+        return
+    cost = q.get("last_cost")
+    extra = f" · last pull cost {cost}" if cost else ""
+    warn = "  ⚠️ running low — pulls pause below 30" if rem < 60 else ""
+    st.caption(f"Odds-API credits remaining this month: **{rem:,}**{extra}. "
+               f"Betting & CLV share one 10-min cache, so both tabs cost a single pull.{warn}")
 
 
 def _sharp_board(scan, prov) -> None:

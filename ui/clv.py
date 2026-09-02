@@ -15,20 +15,12 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from data import betengine, betting, odds_providers
+from data import betengine, betting, odds_feed, odds_providers
 
 
-@st.cache_data(ttl=90, show_spinner="Pulling live multi-book odds…")
-def _fetch_odds() -> tuple[pd.DataFrame, str]:
-    """Return (odds, status). status ∈ ok | no_key | empty | error:<msg>."""
-    prov = odds_providers.get_odds_provider()
-    if not prov.is_available():
-        return pd.DataFrame(), "no_key"
-    try:
-        df = prov.current()
-    except Exception as exc:  # noqa: BLE001 - network/quota issues degrade to empty
-        return pd.DataFrame(), f"error:{exc}"
-    return (df, "ok") if not df.empty else (pd.DataFrame(), "empty")
+def _fetch_odds(force: bool = False) -> tuple[pd.DataFrame, str]:
+    """Shared, quota-frugal odds pull (one cache across Betting & CLV)."""
+    return odds_feed.fetch(force=force)
 
 
 def _best_american(series: pd.Series):
@@ -258,8 +250,13 @@ def _empty_state(status: str) -> None:
             "~500 requests/month, plenty for weekly line-shopping.\n"
             "2. In Streamlit Cloud: **Manage app → Settings → Secrets**, add\n"
             "   ```toml\n   ODDS_API_KEY = \"your-key-here\"\n   ```\n"
-            "3. Reboot the app. This tab lights up across every US, UK, AU & EU book automatically.\n\n"
+            "3. Reboot the app. This tab lights up across the US books automatically.\n\n"
             "Your key stays in Streamlit Secrets — never paste it into the app or commit it.")
+    elif status == "low_quota":
+        st.warning("**Auto-pull paused to protect your quota.** Your Odds-API monthly credits are "
+                   "nearly used up, so the app has stopped pulling on its own. Hit **↻ Refresh now** "
+                   "to force one pull, or wait for the monthly reset. (Tip: leave auto-refresh off and "
+                   "use the manual button to make the remaining credits last.)")
     elif status.startswith("error:"):
         st.error(f"The odds feed is connected but the last pull failed — likely out of monthly "
                  f"quota or a temporary network issue. It'll recover on the next refresh.\n\n"
@@ -269,15 +266,29 @@ def _empty_state(status: str) -> None:
                 "weekly slates and in the offseason). Lines return once books post the next slate.")
 
 
-def _body(auto: bool, off=None, deff=None, extras=None) -> None:
-    df, status = _fetch_odds()
+def _quota_line() -> None:
+    q = odds_providers.quota()
+    rem = q.get("remaining")
+    if rem is None:
+        return
+    cost = q.get("last_cost")
+    extra = f" · last pull cost {cost} credits" if cost else ""
+    warn = "  ⚠️ low — auto-pull pauses under 30" if rem < 60 else ""
+    st.caption(f"Odds-API credits left this month: **{rem:,}**{extra}. Shared 10-min cache with the "
+               f"Betting desk.{warn}")
+
+
+def _body(auto: bool, off=None, deff=None, extras=None, force: bool = False) -> None:
+    df, status = _fetch_odds(force=force)
     if df.empty:
         _empty_state(status)
+        _quota_line()
         return
     c1, c2, c3 = st.columns(3)
     c1.metric("Games", int((df[["away", "home"]].drop_duplicates()).shape[0]))
     c2.metric("Books", int(df["book"].nunique()))
     c3.metric("Feed", "Auto-refreshing ✓" if auto else "Manual")
+    _quota_line()
     st.divider()
     _discrepancy_board(df, off, deff, extras)
     st.divider()
@@ -297,22 +308,24 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
 
     ctop = st.columns([1, 2, 2])
     if ctop[0].button("↻ Refresh now"):
-        _fetch_odds.clear()
+        odds_feed.clear()
+        st.session_state["clv_force"] = True
         st.rerun()
+    force = st.session_state.pop("clv_force", False)
     auto = ctop[1].toggle("Auto-refresh (live)", value=False, key="clv_auto",
                           help="Re-pulls on a cadence. Burns Odds-API quota — leave off unless you want "
-                               "a live feed and have the quota for it.")
-    cadence = ctop[2].selectbox("Cadence", [60, 120, 300], index=1, format_func=lambda s: f"{s}s",
+                               "a live feed and have the quota for it. Auto-pull stops when quota runs low.")
+    cadence = ctop[2].selectbox("Cadence", [120, 300, 600], index=1, format_func=lambda s: f"{s}s",
                                 key="clv_cadence", disabled=not auto)
 
     if auto:
-        st.caption("⚡ Live: continuous polling uses quota fast — the paid Odds-API tier (~$30/mo) is the "
-                   "comfortable way to run this always-on.")
+        st.caption("⚡ Live: continuous polling uses quota fast — leave this off for weekly use. It pauses "
+                   "automatically when your monthly credits run low.")
 
         @st.fragment(run_every=cadence)
         def _live():
-            _fetch_odds.clear()
+            odds_feed.clear()
             _body(auto=True, off=off, deff=deff, extras=extras)
         _live()
     else:
-        _body(auto=False, off=off, deff=deff, extras=extras)
+        _body(auto=False, off=off, deff=deff, extras=extras, force=force)
