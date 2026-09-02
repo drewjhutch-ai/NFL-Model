@@ -626,25 +626,252 @@ def _edge_word(mag) -> str:
     return "Even"
 
 
-def _dropdowns(away, home, off, deff, extras) -> None:
-    st.markdown("### Deeper breakdown")
-    with st.expander("Trenches — O-line vs D-line (the undervalued battle)"):
-        for o, d in ((away, home), (home, away)):
-            rows = _trench_rows(o, d, deff, extras)
-            if rows:
-                st.markdown(f"**{o} blocking vs {d} front**")
-                df = pd.DataFrame(rows).rename(columns={f"{d} pass rush": f"{d} front"})
-                st.dataframe(df, width="stretch", hide_index=True)
-        st.caption("Pass protection = sacks allowed vs pressure generated. Run blocking = "
-                   "rush yards over expected vs run defense. An underdog winning the trenches "
-                   "is one of the strongest angles in football.")
-    with st.expander("WR1 / WR2 / WR3 detail"):
+# --- SCHEME LAB (its own space) ----------------------------------------------
+_POS_ORDER = ["WR", "Slot", "Outside", "TE", "RB"]
+
+
+def _cov_grid(away, home, extras) -> bool:
+    """Coverage-by-position heat grid: each offense vs the defense it faces.
+
+    Rows = receiver positions, columns = the two defenses' YPT allowed (+ rank,
+    heat-colored). The softest spot per defense is flagged as the offense's target
+    — this is the coverage-play comparison that names the attack.
+    """
+    from data import sharp_value as sv
+    from ui import kit
+    cbp = sv.coverage_by_position(extras.get("sharp") or {})
+    if cbp.empty or not (home in cbp.index or away in cbp.index):
+        return False
+    st.markdown('<div class="k-panel"><div class="hd">Coverage by position</div>'
+                '<div class="sub">Yards allowed per target, by where the receiver lines up. '
+                'Green = the defense gets picked apart there — the offense\'s target.</div>',
+                unsafe_allow_html=True)
+    # softest spot per defense (highest rank number among the position ranks)
+    soft = {}
+    for d in (away, home):
+        if d in cbp.index:
+            rks = {p: cbp.loc[d].get(f"ypt_{p}_rank") for p in _POS_ORDER
+                   if pd.notna(cbp.loc[d].get(f"ypt_{p}_rank"))}
+            if rks:
+                soft[d] = max(rks, key=lambda p: rks[p])
+    html = ['<table class="k-cvg"><tr><th class="rl">position</th>'
+            f'<th>{away} defense</th><th>{home} defense</th></tr>']
+    for pos in _POS_ORDER:
+        cells = []
+        for d in (away, home):
+            if d in cbp.index and pd.notna(cbp.loc[d].get(f"ypt_{pos}")):
+                ypt = cbp.loc[d, f"ypt_{pos}"]
+                rk = cbp.loc[d, f"ypt_{pos}_rank"]
+                bg = kit.heat_bg(rk)
+                tgt = " tgt" if soft.get(d) == pos else ""
+                cells.append(f'<td><div class="pc{tgt}" style="background:{bg}">{ypt:.1f}'
+                             f'<span class="rk">{ordinal(int(rk))}</span></div></td>')
+            else:
+                cells.append('<td><span style="color:var(--ink-faint)">—</span></td>')
+        html.append(f'<tr><td class="rl">{pos}</td>{"".join(cells)}</tr>')
+    html.append("</table>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+    tgts = []
+    for o, d in ((away, home), (home, away)):
+        if d in soft:
+            tgts.append(f"<b>{o}</b> should hunt the <b>{soft[d]}</b> matchup "
+                        f"({d} allows the {ordinal(int(cbp.loc[d, f'ypt_{soft[d]}_rank']))}-most YPT there)")
+    if tgts:
+        st.markdown('<div class="sub" style="margin-top:8px">▸ ' +
+                    "<br>▸ ".join(tgts) + "</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    return True
+
+
+def _scheme_panel(col, d_team, o_team, extras) -> None:
+    """One defense's coverage identity + how the opponent offense attacks it."""
+    from data import sharp_value as sv
+    sharp = extras.get("sharp") or {}
+    cs = sv.coverage_schemes(sharp)
+    bx = sv.box_tendencies(sharp)
+    with col:
+        rows = []
+        scheme_lab = ""
+        if not cs.empty and d_team in cs.index:
+            r = cs.loc[d_team]
+            scheme_lab = r.get("scheme", "")
+            for lab, key, c in (("Man", "man_rate", "var(--fade)"),
+                                ("Zone", "zone_rate", "var(--accent)"),
+                                ("Two-high (MOF open)", "middle_open_rate", "var(--violet)")):
+                v = r.get(key)
+                if pd.notna(v):
+                    w = max(3, min(100, v * 100))
+                    rows.append(f'<div class="k-schrow"><span class="lb">{lab}</span>'
+                                f'<div class="bar"><i style="width:{w:.0f}%;background:{c}"></i></div>'
+                                f'<span class="vl">{v*100:.0f}%</span></div>')
+        if not bx.empty and d_team in bx.index:
+            b = bx.loc[d_team]
+            for lab, key, c in (("Blitz", "blitz_rate", "var(--sharp)"),
+                                ("Heavy box", "heavy_box_rate", "var(--edge)")):
+                v = b.get(key)
+                if pd.notna(v):
+                    w = max(3, min(100, v * 100))
+                    rows.append(f'<div class="k-schrow"><span class="lb">{lab}</span>'
+                                f'<div class="bar"><i style="width:{w:.0f}%;background:{c}"></i></div>'
+                                f'<span class="vl">{v*100:.0f}%</span></div>')
+        if not rows:
+            st.caption(f"No charted coverage scheme for {d_team}.")
+            return
+        tag = f'<span class="k-chip accent">{scheme_lab}</span>' if scheme_lab else ""
+        st.markdown(f'<div class="k-panel"><div class="hd">{d_team} defense {tag}</div>'
+                    f'<div class="sub">how {o_team} attacks it</div>{"".join(rows)}'
+                    f'<div class="sub" style="margin-top:9px">{_attack_read(cs, d_team, o_team)}</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+
+def _attack_read(cs, d_team, o_team) -> str:
+    if cs.empty or d_team not in cs.index:
+        return ""
+    r = cs.loc[d_team]
+    m, z = r.get("man_rate"), r.get("zone_rate")
+    mof = r.get("middle_open_rate")
+    bits = []
+    if pd.notna(m) and pd.notna(z):
+        if m >= z:
+            bits.append(f"<b>Man-heavy</b> — {o_team} wants separators, mesh/pick concepts and "
+                        f"designed motion; a mobile QB profits.")
+        else:
+            bits.append(f"<b>Zone-heavy</b> — {o_team} wants option routes, sitting in the soft "
+                        f"spots and yards-after-catch.")
+    if pd.notna(mof):
+        bits.append("Two-high shells invite the run and underneath throws." if mof >= 0.5
+                    else "Single-high leaves grass deep — shot plays are live.")
+    return " ".join(bits)
+
+
+def _scheme_identity(away, home, extras) -> bool:
+    from data import sharp_value as sv
+    if sv.coverage_schemes(extras.get("sharp") or {}).empty:
+        return False
+    st.markdown("##### Coverage scheme & how to attack it")
+    c1, c2 = st.columns(2)
+    _scheme_panel(c1, home, away, extras)   # away offense vs home defense
+    _scheme_panel(c2, away, home, extras)   # home offense vs away defense
+    return True
+
+
+def _personnel_panel(col, o_team, d_team, extras) -> None:
+    """One offense's personnel groupings vs the opponent's box tendencies."""
+    from data import sharp_value as sv
+    sharp = extras.get("sharp") or {}
+    pers = sv.personnel_rates(sharp)
+    bx = sv.box_tendencies(sharp)
+    with col:
+        if pers.empty or o_team not in pers.index:
+            st.caption(f"No charted personnel for {o_team}.")
+            return
+        p = pers.loc[o_team]
+        groups = [("11", "3 WR"), ("12", "2 TE"), ("21", "2 RB"), ("13", "3 TE"), ("22", "goal-line")]
+        rows = []
+        for code, desc in groups:
+            v = p.get(code)
+            if pd.notna(v) and v > 0:
+                w = max(3, min(100, v * 100))
+                rows.append(f'<div class="k-schrow"><span class="lb">{code} · {desc}</span>'
+                            f'<div class="bar"><i style="width:{w:.0f}%;background:var(--accent)"></i></div>'
+                            f'<span class="vl">{v*100:.0f}%</span></div>')
+        note = ""
+        if not bx.empty and d_team in bx.index:
+            b = bx.loc[d_team]
+            lb, hb = b.get("light_box_rate"), b.get("heavy_box_rate")
+            heavy_o = (pd.notna(p.get("12")) and p.get("12", 0) + p.get("13", 0) + p.get("21", 0) >= 0.35)
+            if pd.notna(lb) and pd.notna(hb):
+                if heavy_o and lb >= hb:
+                    note = (f"{o_team} runs heavy sets and {d_team} stays light "
+                            f"({lb*100:.0f}% light box) — a run-game mismatch.")
+                elif not heavy_o and hb >= lb:
+                    note = (f"{o_team} spreads it out but {d_team} loads the box "
+                            f"({hb*100:.0f}% heavy) — throw against the light shell.")
+                else:
+                    note = f"{d_team} plays {lb*100:.0f}% light / {hb*100:.0f}% heavy box."
+        st.markdown(f'<div class="k-panel"><div class="hd">{o_team} personnel</div>'
+                    f'<div class="sub">grouping usage vs {d_team}\'s box</div>{"".join(rows)}'
+                    + (f'<div class="sub" style="margin-top:9px">▸ {note}</div>' if note else "")
+                    + '</div>', unsafe_allow_html=True)
+
+
+def _personnel_lab(away, home, extras) -> bool:
+    from data import sharp_value as sv
+    if sv.personnel_rates(extras.get("sharp") or {}).empty:
+        return False
+    st.markdown("##### Personnel & box")
+    c1, c2 = st.columns(2)
+    _personnel_panel(c1, away, home, extras)
+    _personnel_panel(c2, home, away, extras)
+    return True
+
+
+def _trench_lab(away, home, deff, extras) -> None:
+    """Promoted trenches — the O-line vs D-line battle as a first-class panel."""
+    st.markdown("##### Trenches — where underdogs win")
+    c1, c2 = st.columns(2)
+    for col, (o, d) in ((c1, (away, home)), (c2, (home, away))):
+        rows = _trench_rows(o, d, deff, extras)
+        with col:
+            if not rows:
+                st.caption(f"No trench data for {o} vs {d}.")
+                continue
+            body = []
+            for r in rows:
+                edge = r["Edge"]
+                cls = ("edge" if "offense" in edge.lower() else
+                       "fade" if "defense" in edge.lower() else "mute")
+                body.append(f'<div class="k-spec"><span class="sk">{r["Battle"]}</span>'
+                            f'<span class="sv">{o} <b>{r[f"{o} O-line"]}</b> vs '
+                            f'{d} <b>{r[f"{d} pass rush"]}</b> · '
+                            f'<span class="k-chip {cls}">{edge}</span></span></div>')
+            st.markdown(f'<div class="k-panel"><div class="hd">{o} blocking vs {d} front</div>'
+                        f'<div class="k-speclist">{"".join(body)}</div></div>',
+                        unsafe_allow_html=True)
+    st.caption("Pass protection = pressure allowed vs pressure generated · run blocking = RYOE vs "
+               "run defense. An underdog owning the trenches is one of football's strongest angles.")
+
+
+def _scheme_lab(away, home, off, deff, blitz, extras) -> None:
+    """The deeper breakdown, promoted to its own space: coverage, scheme, trenches, personnel."""
+    from data import sharp_value as sv
+    st.caption("The scheme read behind the number — coverage matchups, defensive identity, the "
+               "trenches, and personnel. This is where the offense-vs-coverage edge is named.")
+    any_sharp = False
+    if _cov_grid(away, home, extras):
+        any_sharp = True
+        st.divider()
+    if _scheme_identity(away, home, extras):
+        any_sharp = True
+        st.divider()
+    _trench_lab(away, home, deff, extras)
+    if _personnel_lab(away, home, extras):
+        any_sharp = True
+        st.divider()
+    else:
+        st.divider()
+    # WR tiers + situational stay as focused drill-downs
+    _wr_tiers(away, home, extras)
+    _situational(away, home, extras)
+    with st.expander("Environment — weather, rest, home field"):
+        _environment(away, home, extras)
+    _pff_coverage(away, home)
+    if not any_sharp:
+        st.info("The full scheme lab lights up once the Sharp Football feed is loaded "
+                "(coverage-by-position, scheme rates, personnel).")
+
+
+def _wr_tiers(away, home, extras) -> None:
+    with st.expander("WR1 / WR2 / WR3 vs coverage"):
         for o, d in ((away, home), (home, away)):
             wr = positional.wr_tier_matchup(o, d, extras.get("wr_off", pd.DataFrame()),
                                             extras.get("wr_def", {}))
             if not wr.empty:
                 st.markdown(f"**{o} receivers vs {d} coverage**")
                 st.dataframe(wr, width="stretch", hide_index=True)
+
+
+def _situational(away, home, extras) -> None:
     with st.expander("Situational & pace"):
         os_ = extras.get("off_sit"); pace = extras.get("pace")
         rows = []
@@ -657,9 +884,10 @@ def _dropdowns(away, home, off, deff, extras) -> None:
                              "Pace (plays/gm)": f"{pace.get(o, float('nan')):.0f}" if pace is not None else "—"})
         if rows:
             st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-    with st.expander("Environment — weather, rest, home field"):
-        _environment(away, home, extras)
-    with st.expander("Coverage scheme (unlocks with PFF)"):
+
+
+def _pff_coverage(away, home) -> None:
+    with st.expander("Man/zone from PFF export (optional)"):
         scheme = load_coverage(config.CURRENT_SEASON, st.session_state.get("pff_bytes"))
         if scheme is not None and not getattr(scheme, "empty", True):
             rows = []
@@ -669,8 +897,8 @@ def _dropdowns(away, home, off, deff, extras) -> None:
                                  "Man": fmt(scheme.loc[t, "man_rate"], "pct")})
             if rows:
                 st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-        st.caption("Zone/man rates show here from the blended feed. The **scheme-fit edge** "
-                   "activates automatically once a PFF offense-vs-coverage export is uploaded.")
+        st.caption("The scheme lab above already runs on the Sharp coverage feed. This panel adds "
+                   "PFF's man/zone split if you upload an export — a second charted source.")
 
 
 def _environment(away, home, extras) -> None:
@@ -815,38 +1043,41 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     if assessment is None:
         _projection_verdict(away, home, off, deff, extras)
 
-    st.divider()
-    st.markdown("### Tale of the tape")
-    _tale_of_the_tape(away, home, off, deff, extras)
-    _attack_meter(away, home, off, deff, extras)
+    tab_game, tab_lab = st.tabs(["📊  The Matchup", "🔬  Scheme Lab"])
 
-    st.divider()
-    _sharp_matchup(away, home, extras)
+    with tab_game:
+        st.markdown("### Tale of the tape")
+        _tale_of_the_tape(away, home, off, deff, extras)
+        _attack_meter(away, home, off, deff, extras)
 
-    st.divider()
-    _model_council(away, home, off, deff, extras)
+        st.divider()
+        _sharp_matchup(away, home, extras)
 
-    st.divider()
-    sim = _simulation(away, home, off, deff, extras, game_row)
-    if sim:
-        _box_score(sim, away, home, extras)
+        st.divider()
+        _model_council(away, home, off, deff, extras)
 
-    st.divider()
-    st.markdown("### Attack breakdowns")
-    la, ra = st.columns(2)
-    with la:
-        _direction(away, home, off, deff, blitz, extras)
-    with ra:
-        _direction(home, away, off, deff, blitz, extras)
-    st.caption("offense edge · defense edge. Bar length = raw edge; thickness = "
-               "how much the facet decides games; ordered by weighted impact.")
+        st.divider()
+        sim = _simulation(away, home, off, deff, extras, game_row)
+        if sim:
+            _box_score(sim, away, home, extras)
 
-    st.divider()
-    _dropdowns(away, home, off, deff, extras)
-    st.divider()
-    _angle_finder(away, home, off, deff, extras, assessment, sim)
-    st.divider()
-    _scouting(away, home, off, deff, extras)
+        st.divider()
+        st.markdown("### Attack breakdowns")
+        la, ra = st.columns(2)
+        with la:
+            _direction(away, home, off, deff, blitz, extras)
+        with ra:
+            _direction(home, away, off, deff, blitz, extras)
+        st.caption("offense edge · defense edge. Bar length = raw edge; thickness = "
+                   "how much the facet decides games; ordered by weighted impact.")
+
+        st.divider()
+        _angle_finder(away, home, off, deff, extras, assessment, sim)
+        st.divider()
+        _scouting(away, home, off, deff, extras)
+
+    with tab_lab:
+        _scheme_lab(away, home, off, deff, blitz, extras)
 
 
 def _custom(off, deff, blitz, extras, teams) -> None:

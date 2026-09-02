@@ -152,6 +152,82 @@ def coverage_by_position(sharp: dict) -> pd.DataFrame:
     return out
 
 
+# --- coverage scheme identity (man/zone, middle) -----------------------------
+def coverage_schemes(sharp: dict) -> pd.DataFrame:
+    """team -> man_rate, zone_rate, middle_open_rate (0-1) + a scheme label.
+
+    A defense's coverage identity: man-heavy teams get attacked by separators and
+    pick plays; zone-heavy teams by option routes and yards-after-catch. Middle-
+    open (two-high) vs middle-closed (single-high) frames the deep-shot picture.
+    Empty if the table is absent.
+    """
+    cs = sharp.get("coverage_schemes") if sharp else None
+    if cs is None or cs.empty:
+        return pd.DataFrame()
+    out = pd.DataFrame(index=cs.index)
+    man = _as_rate(_series(cs, "man", "rate"))
+    zone = _as_rate(_series(cs, "zone", "rate"))
+    mid_open = _as_rate(_series(cs, "middle", "open"))
+    if man is not None:
+        out["man_rate"] = man
+    if zone is not None:
+        out["zone_rate"] = zone
+    if mid_open is not None:
+        out["middle_open_rate"] = mid_open
+    if out.empty:
+        return out
+    lab = []
+    for t in out.index:
+        m = out.loc[t].get("man_rate")
+        z = out.loc[t].get("zone_rate")
+        if pd.notna(m) and pd.notna(z):
+            lab.append("man-heavy" if m >= z else "zone-heavy")
+        else:
+            lab.append("—")
+    out["scheme"] = lab
+    return out
+
+
+def box_tendencies(sharp: dict) -> pd.DataFrame:
+    """team -> blitz_rate, light_box_rate, heavy_box_rate, sub_rate (0-1).
+
+    How a defense lines up: blitz pressure vs coverage, and how they defend the
+    run (heavy box = stack the run, light box = respect the pass). Empty if absent.
+    """
+    dt = sharp.get("def_tendencies") if sharp else None
+    if dt is None or dt.empty:
+        return pd.DataFrame()
+    out = pd.DataFrame(index=dt.index)
+    for name, keys in (("blitz_rate", ("blitz",)), ("light_box_rate", ("light", "box")),
+                       ("heavy_box_rate", ("heavy", "box")), ("sub_rate", ("sub",))):
+        s = _as_rate(_series(dt, *keys))
+        if s is not None:
+            out[name] = s
+    return out
+
+
+# --- offensive personnel (11/12/21…) -----------------------------------------
+_PERS_COLS = ["11", "12", "13", "21", "22", "2+ TE", "2+ RB", "3+ WR"]
+
+
+def personnel_rates(sharp: dict) -> pd.DataFrame:
+    """team -> offensive personnel usage rates (0-1) for the common groupings.
+
+    11 = 1 RB/1 TE/3 WR (spread pass), 12 = 2 TE (heavier), 21 = 2 backs, etc.
+    Tells you the shape of an offense and which defensive personnel it forces.
+    Values are already normalized to fractions by the data layer. Empty if absent.
+    """
+    op = sharp.get("off_personnel") if sharp else None
+    if op is None or op.empty:
+        return pd.DataFrame()
+    out = pd.DataFrame(index=op.index)
+    for c in _PERS_COLS:
+        if c in op.columns:
+            s = pd.to_numeric(op[c], errors="coerce")
+            out[c] = _as_rate(s)
+    return out
+
+
 # --- trenches (charted) ------------------------------------------------------
 def pass_rush_ranks(sharp: dict) -> pd.Series:
     """team -> defensive pass-rush rank (1 = best) from Sharp pressure rate."""

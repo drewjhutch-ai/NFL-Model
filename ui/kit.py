@@ -210,6 +210,29 @@ section[data-testid="stSidebar"]{ border-right:1px solid var(--line); background
 .k-cell .sn{ font-family:'IBM Plex Mono',monospace; font-size:.75rem; width:44px; text-align:right;
   color:var(--ink); flex:none; }
 
+/* ---- coverage / scheme lab grids ---- */
+.k-cvg{ width:100%; border-collapse:separate; border-spacing:0; font-size:.82rem; }
+.k-cvg th{ font-family:'IBM Plex Mono',monospace; font-size:.58rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:4px 6px; text-align:center; }
+.k-cvg th.rl{ text-align:left; }
+.k-cvg td{ padding:6px 6px; text-align:center; border-top:1px solid var(--line); }
+.k-cvg td.rl{ text-align:left; font-weight:600; color:var(--ink); font-size:.86rem; }
+.k-cvg .pc{ border-radius:6px; padding:5px 0; font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.k-cvg .pc .rk{ display:block; font-size:.6rem; color:var(--ink-faint); font-weight:400; margin-top:1px; }
+.k-cvg .tgt{ color:var(--edge); }
+.k-panel{ background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:14px 16px; height:100%; }
+.k-panel .hd{ font-family:'Archivo',sans-serif; font-weight:700; font-size:1rem; color:var(--ink);
+  margin-bottom:2px; }
+.k-panel .sub{ font-size:.78rem; color:var(--ink-dim); margin-bottom:10px; }
+.k-schrow{ display:flex; align-items:center; gap:10px; margin:7px 0; }
+.k-schrow .bar{ flex:1; height:14px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:5px; overflow:hidden; position:relative; }
+.k-schrow .bar i{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; }
+.k-schrow .lb{ font-size:.78rem; color:var(--ink-dim); width:96px; flex:none; }
+.k-schrow .vl{ font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:var(--ink);
+  width:44px; text-align:right; flex:none; }
+
 /* ---- stat tile mini (NGS etc.) ---- */
 .k-mini{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
 .k-mini .l{ font-size:.7rem; color:var(--ink-dim); }
