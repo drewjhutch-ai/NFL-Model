@@ -59,7 +59,9 @@ def _effective_row(row: pd.Series, live_game: pd.DataFrame) -> pd.Series:
 
 # --- the edge board ----------------------------------------------------------
 def _edge_board(games, off, deff, extras, live, gp) -> None:
-    st.markdown("### The edge board")
+    st.markdown("### The ticket board")
+    st.caption("Every market we can price — spread, total, moneyline, props — against the no-vig "
+               "line, ranked by edge with a Kelly stake. The desk's full order book.")
     rows = []
     for _, r in games.iterrows():
         lg = live[(live["away"] == r["away_team"]) & (live["home"] == r["home_team"])] \
@@ -109,61 +111,78 @@ def _edge_board(games, off, deff, extras, live, gp) -> None:
 
 
 # --- sharp-money tracker -----------------------------------------------------
-def _sharp_tracker(away, home, live_game, a) -> None:
-    st.markdown("##### Sharp-money tracker")
-    signals = []          # (badge, text)
-    prov = op.get_odds_provider()
+_SIGNAL_KIND = {"RLM": "edge", "STEAM": "edge", "AGREE": "edge",
+                "SHARP": "sharp", "MOVE": "mute"}
+_SIGNAL_DOT = {"RLM": "var(--edge)", "STEAM": "var(--edge)", "AGREE": "var(--edge)",
+               "SHARP": "var(--sharp)", "MOVE": "var(--ink-faint)"}
 
-    # 1) line movement (open -> current), from odds snapshots
-    mv = prov.movement(away, home) if prov.is_available() else {}
+
+def _compute_signals(away, home, live_game, a, prov, pub_home: int | None = None):
+    """Automated sharp-money read for one game from odds snapshots — no paid data.
+
+    Returns (signals, move_dir, agree_side). Each signal is (badge, text, score);
+    score ranks the whole slate. Detects: line movement (steam), sharp-book vs
+    consensus divergence, reverse line movement (if public % supplied), and the
+    gold state where movement and our model agree.
+    """
+    signals = []
     move_dir = None
+    mv = prov.movement(away, home) if prov.is_available() else {}
     if mv:
         d = mv["delta"]
         if abs(d) >= 0.5:
             move_dir = home if d > 0 else away
-            signals.append(("STEAM" if abs(d) >= 1.5 else "MOVE",
+            steam = abs(d) >= 1.5
+            signals.append(("STEAM" if steam else "MOVE",
                             f"Line moved {mv['open_spread']:+.1f} → {mv['current_spread']:+.1f} "
-                            f"(toward **{move_dir}**)"))
-
-    # 2) sharp book vs consensus
+                            f"(toward {move_dir})", (3.0 if steam else 1.2) + abs(d) * 0.3))
     if live_game is not None and not live_game.empty:
         c = op.consensus(live_game)
         if c.get("sharp_spread") is not None and c.get("home_spread") is not None:
             diff = c["sharp_spread"] - c["home_spread"]
             if abs(diff) >= 0.5:
                 sb = home if diff > 0 else away
-                signals.append(("SHARP", f"Sharp book(s) sit toward **{sb}** "
-                                f"({c.get('sharp_book','?')}) vs the consensus"))
+                signals.append(("SHARP", f"Sharp book(s) sit toward {sb} "
+                                f"({c.get('sharp_book','?')}) vs consensus", 2.0 + abs(diff) * 0.4))
+    if pub_home is not None and pub_home != 50 and move_dir:
+        public_side = home if pub_home > 50 else away
+        if move_dir != public_side and abs(pub_home - 50) >= 15:
+            signals.append(("RLM", f"Reverse line movement — public on {public_side} "
+                            f"({pub_home}%) but line moved to {move_dir}. Classic sharp tell.", 4.0))
+    our = a.get("value_side") or a.get("our_fav")
+    agree_side = None
+    if our and move_dir == our:
+        agree_side = our
+        signals.append(("AGREE", f"Sharp money and our model both lean {our} — "
+                        "two independent edges aligned.", 3.5))
+    return signals, move_dir, agree_side
 
-    # 3) public % backdoor (manual) → reverse line movement
+
+def _signal_html(signals) -> str:
+    from ui import kit
+    rows = []
+    for badge, text, _ in signals:
+        rows.append(f'<div class="it"><span class="dot" style="background:{_SIGNAL_DOT.get(badge,"var(--ink-faint)")}"></span>'
+                    f'{kit.chip(badge, _SIGNAL_KIND.get(badge, "mute"))}'
+                    f'<span class="t">{text}</span></div>')
+    return f'<div class="k-tick">{"".join(rows)}</div>'
+
+
+def _sharp_tracker(away, home, live_game, a) -> None:
+    st.markdown("##### Sharp-money tracker")
+    prov = op.get_odds_provider()
+    pub_home = None
     with st.expander("Enter public betting % (optional — powers RLM)"):
         pub_home = st.slider(f"% of tickets on {home}", 0, 100, 50, key=f"pub_{away}_{home}")
-        if pub_home != 50 and move_dir:
-            public_side = home if pub_home > 50 else away
-            if move_dir != public_side and abs(pub_home - 50) >= 15:
-                signals.append(("RLM", f"**Reverse line movement** — public on {public_side} "
-                                f"({pub_home}%) but the line moved to {move_dir}. Classic sharp tell."))
-
-    # 4) model agreement — the gold state
-    our = a.get("value_side") or a.get("our_fav")
-    if our and (move_dir == our):
-        signals.append(("AGREE", f"Sharp money **and our model** both lean **{our}** — "
-                        "two independent edges pointing the same way."))
-
+    signals, *_ = _compute_signals(away, home, live_game, a, prov, pub_home)
     if not signals:
         if not prov.is_available():
-            st.caption("Connect a live odds feed (ODDS_API_KEY) for line movement & sharp-book "
-                       "signals. Our model lean is shown above; enter public % to check for RLM.")
+            st.caption("Connect a live odds feed (ODDS_API_KEY in Streamlit secrets) for line "
+                       "movement & sharp-book signals. Model lean is shown above; enter public % for RLM.")
         else:
             st.caption("No sharp signal yet — line is stable and books agree.")
         return
-    colors = {"RLM": "#2ecc71", "STEAM": "#2ecc71", "SHARP": "#f1c40f",
-              "MOVE": "#9aa0a6", "AGREE": "#2ecc71"}
-    for badge, text in signals:
-        c = colors.get(badge, "#9aa0a6")
-        st.markdown(f"<span style='background:{c};color:#111;border-radius:6px;padding:2px 8px;"
-                    f"font-weight:700;font-size:0.72rem;font-family:monospace;'>{badge}</span> "
-                    f"{text}", unsafe_allow_html=True)
+    st.markdown(_signal_html(signals), unsafe_allow_html=True)
 
 
 # --- report card + performance ----------------------------------------------
@@ -365,8 +384,103 @@ def _game_props(off, deff, extras, row) -> None:
                "Players → Prop edge finder for exact edge.")
 
 
+# --- market desk: slate scan + header + boards -------------------------------
+def _scan_slate(games, off, deff, extras, live, prov) -> list[dict]:
+    """One market read per game: model vs line, edge, and automated sharp signals."""
+    scan = []
+    for _, r in games.iterrows():
+        away, home = r["away_team"], r["home_team"]
+        lg = live[(live["away"] == away) & (live["home"] == home)] \
+            if live is not None and not live.empty else pd.DataFrame()
+        a = betting.assess(_effective_row(r, lg), off, deff, extras)
+        signals, move_dir, agree = _compute_signals(away, home, lg, a, prov)
+        mm = a.get("blended_margin")
+        if pd.isna(mm):
+            mm = a.get("model_margin")
+        scan.append({
+            "away": away, "home": home, "a": a, "signals": signals,
+            "move_dir": move_dir, "agree": agree,
+            "model_margin": mm, "mkt_spread": a.get("mkt_spread"),
+            "edge": a.get("edge_pts"), "value_side": a.get("value_side"),
+            "top_score": max((s[2] for s in signals), default=0.0),
+        })
+    return scan
+
+
+def _desk_header(scan, live) -> None:
+    from ui import kit
+    n_books = int(live["book"].nunique()) if live is not None and not live.empty else 0
+    n_sig = sum(1 for g in scan if g["signals"])
+    n_agree = sum(1 for g in scan if g["agree"])
+    biggest = max(scan, key=lambda g: g["top_score"], default=None)
+    k = st.columns(4)
+    k[0].markdown(kit.kpi("Books live", str(n_books) if n_books else "—",
+                          "line-shopping" if n_books else "no feed", None,
+                          "accent" if n_books else "mute"), unsafe_allow_html=True)
+    k[1].markdown(kit.kpi("Sharp signals", str(n_sig), "games moving", None,
+                          "sharp" if n_sig else "mute"), unsafe_allow_html=True)
+    k[2].markdown(kit.kpi("Model + market", str(n_agree), "aligned leans", None,
+                          "edge" if n_agree else "mute"), unsafe_allow_html=True)
+    if biggest and biggest["signals"]:
+        b = biggest["signals"][0]
+        k[3].markdown(kit.kpi("Top move", f"{biggest['away']}@{biggest['home']}",
+                              b[0], "up", "violet"), unsafe_allow_html=True)
+    else:
+        k[3].markdown(kit.kpi("Top move", "—", "stable board", None, "mute"),
+                      unsafe_allow_html=True)
+
+
+def _sharp_board(scan, prov) -> None:
+    st.markdown("### Sharp-money board")
+    st.caption("Automated from odds snapshots — steam, reverse line movement, and sharp-book "
+               "divergence, ranked by signal. No paid handle data: the tape tells the story.")
+    live_games = [g for g in scan if g["signals"]]
+    if not live_games:
+        if not prov.is_available():
+            st.info("The sharp board runs on a live odds feed. Add **ODDS_API_KEY** to Streamlit "
+                    "secrets (free tier at the-odds-api.com) — the model snapshots each pull and "
+                    "builds line-movement, steam, and RLM signals automatically. The Model-vs-market "
+                    "map below works right now on the posted line.")
+        else:
+            st.info("No sharp signals yet — the board is stable and books agree. Movement builds "
+                    "as snapshots accumulate through the week.")
+        return
+    live_games.sort(key=lambda g: g["top_score"], reverse=True)
+    for g in live_games:
+        head = (f"**{g['away']} @ {g['home']}**"
+                + (f" · model likes **{g['value_side']}** {g['edge']:+.1f}" if g["value_side"]
+                   and pd.notna(g["edge"]) else ""))
+        st.markdown(head)
+        st.markdown(_signal_html([(b, t, s) for b, t, s in g["signals"]]),
+                    unsafe_allow_html=True)
+
+
+def _market_map(scan) -> None:
+    from ui import kit
+    st.markdown("### Model vs market map")
+    st.caption("Where our number most disagrees with the posted line — the desk's mispricings. "
+               "A ✓ means sharp money is moving the same way we lean (the strongest state).")
+    rated = [g for g in scan if pd.notna(g.get("edge")) and g.get("value_side")]
+    if not rated:
+        st.caption("No priced disagreements on this slate yet.")
+        return
+    rated.sort(key=lambda g: abs(g["edge"]), reverse=True)
+    maxabs = max(6.0, max(abs(g["edge"]) for g in rated))
+    rows = []
+    for g in rated:
+        side = g["value_side"]
+        agree = " ✓" if g["agree"] == side else ""
+        detail = f"vs {_spread_str(g['home'], g['away'], g['mkt_spread'])}" if pd.notna(g["mkt_spread"]) else ""
+        rows.append(kit.diverging_bar(f"{g['away']}@{g['home']} → {side}{agree}",
+                                      g["edge"], maxabs, detail))
+    st.markdown('<div class="k-splits">' + "".join(rows) + "</div>", unsafe_allow_html=True)
+
+
 def render(off, deff, schedule, extras) -> None:
-    st.subheader("Betting — the edge board")
+    st.subheader("Betting — the market desk")
+    st.caption("The market's-eye view: where lines are moving, where sharp money sits, and where "
+               "our number disagrees with the book. Game-by-game bets live in **Game Bets**; the "
+               "model's top plays live in **Picks** — this desk watches the market itself.")
     if off.empty or deff.empty:
         st.warning("Need team data loaded first.")
         return
@@ -381,9 +495,8 @@ def render(off, deff, schedule, extras) -> None:
         return
 
     live = _live_odds()
-    if not live.empty:
-        st.caption(f"Live odds connected ({live['book'].nunique()} books).")
     gp = _games_played(extras)
+    prov = op.get_odds_provider()
 
     s = schedule[(schedule["season"] == season) & schedule["spread_line"].notna()]
     weeks = sorted(int(w) for w in s["week"].unique())
@@ -392,9 +505,18 @@ def render(off, deff, schedule, extras) -> None:
                       index=weeks.index(default_wk) if default_wk in weeks else 0)
     games = s[s["week"] == wk]
 
-    _report_card(extras)
+    scan = _scan_slate(games, off, deff, extras, live, prov)
+    _desk_header(scan, live)
+    st.divider()
+    _sharp_board(scan, prov)
+    st.divider()
+    _market_map(scan)
+    st.divider()
     _edge_board(games, off, deff, extras, live, gp)
     st.divider()
+    _report_card(extras)
+    st.divider()
+    st.markdown("### Single-game market read")
     labels = [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]
     pick = st.selectbox("Break down a game", labels)
     _detail(games.iloc[labels.index(pick)], off, deff, extras, live)
