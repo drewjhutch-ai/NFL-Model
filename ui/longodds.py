@@ -72,6 +72,33 @@ def _long_pool(board: pd.DataFrame) -> pd.DataFrame:
     return pool.sort_values("ev", ascending=False).reset_index(drop=True)
 
 
+_TAG_RAIL = {"Model + market dog": "edge", "Market overpricing": "sharp",
+             "Model longshot": "violet"}
+
+
+def _hero_cards(pool: pd.DataFrame) -> None:
+    """The top conviction plays as number-forward cards before the full table."""
+    from ui import kit
+    top = pool.head(3)
+    cols = st.columns(len(top))
+    for col, (_, r) in zip(cols, top.iterrows()):
+        rail = _TAG_RAIL.get(r["tag"], "accent")
+        price = betengine.fmt_odds(r["market_odds"])
+        ev_chip = kit.chip(f"EV {r['ev'] * 100:+.0f}%", "edge")
+        line1 = f"{r['selection']}"
+        meta = f"{r['market']} · {r['game']}"
+        sub = f"model {r['model_prob'] * 100:.0f}% · edge {r['edge'] * 100:+.1f} · {r['tag']}"
+        col.markdown(
+            f'<div class="k-bet" style="--kbet:var(--{rail})">'
+            f'<div class="sel">{line1}</div>'
+            f'<div class="meta">{meta}</div>'
+            f'<div class="row">'
+            f'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:1.35rem;font-weight:700;'
+            f'color:var(--edge)">{price}</span>{ev_chip}</div>'
+            f'<div class="row"><span class="meta">{sub}</span></div>'
+            f'</div>', unsafe_allow_html=True)
+
+
 def _conviction(pool: pd.DataFrame) -> None:
     st.markdown("### Conviction longshots")
     st.caption("Every straight priced **+200 or longer** where the model still shows positive EV against "
@@ -81,6 +108,7 @@ def _conviction(pool: pd.DataFrame) -> None:
         st.info("No +200-or-longer plays clear the EV guardrail on this slate. That's the discipline "
                 "working — no garbage longshots.")
         return
+    _hero_cards(pool)
     view = pool.head(14)
     show = pd.DataFrame({
         "Bet": view["selection"], "Market": view["market"], "Game": view["game"],
@@ -171,12 +199,12 @@ def _between_lines(pool: pd.DataFrame, off, deff, extras) -> None:
             continue
         shown += 1
         top = angles[:4]
-        chips = " · ".join(f"**{o}** {e['label']} ({e['detail']})" for o, e in top)
+        chips = " · ".join(f"<b>{o}</b> {e['label']} ({e['detail']})" for o, e in top)
         st.markdown(
-            f"<div style='border-left:3px solid #2dd4bf;padding:6px 0 6px 12px;margin:8px 0;'>"
-            f"<b>{b['selection']}</b> <span style='color:#8b98a5;'>· {b['market']} · {game} · "
+            f"<div style='border-left:3px solid var(--edge);padding:6px 0 6px 12px;margin:8px 0;'>"
+            f"<b>{b['selection']}</b> <span style='color:var(--ink-faint);'>· {b['market']} · {game} · "
             f"{betengine.fmt_odds(b['market_odds'])}</span><br>"
-            f"<span style='color:#9aa0a6;font-size:0.9rem;'>{chips}</span></div>",
+            f"<span style='color:var(--ink-dim);font-size:0.9rem;'>{chips}</span></div>",
             unsafe_allow_html=True)
     if shown == 0:
         st.info("No standout supporting angles cleared the bar for this week's longshots.")
@@ -237,8 +265,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
            extras: dict) -> None:
     st.subheader("Long Odds — +200 with conviction")
     st.caption("The model's creative freedom: high-conviction plays at a long price that don't fit the "
-               "safe or edge boards. Everything here is +EV against the market — discipline first, "
-               "payout second.")
+               "safe or edge boards. Same engine as every other tab — game bets and prop projections "
+               "priced against the de-vigged market — kept only where the EV survives at +200 or longer.")
     if off.empty or deff.empty:
         st.info("Load data first (needs offensive & defensive numbers).")
         return
@@ -267,10 +295,18 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         board = pd.concat([board, pd.DataFrame(prop_bets)], ignore_index=True)
 
     pool = _long_pool(board)
+    from ui import kit
     c1, c2, c3 = st.columns(3)
-    c1.metric("Qualifying longshots", len(pool))
-    c2.metric("Best EV", f"{pool['ev'].max()*100:+.0f}%" if not pool.empty else "—")
-    c3.metric("Longest price", betengine.fmt_odds(pool["market_odds"].max()) if not pool.empty else "—")
+    c1.markdown(kit.kpi("Qualifying longshots", str(len(pool)),
+                        "+EV at a long price", None, "accent" if len(pool) else "mute"),
+                unsafe_allow_html=True)
+    c2.markdown(kit.kpi("Best EV", f"{pool['ev'].max()*100:+.0f}%" if not pool.empty else "—",
+                        "top play", "up" if not pool.empty else None,
+                        "edge" if not pool.empty else "mute"), unsafe_allow_html=True)
+    c3.markdown(kit.kpi("Longest price",
+                        betengine.fmt_odds(pool["market_odds"].max()) if not pool.empty else "—",
+                        "biggest swing", None, "violet" if not pool.empty else "mute"),
+                unsafe_allow_html=True)
     st.divider()
     _conviction(pool)
     if not pool.empty:
