@@ -98,6 +98,42 @@ def _most_likely(board) -> None:
                "for value, see Most Edge below.")
 
 
+def _ml_ou_confidence(board) -> None:
+    """A dedicated chart: strictly moneyline & over/under picks, ranked by confidence."""
+    import plotly.graph_objects as go
+    from ui import kit
+    P = kit.PALETTE
+    st.markdown("### Moneyline & Over/Under — by confidence")
+    st.caption("The straight game markets on their own board — every moneyline and total the model "
+               "has an opinion on, ranked by confidence. Cyan = moneyline · gold = over/under.")
+    view = board[board["market"].isin(["Moneyline", "Total"])].copy()
+    view = view[view["confidence"] > 0].sort_values("confidence", ascending=True).tail(14)
+    if view.empty:
+        st.info("No moneyline or over/under picks with positive confidence on this slate yet.")
+        return
+    colors = [P["accent"] if m == "Moneyline" else P["sharp"] for m in view["market"]]
+    labels = [f"{s}  ·  {g}" for s, g in zip(view["selection"], view["game"])]
+    hover = [f"{r.selection} · {r.market} · {r.game}<br>{r.model_prob*100:.0f}% model · "
+             f"fair {betengine.fmt_odds(r.fair_odds)} · conf {r.confidence:.0f}"
+             for r in view.itertuples()]
+    fig = go.Figure(go.Bar(
+        x=view["confidence"], y=labels, orientation="h", marker_color=colors,
+        marker_line_color=P["edge"], marker_line_width=0,
+        text=[f"{c:.0f}" for c in view["confidence"]], textposition="outside",
+        textfont=dict(color=P["ink_dim"], size=11), hovertext=hover, hoverinfo="text"))
+    fig.update_layout(height=max(240, 34 * len(view) + 40),
+                      margin=dict(l=6, r=28, t=6, b=24),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      font=dict(color=P["ink_dim"]), showlegend=False,
+                      xaxis=dict(title="confidence", gridcolor=P["line"], zeroline=False),
+                      yaxis=dict(gridcolor="rgba(0,0,0,0)", automargin=True))
+    st.plotly_chart(fig, width="stretch")
+    n_ml = int((view["market"] == "Moneyline").sum())
+    n_ou = int((view["market"] == "Total").sum())
+    st.caption(f"{n_ml} moneyline · {n_ou} over/under shown. Confidence = decisiveness × edge, "
+               "damped by sample size — not the odds.")
+
+
 def _most_edge(board) -> None:
     st.markdown("### Most edge")
     st.caption("The pure +EV board — model probability minus the de-vigged market price, any market.")
@@ -274,6 +310,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     _kpi_header(board, prop_df)
     st.divider()
     if not board.empty:
+        _ml_ou_confidence(board)
+        st.divider()
         _most_likely(board)
         st.divider()
         _most_edge(board)

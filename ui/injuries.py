@@ -83,8 +83,12 @@ def _season_long_board(espn: dict) -> None:
                "cover. This is the board that stays populated in the offseason and through camp.")
     flat = _espn_flat(espn)
     if flat.empty:
-        st.info("ESPN feed unreachable from this host right now — the season-long board fills in "
-                "when the feed is reachable (it works on the Streamlit Cloud host).")
+        from data.providers import espn_injuries
+        reason = espn_injuries.last_error()
+        detail = f" ({reason})" if reason else ""
+        st.info(f"No ESPN season-long data right now{detail}. If this host is blocked by ESPN, the "
+                "board fills in on the Streamlit Cloud host; use the **↻ Retry ESPN feed** button "
+                "above to re-pull.")
         return
     board = flat[flat["espn_status"].isin(_SEASON_LONG)].copy()
     if board.empty:
@@ -182,6 +186,9 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     inj_map = extras.get("injuries") or {}
     week = extras.get("injury_week")
     inj_pts = extras.get("injury_pts") or {}
+    if st.button("↻ Retry ESPN feed"):
+        _load_espn.clear()
+        st.rerun()
     espn = _load_espn()
 
     in_season = bool(week) and bool(inj_pts)
@@ -194,8 +201,11 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     c3.metric("IR / PUP / susp.", n_season_long if espn else "—")
     c4.metric("ESPN feed", "Live ✓" if espn else "Unavailable")
     if not espn:
-        st.caption("ESPN feed unreachable from this host right now — the official report + practice signal "
-                   "below still drive everything. The feed refreshes when reachable (works on the cloud host).")
+        from data.providers import espn_injuries
+        reason = espn_injuries.last_error()
+        rtxt = f" — {reason}" if reason else ""
+        st.caption(f"ESPN feed returned nothing{rtxt}. The official report + practice signal below still "
+                   "drive the model; hit ↻ Retry, or it recovers on the Streamlit Cloud host.")
     st.divider()
     # Year-round board first when the weekly report isn't posted (offseason / between slates).
     if in_season:

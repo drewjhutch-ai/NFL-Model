@@ -13,7 +13,7 @@ import streamlit as st
 import config
 from data import betengine, betting, loaders, players, props
 from ui import kit
-from ui.components import fmt
+from ui.components import fmt, ordinal
 
 
 def _games_played(extras) -> int:
@@ -327,5 +327,4 @@ def render(off, deff, schedule, extras) -> None:
         _finder(stats, off, deff, extras, schedule)
     with st.expander("League coverage-by-position board"):
         _coverage_matchups(extras)
-    _usage(stats, teams)
     _usage(stats, teams)
