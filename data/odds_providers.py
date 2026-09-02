@@ -82,7 +82,9 @@ class TheOddsAPIProvider(LiveOddsProvider):
 
     def current(self) -> pd.DataFrame:
         url = f"https://api.the-odds-api.com/v4/sports/{_SPORT}/odds"
-        params = {"apiKey": self.api_key, "regions": "us,us2,eu",
+        # All free-tier regions for maximum book coverage (a single request covers
+        # every region — one credit per market, not per region).
+        params = {"apiKey": self.api_key, "regions": "us,us2,uk,au,eu",
                   "markets": "spreads,totals,h2h", "oddsFormat": "american"}
         resp = requests.get(url, params=params, timeout=20)
         resp.raise_for_status()

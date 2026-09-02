@@ -54,6 +54,56 @@ def _impact_table(inj_map: dict, inj_pts: dict) -> None:
     })
 
 
+def _espn_flat(espn: dict) -> pd.DataFrame:
+    """Flatten the ESPN by-team dict into one league frame."""
+    if not espn:
+        return pd.DataFrame()
+    frames = []
+    for team, g in espn.items():
+        if g is None or g.empty:
+            continue
+        gg = g.copy()
+        gg["team"] = team
+        frames.append(gg)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+_SEASON_LONG = ("IR", "PUP", "Suspended")
+
+
+def _season_long_board(espn: dict) -> None:
+    """League-wide IR / PUP / Suspended — the year-round board that works in the offseason.
+
+    The official nflverse report is in-season only, so between slates and through
+    the summer this ESPN-fed board is what keeps the tab alive: who's on injured
+    reserve, the PUP list, and suspensions across all 32 teams.
+    """
+    st.markdown("### Season-long absences — IR · PUP · Suspended")
+    st.caption("Year-round from the ESPN feed — the long-term list the weekly game report doesn't "
+               "cover. This is the board that stays populated in the offseason and through camp.")
+    flat = _espn_flat(espn)
+    if flat.empty:
+        st.info("ESPN feed unreachable from this host right now — the season-long board fills in "
+                "when the feed is reachable (it works on the Streamlit Cloud host).")
+        return
+    board = flat[flat["espn_status"].isin(_SEASON_LONG)].copy()
+    if board.empty:
+        st.caption("No IR / PUP / suspended players on the ESPN feed right now.")
+        return
+    order = {"IR": 0, "PUP": 1, "Suspended": 2}
+    board["_o"] = board["espn_status"].map(order).fillna(9)
+    board = board.sort_values(["team", "_o", "pos"])
+    c = st.columns(4)
+    c[0].metric("On IR", int((board["espn_status"] == "IR").sum()))
+    c[1].metric("On PUP", int((board["espn_status"] == "PUP").sum()))
+    c[2].metric("Suspended", int((board["espn_status"] == "Suspended").sum()))
+    c[3].metric("Teams affected", int(board["team"].nunique()))
+    show = board[["team", "name", "pos", "espn_status", "detail"]].rename(columns={
+        "team": "Team", "name": "Player", "pos": "Pos",
+        "espn_status": "Status", "detail": "Note"})
+    st.dataframe(show, width="stretch", hide_index=True)
+
+
 def _team_drill(inj_map: dict, espn: dict) -> None:
     st.markdown("### Team injury room")
     teams = sorted(set(inj_map) | set(espn))
@@ -134,15 +184,28 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     inj_pts = extras.get("injury_pts") or {}
     espn = _load_espn()
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Report week", week if week else "—")
+    in_season = bool(week) and bool(inj_pts)
+    flat = _espn_flat(espn)
+    n_season_long = int(flat["espn_status"].isin(_SEASON_LONG).sum()) if not flat.empty else 0
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Report week", week if week else "offseason")
     c2.metric("Teams with absences", sum(1 for v in inj_pts.values() if v > 0))
-    c3.metric("ESPN faster feed", "Live ✓" if espn else "Unavailable")
+    c3.metric("IR / PUP / susp.", n_season_long if espn else "—")
+    c4.metric("ESPN feed", "Live ✓" if espn else "Unavailable")
     if not espn:
         st.caption("ESPN feed unreachable from this host right now — the official report + practice signal "
                    "below still drive everything. The feed refreshes when reachable (works on the cloud host).")
     st.divider()
-    _impact_table(inj_map, inj_pts)
+    # Year-round board first when the weekly report isn't posted (offseason / between slates).
+    if in_season:
+        _impact_table(inj_map, inj_pts)
+        st.divider()
+        _season_long_board(espn)
+    else:
+        _season_long_board(espn)
+        st.divider()
+        _impact_table(inj_map, inj_pts)
     st.divider()
     _team_drill(inj_map, espn)
     st.divider()

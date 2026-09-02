@@ -15,18 +15,20 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from data import betengine, odds_providers
+from data import betengine, betting, odds_providers
 
 
 @st.cache_data(ttl=90, show_spinner="Pulling live multi-book odds…")
-def _fetch_odds() -> pd.DataFrame:
+def _fetch_odds() -> tuple[pd.DataFrame, str]:
+    """Return (odds, status). status ∈ ok | no_key | empty | error:<msg>."""
     prov = odds_providers.get_odds_provider()
     if not prov.is_available():
-        return pd.DataFrame()
+        return pd.DataFrame(), "no_key"
     try:
-        return prov.current()
-    except Exception:  # noqa: BLE001 - network/quota issues degrade to empty
-        return pd.DataFrame()
+        df = prov.current()
+    except Exception as exc:  # noqa: BLE001 - network/quota issues degrade to empty
+        return pd.DataFrame(), f"error:{exc}"
+    return (df, "ok") if not df.empty else (pd.DataFrame(), "empty")
 
 
 def _best_american(series: pd.Series):
@@ -40,10 +42,30 @@ def _devig_prob(a: float, b: float) -> float:
     return betengine.novig_prob(a, b)
 
 
-def _discrepancy_board(df: pd.DataFrame) -> None:
+def _model_lean(off, deff, extras, away, home, cons_spread):
+    """The model's home margin and its lean vs the consensus spread.
+
+    Ties CLV back to the predictive engine: a soft line only matters if the model
+    likes that side. Returns {margin, side, edge} or None.
+    """
+    if off is None or deff is None or off.empty or deff.empty:
+        return None
+    m = betting.project_margin(off, deff, home, away, extras.get("st_ppg"),
+                               extras.get("qb_value"), extras.get("points_rtg"))
+    if pd.isna(m):
+        return None
+    if cons_spread is None or pd.isna(cons_spread):
+        return {"margin": float(m), "side": home if m > 0 else away, "edge": None}
+    edge = float(m) - float(cons_spread)   # + = model favors home more than market
+    return {"margin": float(m), "side": home if edge > 0 else away, "edge": abs(edge)}
+
+
+def _discrepancy_board(df: pd.DataFrame, off=None, deff=None, extras=None) -> None:
     st.markdown("### Discrepancy board")
     st.caption("Every game, how far apart the books are, and the best number available on each side. "
-               "A **wide spread across books = a soft line** worth attacking at the right shop.")
+               "A **wide spread across books = a soft line**; the ★ marks games where our model likes "
+               "the side the soft number is on — a soft line on a side we already back is the play.")
+    extras = extras or {}
     rows = []
     for (away, home), g in df.groupby(["away", "home"]):
         con = odds_providers.consensus(g)
@@ -51,24 +73,36 @@ def _discrepancy_board(df: pd.DataFrame) -> None:
         tot = g["total"].dropna()
         spread_width = (float(hs.max()) - float(hs.min())) if len(hs) > 1 else 0.0
         total_width = (float(tot.max()) - float(tot.min())) if len(tot) > 1 else 0.0
-        best_home_ml = _best_american(g["ml_home"])
-        best_away_ml = _best_american(g["ml_away"])
+        lean = _model_lean(off, deff, extras, away, home, con.get("home_spread"))
+        # value = a soft market AND the model has a real lean with an edge
+        starred = bool(lean and lean.get("edge") and lean["edge"] >= 1.0 and spread_width >= 1.0)
+        model_txt = "—"
+        if lean:
+            model_txt = lean["side"] + (f" +{lean['edge']:.1f}" if lean.get("edge") else "")
         rows.append({
-            "Game": f"{away} @ {home}", "Books": int(g["book"].nunique()),
+            "": "★" if starred else "", "Game": f"{away} @ {home}",
+            "Books": int(g["book"].nunique()),
+            "Model lean": model_txt,
             "Cons. spread": con.get("home_spread"),
             "Spread range": spread_width,
             "Best home line": con.get("best_home_spread"),
             "Best away line": con.get("best_away_spread"),
             "Cons. total": con.get("total"),
             "Total range": total_width,
-            "Best home ML": best_home_ml, "Best away ML": best_away_ml,
-            "_soft": max(spread_width, total_width),
+            "Best home ML": _best_american(g["ml_home"]),
+            "Best away ML": _best_american(g["ml_away"]),
+            "_sort": (1 if starred else 0, max(spread_width, total_width)),
         })
     if not rows:
         st.info("No games in the live feed right now.")
         return
-    board = pd.DataFrame(rows).sort_values("_soft", ascending=False).drop(columns="_soft")
+    board = (pd.DataFrame(rows).sort_values("_sort", ascending=False, key=lambda s: s.map(lambda t: t[0] * 100 + t[1]))
+             .drop(columns="_sort"))
     st.dataframe(board, width="stretch", hide_index=True, column_config={
+        "": st.column_config.TextColumn("", width="small",
+            help="★ = soft line on the side our model already backs."),
+        "Model lean": st.column_config.TextColumn("Model lean",
+            help="Our projected side vs the consensus spread, with the points of edge."),
         "Cons. spread": st.column_config.NumberColumn("Cons. spread", format="%+.1f",
             help="Consensus home spread (+ = home favored by, − = home dog)."),
         "Spread range": st.column_config.NumberColumn("Spread Δ", format="%.1f",
@@ -80,7 +114,8 @@ def _discrepancy_board(df: pd.DataFrame) -> None:
         "Best home ML": st.column_config.NumberColumn("Best home ML", format="%+d"),
         "Best away ML": st.column_config.NumberColumn("Best away ML", format="%+d"),
     })
-    st.caption("‘Best’ = the most favorable number in the market — fewest points laid, or the plus-est ML.")
+    st.caption("‘Best’ = the most favorable number in the market — fewest points laid, or the plus-est ML. "
+               "★ games rank first: the model's edge and a soft line pointing the same way.")
 
 
 def _book_grid(df: pd.DataFrame) -> None:
@@ -213,19 +248,38 @@ def _clv_tracking(df: pd.DataFrame) -> None:
     })
 
 
-def _body(auto: bool) -> None:
-    df = _fetch_odds()
+def _empty_state(status: str) -> None:
+    if status == "no_key":
+        st.warning("**No odds feed connected.** The CLV tab needs a live multi-book feed to shop "
+                   "lines — it can't be built from the single consensus number in the schedule.")
+        st.markdown(
+            "**Turn it on (free):**\n"
+            "1. Get a free key at [the-odds-api.com](https://the-odds-api.com) — the free tier is "
+            "~500 requests/month, plenty for weekly line-shopping.\n"
+            "2. In Streamlit Cloud: **Manage app → Settings → Secrets**, add\n"
+            "   ```toml\n   ODDS_API_KEY = \"your-key-here\"\n   ```\n"
+            "3. Reboot the app. This tab lights up across every US, UK, AU & EU book automatically.\n\n"
+            "Your key stays in Streamlit Secrets — never paste it into the app or commit it.")
+    elif status.startswith("error:"):
+        st.error(f"The odds feed is connected but the last pull failed — likely out of monthly "
+                 f"quota or a temporary network issue. It'll recover on the next refresh.\n\n"
+                 f"`{status[6:][:200]}`")
+    else:  # empty
+        st.info("The feed is connected but no NFL games are posted right now (typical between the "
+                "weekly slates and in the offseason). Lines return once books post the next slate.")
+
+
+def _body(auto: bool, off=None, deff=None, extras=None) -> None:
+    df, status = _fetch_odds()
     if df.empty:
-        st.warning("No live odds available. Add **ODDS_API_KEY** in Streamlit Secrets "
-                   "(from the-odds-api.com) to light up the CLV tab, or the feed is temporarily "
-                   "unreachable / out of quota.")
+        _empty_state(status)
         return
     c1, c2, c3 = st.columns(3)
     c1.metric("Games", int((df[["away", "home"]].drop_duplicates()).shape[0]))
     c2.metric("Books", int(df["book"].nunique()))
     c3.metric("Feed", "Auto-refreshing ✓" if auto else "Manual")
     st.divider()
-    _discrepancy_board(df)
+    _discrepancy_board(df, off, deff, extras)
     st.divider()
     _book_grid(df)
     st.divider()
@@ -258,7 +312,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         @st.fragment(run_every=cadence)
         def _live():
             _fetch_odds.clear()
-            _body(auto=True)
+            _body(auto=True, off=off, deff=deff, extras=extras)
         _live()
     else:
-        _body(auto=False)
+        _body(auto=False, off=off, deff=deff, extras=extras)
