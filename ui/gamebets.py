@@ -1,15 +1,11 @@
-"""The 'Game Bets' tab: pick a game, get the model's best bets for it.
+"""The 'Game Bets' tab — one game, every exploitable edge the engine can find.
 
-The Picks tab ranks the whole slate; this drills into one game the way Matchups
-does — select the week and matchup, and the Bet Engine surfaces that game's best
-plays in three buckets:
-
-  * Safest — highest model win probability (most likely to cash).
-  * Most edge — biggest value vs the de-vigged line.
-  * Same-game parlay — the best correlated combo, priced honestly.
-
-When market lines aren't posted yet, it falls back to the model's straight read
-(projected score, win %, our number) so the game is never blank.
+Where the model shows off. Beyond the priced markets, an **Edge Sheet** sifts the
+game for points of interest the base numbers miss — a heavily-used weapon meeting
+a soft coverage, a pace/total tilt, a trench mismatch — and surfaces each as a
+candidate bet, ranked. Then the priced board: safest, most edge, and a
+correlation-aware same-game parlay. Every number is engine-priced (the full
+ensemble incl. Sharp), never hand-set.
 """
 from __future__ import annotations
 
@@ -17,26 +13,109 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betengine, betting, loaders, props, simulation
-from ui.components import fmt, ordinal
+from data import betengine, betting, loaders, mismatch, props, simulation
+from data import sharp_value as sv
+from ui import kit
 
 
-def _banner(away, home, row) -> None:
+# --- broadcast header --------------------------------------------------------
+def _gb_header(off, deff, extras, row) -> dict | None:
+    away, home = row["away_team"], row["home_team"]
     meta = loaders.team_meta()
-    c1, cm, c2 = st.columns([5, 1, 5])
-    for col, t in ((c1, away), (c2, home)):
-        m = meta.get(t, {})
-        with col:
-            if m.get("logo"):
-                st.image(m["logo"], width=52)
-            st.markdown(f"<b style='border-left:5px solid {m.get('color') or 'var(--accent)'};"
-                        f"padding-left:8px;'>{m.get('name', t)}</b>", unsafe_allow_html=True)
-    cm.markdown("<div style='text-align:center;font-size:1.4rem;margin-top:14px;"
-                "color:var(--ink-faint);'>@</div>", unsafe_allow_html=True)
-    if row is not None and pd.notna(row.get("gameday")):
-        st.caption(f"{row['gameday']} · Week {int(row['week'])}")
+    sim = simulation.simulate(off, deff, home, away, extras, row)
+    am, hm = meta.get(away, {}), meta.get(home, {})
+    a_logo = f'<img src="{am["logo"]}">' if am.get("logo") else ""
+    h_logo = f'<img src="{hm["logo"]}">' if hm.get("logo") else ""
+    score = (f'<div class="sc">{sim["proj_away"]:.0f} <span class="at">–</span> {sim["proj_home"]:.0f}</div>'
+             f'<div class="lb">projected score</div>') if sim else '<div class="sc"><span class="at">@</span></div>'
+    st.markdown(
+        f'<div class="k-vs"><div class="side">{a_logo}<div><div class="nm">{am.get("name", away)}</div></div></div>'
+        f'<div class="mid">{score}</div>'
+        f'<div class="side right"><div><div class="nm">{hm.get("name", home)}</div></div>{h_logo}</div></div>',
+        unsafe_allow_html=True)
+    if sim:
+        margin = sim["margin_mean"]
+        fav = home if margin > 0 else away
+        win = max(sim["home_win"], 1 - sim["home_win"])
+        wteam = home if sim["home_win"] >= 0.5 else away
+        k = st.columns(4)
+        k[0].markdown(kit.kpi("Model line", betting.fmt_line(fav, abs(margin)), None, None, "accent"),
+                      unsafe_allow_html=True)
+        k[1].markdown(kit.kpi("Proj. total", f"{sim['total_mean']:.1f}", None, None, "sharp"),
+                      unsafe_allow_html=True)
+        k[2].markdown(kit.kpi(f"{wteam} win", f"{win*100:.0f}%", None, None, "edge"),
+                      unsafe_allow_html=True)
+        if pd.notna(row.get("spread_line")):
+            a = betting.assess(row, off, deff, extras)
+            ep = a.get("edge_pts")
+            if pd.notna(ep) and a.get("value_side"):
+                k[3].markdown(kit.kpi("Model edge", f"{a['value_side']} {ep:+.1f}", "vs market",
+                                      "up" if ep > 0 else "down", "violet"), unsafe_allow_html=True)
+            else:
+                k[3].markdown(kit.kpi("Model edge", "none", "≈ market", None, "mute"), unsafe_allow_html=True)
+        else:
+            k[3].markdown(kit.kpi("Market", "—", "no line posted", None, "mute"), unsafe_allow_html=True)
+    return sim
 
 
+# --- the edge sheet (points of interest) -------------------------------------
+def _edge_sheet(away, home, off, deff, extras, sim) -> None:
+    st.markdown("### Edge sheet")
+    st.caption("The engine sifting the game for exploitable spots — a used weapon vs a soft coverage, a "
+               "pace tilt, a trench win. These are candidate bets, ranked by how big the mismatch is.")
+
+    ms = mismatch.game_mismatches(away, home, off, deff, extras)
+    ms = [m for m in ms if m["score"] >= 0.20][:6]
+    if ms:
+        for m in ms:
+            lbl = mismatch.strength_label(m["score"])
+            color = "var(--edge)" if m["score"] >= 0.30 else "var(--accent)"
+            who = m["player"] or f'{m["off"]} {m["pos"]}s'
+            epa = f' · {m["epa_tgt"]*100:+.0f} EPA/tgt' if m.get("epa_tgt") is not None else ""
+            st.markdown(
+                f'<div class="k-bet" style="--kbet:{color}">'
+                f'<div class="sel">{who} {kit.chip(lbl, "edge" if m["score"] >= 0.30 else "accent")}</div>'
+                f'<div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% of team targets '
+                f'(#{m["share_rank"]}){epa}</div>'
+                f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b> '
+                f'(1=tough, 32=soft)</span> · <span style="color:{color}">lean: '
+                f'<b>{who} {m["stat"]} Over</b></span></div></div>',
+                unsafe_allow_html=True)
+    else:
+        st.caption("No standout receiving mismatch in this game — coverage is tight both ways.")
+
+    # pace / total tilt + trench note (Sharp), compact
+    extras_notes = _sheet_notes(away, home, extras, sim)
+    if extras_notes:
+        st.markdown("".join(extras_notes), unsafe_allow_html=True)
+
+
+def _sheet_notes(away, home, extras, sim) -> list[str]:
+    sharp = extras.get("sharp") or {}
+    pace = extras.get("pace")
+    rows = []
+    if pace is not None and away in pace.index and home in pace.index:
+        combined = pace.get(away) + pace.get(home)
+        lg = float(pace.mean()) * 2
+        tilt = combined - lg
+        if abs(tilt) >= 4:
+            side = "Over" if tilt > 0 else "Under"
+            rows.append(f'<div class="k-spec"><span class="sk">Pace</span><span class="sv">'
+                        f'combined <b>{combined:.0f}</b> plays/gm vs league {lg:.0f} → total leans '
+                        f'<b>{side}</b></span></div>')
+    if sv.available(sharp):
+        pr, pp = sv.pass_rush_ranks(sharp), sv.pass_pro_ranks(sharp)
+        for o, d in ((away, home), (home, away)):
+            if not pp.empty and o in pp.index and not pr.empty and d in pr.index:
+                po, dr = int(pp.loc[o]), int(pr.loc[d])
+                if dr - po >= 10:   # offense line much better than the rush it faces
+                    rows.append(f'<div class="k-spec"><span class="sk">Trenches</span><span class="sv">'
+                                f'<b>{o}</b> pass-pro (#{po}) clearly beats <b>{d}</b> pass-rush (#{dr}) '
+                                f'→ clean pocket, back the passing game</span></div>')
+    return [f'<div class="k-speclist" style="margin-top:10px">'] + rows + ["</div>"] if rows else []
+
+
+# --- priced board (kept) -----------------------------------------------------
 def _bet_row(b, show_edge=True) -> str:
     conf = b["confidence"]
     color = "var(--edge)" if conf >= 50 else ("var(--accent)" if conf >= 32 else "var(--ink-faint)")
@@ -50,20 +129,47 @@ def _bet_row(b, show_edge=True) -> str:
             f"{b['model_prob']*100:.0f}% to hit · fair {betengine.fmt_odds(b['fair_odds'])}{edge}</span></div>")
 
 
-def _model_read(off, deff, extras, row, away, home) -> None:
-    """Fallback when no market line is posted: the straight model projection."""
-    sim = simulation.simulate(off, deff, home, away, extras, row)
-    if not sim:
-        st.info("Not enough data to project this game yet.")
+def _priced_board(off, deff, extras, row, away, home, sim) -> None:
+    from ui.betting import _games_played
+    gp = _games_played(extras)
+    no_lines = pd.isna(row.get("spread_line")) and pd.isna(row.get("total_line"))
+    game_list = [] if no_lines else betengine.game_bets(row, off, deff, extras, gp)
+    prop_list = props.prop_bets_for_games(off, deff, extras, pd.DataFrame([row]), gp)
+    bets = game_list + prop_list
+    if not bets:
+        _game_props(off, deff, extras, row)
         return
-    fav = home if sim["margin_mean"] > 0 else away
-    st.markdown(f"#### The model's read")
-    k = st.columns(3)
-    k[0].metric("Projected score", f"{away} {sim['proj_away']:.0f} – {home} {sim['proj_home']:.0f}")
-    k[1].metric(f"{fav} win", f"{max(sim['home_win'],1-sim['home_win'])*100:.0f}%")
-    k[2].metric("Model line", betting.fmt_line(fav, abs(sim['margin_mean'])))
-    st.caption("Categorized best bets (safest / edge / parlay) unlock once the book posts lines "
-               "for this game — then the model prices every market against them.")
+    safest = sorted(bets, key=lambda b: b["model_prob"], reverse=True)[:3]
+    edges = [b for b in sorted(bets, key=lambda b: (b["edge"] if pd.notna(b["edge"]) else -1),
+                               reverse=True) if pd.notna(b["edge"]) and b["edge"] > 0][:3]
+    st.markdown("### Priced board")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Safest** — most likely to cash")
+        for b in safest:
+            st.markdown(_bet_row(b, show_edge=False), unsafe_allow_html=True)
+    with c2:
+        st.markdown("**Most edge** — biggest value vs the line")
+        if edges:
+            for b in edges:
+                st.markdown(_bet_row(b), unsafe_allow_html=True)
+        else:
+            st.info("No +EV bet — the market has this game priced tight.")
+
+    st.markdown("**Same-game parlay** — correlation-priced")
+    pool = [b for b in bets if pd.notna(b["edge"]) and b["edge"] > 0] or safest
+    legs = pool[:3] if len(pool) >= 2 else []
+    if len(legs) >= 2:
+        par = betengine.parlay(legs)
+        k = st.columns(3)
+        k[0].metric("Combined odds", betengine.fmt_odds(par["american"]))
+        k[1].metric("Model hit %", f"{par['model_prob']*100:.0f}%")
+        k[2].metric("EV / unit", f"{par['ev']*100:+.0f}%")
+        st.caption("Legs: " + " + ".join(l["selection"] for l in legs) + " — priced for correlation, not "
+                   "naïve multiplication. High variance; keep the ticket small.")
+    else:
+        st.info("Not enough +EV legs for a parlay in this game.")
+    _game_props(off, deff, extras, row)
 
 
 def _game_props(off, deff, extras, row) -> None:
@@ -71,21 +177,17 @@ def _game_props(off, deff, extras, row) -> None:
     stats = extras.get("players")
     if stats is None or stats.empty:
         return
-    from data import props
     board = props.auto_prop_picks(stats, off, deff, extras, pd.DataFrame([row]),
                                   games_played=_games_played(extras))
     if board.empty:
         return
-    st.divider()
-    st.markdown("### Player prop leans")
-    st.caption("Biggest projection-vs-baseline mismatches in this game — the model bets props too, "
-               "not just the big three. Price exact lines in Players → Prop edge finder.")
-    show = board.head(6)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
-                          "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
-    st.dataframe(show, width="stretch", hide_index=True, column_config={
-        "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
-        "Conf": st.column_config.NumberColumn("Conf", format="%d"),
-    })
+    with st.expander("All player prop leans (full table)"):
+        show = board.head(12)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
+                               "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+        st.dataframe(show, width="stretch", hide_index=True, column_config={
+            "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
+            "Conf": st.column_config.NumberColumn("Conf", format="%d"),
+        })
 
 
 def _advantage(off, deff, extras, away, home) -> None:
@@ -100,63 +202,17 @@ def _advantage(off, deff, extras, away, home) -> None:
 
 def _breakdown(off, deff, extras, row) -> None:
     away, home = row["away_team"], row["home_team"]
-    _banner(away, home, row)
+    sim = _gb_header(off, deff, extras, row)
+    st.divider()
+    _edge_sheet(away, home, off, deff, extras, sim)
     st.divider()
     _advantage(off, deff, extras, away, home)
     st.divider()
-    from ui.betting import _games_played
-    gp = _games_played(extras)
-    no_lines = pd.isna(row.get("spread_line")) and pd.isna(row.get("total_line"))
-    game_list = [] if no_lines else betengine.game_bets(row, off, deff, extras, gp)
-    prop_list = props.prop_bets_for_games(off, deff, extras, pd.DataFrame([row]), gp)
-    bets = game_list + prop_list        # props compete in every bucket
-    if no_lines:
-        _model_read(off, deff, extras, row, away, home)  # projected-score context
-    if not bets:
-        _game_props(off, deff, extras, row)
-        return
-
-    safest = sorted(bets, key=lambda b: b["model_prob"], reverse=True)[:3]
-    edges = [b for b in sorted(bets, key=lambda b: (b["edge"] if pd.notna(b["edge"]) else -1),
-                               reverse=True) if pd.notna(b["edge"]) and b["edge"] > 0][:3]
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("### Safest")
-        st.caption("Most likely to cash, regardless of price.")
-        for b in safest:
-            st.markdown(_bet_row(b, show_edge=False), unsafe_allow_html=True)
-    with c2:
-        st.markdown("### Most edge")
-        st.caption("Biggest value vs the de-vigged line.")
-        if edges:
-            for b in edges:
-                st.markdown(_bet_row(b), unsafe_allow_html=True)
-        else:
-            st.info("No +EV bet in this game — the market has it priced tight.")
-
-    st.divider()
-    st.markdown("### Same-game parlay")
-    pool = [b for b in bets if pd.notna(b["edge"]) and b["edge"] > 0] or safest
-    legs = pool[:3] if len(pool) >= 2 else []
-    if len(legs) >= 2:
-        par = betengine.parlay(legs)
-        k = st.columns(3)
-        k[0].metric("Combined odds", betengine.fmt_odds(par["american"]))
-        k[1].metric("Model hit %", f"{par['model_prob']*100:.0f}%")
-        k[2].metric("EV / unit", f"{par['ev']*100:+.0f}%")
-        st.markdown("**Legs:** " + " + ".join(f"{l['selection']}" for l in legs))
-        st.caption("These legs share a game, so they're **correlated** — the model prices the joint "
-                   "probability accordingly (not naïve multiplication). Same-game parlays are "
-                   "high-variance; keep the ticket small.")
-    else:
-        st.info("Not enough +EV legs in this game for a parlay.")
-
-    _game_props(off, deff, extras, row)
+    _priced_board(off, deff, extras, row, away, home, sim)
 
 
 def render(off, deff, blitz, schedule, extras) -> None:
-    st.subheader("Game Bets — the model's best plays, one game at a time")
+    st.subheader("Game Bets — every edge in one game")
     if off.empty or deff.empty:
         st.warning("Need team data loaded first.")
         return
