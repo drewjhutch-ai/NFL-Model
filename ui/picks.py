@@ -51,13 +51,22 @@ def _slate_mismatches(games, off, deff, extras) -> None:
         who = m["player"] or f'{m["off"]} {m["pos"]}s'
         strong = m["score"] >= 0.30
         color = "var(--edge)" if strong else "var(--accent)"
+        side = m.get("side")
+        if side and m.get("line") is not None:
+            # projection-derived lean + the line it's against (agrees with the prop board)
+            sc = "var(--edge)" if side == "Over" else "var(--fade)"
+            lean_html = (f'<span style="color:{sc}">lean <b>{who} {m["stat"]} {side} {m["line"]:g}</b></span> '
+                         f'<span class="meta">· proj {m["proj"]:g} · {m["hit"]:.0f}%</span>')
+        else:
+            # no projectable line yet — present as a target, not a directional bet
+            lean_html = f'<span class="meta">high-usage target · line pending</span>'
         st.markdown(
             f'<div class="k-bet" style="--kbet:{color}">'
             f'<div class="sel">{who} {kit.chip(mismatch.strength_label(m["score"]), "edge" if strong else "accent")}'
             f'</div><div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% team targets (#{m["share_rank"]}) '
             f'· {m["off"]} @ / vs {m["def"]}</div>'
             f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b></span> · '
-            f'<span style="color:{color}">lean <b>{who} {m["stat"]} Over</b></span></div></div>',
+            f'{lean_html}</div></div>',
             unsafe_allow_html=True)
 
 

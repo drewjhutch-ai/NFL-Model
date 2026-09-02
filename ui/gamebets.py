@@ -72,14 +72,20 @@ def _edge_sheet(away, home, off, deff, extras, sim) -> None:
             color = "var(--edge)" if m["score"] >= 0.30 else "var(--accent)"
             who = m["player"] or f'{m["off"]} {m["pos"]}s'
             epa = f' · {m["epa_tgt"]*100:+.0f} EPA/tgt' if m.get("epa_tgt") is not None else ""
+            side = m.get("side")
+            if side and m.get("line") is not None:
+                sc = "var(--edge)" if side == "Over" else "var(--fade)"
+                lean_html = (f'<span style="color:{sc}">lean: <b>{who} {m["stat"]} {side} {m["line"]:g}</b></span> '
+                             f'<span class="meta">· proj {m["proj"]:g} · {m["hit"]:.0f}%</span>')
+            else:
+                lean_html = '<span class="meta">high-usage target · line pending</span>'
             st.markdown(
                 f'<div class="k-bet" style="--kbet:{color}">'
                 f'<div class="sel">{who} {kit.chip(lbl, "edge" if m["score"] >= 0.30 else "accent")}</div>'
                 f'<div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% of team targets '
                 f'(#{m["share_rank"]}){epa}</div>'
                 f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b> '
-                f'(1=tough, 32=soft)</span> · <span style="color:{color}">lean: '
-                f'<b>{who} {m["stat"]} Over</b></span></div></div>',
+                f'(1=tough, 32=soft)</span> · {lean_html}</div></div>',
                 unsafe_allow_html=True)
     else:
         st.caption("No standout receiving mismatch in this game — coverage is tight both ways.")
