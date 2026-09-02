@@ -16,7 +16,49 @@ import pandas as pd
 import streamlit as st
 
 import config
-from data import betengine, loaders, props
+from data import betengine, loaders, mismatch, props
+from ui import kit
+
+
+def _kpi_header(board, prop_df) -> None:
+    ev = board[board["edge"].fillna(-1) > 0] if not board.empty else board
+    best_edge = ev["edge"].max() * 100 if not ev.empty else None
+    top_conf = board["confidence"].max() if not board.empty else None
+    c = st.columns(4)
+    c[0].markdown(kit.kpi("+EV bets", str(len(ev)) if not board.empty else "—", None, None, "edge"),
+                  unsafe_allow_html=True)
+    c[1].markdown(kit.kpi("Best edge", f"{best_edge:+.1f}%" if best_edge is not None else "—",
+                          None, "up" if (best_edge or 0) > 0 else None, "accent"), unsafe_allow_html=True)
+    c[2].markdown(kit.kpi("Top confidence", f"{top_conf:.0f}" if top_conf is not None else "—",
+                          None, None, "sharp"), unsafe_allow_html=True)
+    c[3].markdown(kit.kpi("Prop leans", str(len(prop_df)) if prop_df is not None and not prop_df.empty else "0",
+                          None, None, "violet"), unsafe_allow_html=True)
+
+
+def _slate_mismatches(games, off, deff, extras) -> None:
+    st.markdown("### Prop mismatches of the week")
+    st.caption("The engine's scout report across the slate — heavily-used weapons meeting soft coverage. "
+               "The nitty-gritty edges that become the sharpest prop tickets.")
+    allm = []
+    for r in games.itertuples():
+        allm.extend(mismatch.game_mismatches(r.away_team, r.home_team, off, deff, extras))
+    allm = [m for m in allm if m["score"] >= 0.24]
+    allm.sort(key=lambda m: m["score"], reverse=True)
+    if not allm:
+        st.info("No standout receiving mismatches on this slate yet.")
+        return
+    for m in allm[:8]:
+        who = m["player"] or f'{m["off"]} {m["pos"]}s'
+        strong = m["score"] >= 0.30
+        color = "var(--edge)" if strong else "var(--accent)"
+        st.markdown(
+            f'<div class="k-bet" style="--kbet:{color}">'
+            f'<div class="sel">{who} {kit.chip(mismatch.strength_label(m["score"]), "edge" if strong else "accent")}'
+            f'</div><div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% team targets (#{m["share_rank"]}) '
+            f'· {m["off"]} @ / vs {m["def"]}</div>'
+            f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b></span> · '
+            f'<span style="color:{color}">lean <b>{who} {m["stat"]} Over</b></span></div></div>',
+            unsafe_allow_html=True)
 
 
 def _games_played(extras) -> int:
@@ -229,6 +271,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     if prop_bets:
         board = pd.concat([board, pd.DataFrame(prop_bets)], ignore_index=True)
 
+    _kpi_header(board, prop_df)
+    st.divider()
     if not board.empty:
         _most_likely(board)
         st.divider()
@@ -239,6 +283,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         _confidence(board, gp)
     else:
         st.info("No priced bets yet — game lines aren't posted and no player data for props.")
+    st.divider()
+    _slate_mismatches(games, off, deff, extras)
     st.divider()
     _prop_leans(prop_df)
     st.divider()
