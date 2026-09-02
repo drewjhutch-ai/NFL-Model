@@ -96,6 +96,19 @@ def build_frames():
     # the in-season game report. Degrades to the weekly map if the feed is down.
     feed = _injury_feed()
     inj_map = injuries.merge_feed(inj_map, feed, extras.get("players"))
+    # Persistence: how many weeks each player has been on the report (from the
+    # committed injury snapshots). Chronic/lingering knocks get weighted harder.
+    from data import injury_history
+    persist = injury_history.persistence(config.CURRENT_SEASON)
+    if persist:
+        for team, items in inj_map.items():
+            for p in items:
+                info = persist.get((team, (p.get("name") or "").lower()))
+                if info:
+                    p["weeks_lingering"] = info["weeks"]
+                    if info["weeks"] >= 3 and injury_value._is_lingering(
+                            p.get("status", ""), p.get("practice", "")):
+                        p["lingering"] = True
     extras["injuries"] = inj_map
     extras["injury_week"] = inj_week
     extras["injury_feed_source"] = "Sleeper/ESPN" if feed else ""

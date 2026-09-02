@@ -139,11 +139,14 @@ def _team_drill(inj_map: dict, espn: dict) -> None:
         for p in items:
             lean, tone = injmod.practice_read(p.get("practice", ""), p.get("status", ""))
             color = _TONE.get(tone, _TONE["flat"])
-            pts = injury_value.player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""))
+            weeks = int(p.get("weeks_lingering", 0) or 0)
+            pts = injury_value.player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
+                                            p.get("practice", ""), weeks)
             watch = " · 👁 WATCH" if injmod.is_watch(p) else ""
             prac = injmod.practice_short(p.get("practice", ""))
             prac_txt = f" · practice {prac}" if prac else ""
             pts_txt = f" · −{pts:.2f} pts" if pts > 0 else ""
+            linger_txt = f" · 🔁 lingering {weeks}wk" if weeks >= 2 else ""
             share = f"{float(p.get('pct') or 0)*100:.0f}% snaps"
             st.markdown(
                 f"<div style='border-left:4px solid {color};padding:5px 0 5px 12px;margin:6px 0;'>"
@@ -151,7 +154,7 @@ def _team_drill(inj_map: dict, espn: dict) -> None:
                 f"{pts_txt}</span><br>"
                 f"<span style='color:{color};font-weight:600;'>{p['status']} — {lean}</span>"
                 f"<span style='color:var(--ink-faint);font-size:0.9rem;'> · {p.get('injury','') or '—'}"
-                f"{prac_txt}{watch}</span></div>",
+                f"{prac_txt}{linger_txt}{watch}</span></div>",
                 unsafe_allow_html=True)
     else:
         st.caption("No official designations for this team — showing the live feed only.")

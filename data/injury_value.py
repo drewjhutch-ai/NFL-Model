@@ -37,11 +37,17 @@ def _is_lingering(status: str, practice: str) -> bool:
     return ("limited" in p) or ("did not" in p) or ("dnp" in p) or ("out" in p)
 
 
-def player_value(pos: str, pct, status: str, practice: str = "") -> float:
-    """Point value of one missing/compromised player, scaled by role and status."""
+def player_value(pos: str, pct, status: str, practice: str = "", weeks: int = 0) -> float:
+    """Point value of one missing/compromised player, scaled by role and status.
+
+    ``weeks`` is how many weeks the player has carried a limiting designation
+    (from the injury-snapshot history). A lingering injury that drags on gets a
+    heavier effectiveness dock — chronic knocks are what the market misprices.
+    """
     sw = _STATUS_W.get(status, 0.0)
     if not sw and _is_lingering(status, practice):
-        sw = _LINGER_W
+        # base lingering dock, escalating with how long it's dragged on (cap +4wk)
+        sw = _LINGER_W + min(max(int(weeks) - 1, 0), 4) * 0.09
     if not sw:
         return 0.0
     base = _BASE.get((pos or "").upper(), 0.5)
@@ -56,7 +62,7 @@ def injury_points(items: list[dict]) -> float:
     if not items:
         return 0.0
     total = sum(player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
-                             p.get("practice", ""))
+                             p.get("practice", ""), p.get("weeks_lingering", 0))
                for p in items if p.get("pos") != "QB")
     return round(min(total, _CAP), 2)
 
@@ -67,11 +73,13 @@ def injury_detail(items: list[dict]) -> list[dict]:
     for p in items or []:
         if p.get("pos") == "QB":
             continue
+        weeks = p.get("weeks_lingering", 0)
         v = player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
-                         p.get("practice", ""))
+                         p.get("practice", ""), weeks)
         if v > 0:
             rows.append({"name": p.get("name"), "pos": p.get("pos"),
                          "status": p.get("status"), "pts": round(v, 2),
+                         "weeks": int(weeks or 0),
                          "lingering": bool(p.get("lingering") or _is_lingering(
                              p.get("status", ""), p.get("practice", "")))})
     return sorted(rows, key=lambda r: r["pts"], reverse=True)

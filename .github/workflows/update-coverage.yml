@@ -59,6 +59,16 @@ jobs:
           python scripts/fetch_sharp.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Snapshot injury report (lingering-injury history)
+        id: injuries
+        # Appends this week's injury picture (nflverse status + practice, plus
+        # Sleeper IR/PUP/susp.) to injury_snapshots/. The model reads the history
+        # to weight chronic/lingering injuries. Exit 2 if no source answered.
+        run: |
+          set +e
+          python scripts/snapshot_injuries.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Snapshot model state (Evolution Engine)
         id: snapshot
         # Freezes this week's ranks + projections into history/. Exits 2 in the
@@ -87,7 +97,7 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.injuries.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -95,6 +105,7 @@ jobs:
           # offseason) must not abort staging the files that DO exist.
           git add -f scheme_data/coverage_*.csv 2>/dev/null || true
           git add -f sharp_data/*.csv 2>/dev/null || true
+          git add -f injury_snapshots/*.csv 2>/dev/null || true
           git add -f history/*.csv 2>/dev/null || true
           git add -f model_tuning.json tuning_log.csv review_log.csv 2>/dev/null || true
           if git diff --cached --quiet; then
