@@ -19,14 +19,29 @@ _BASE = {
     "CB": 0.9, "DB": 0.7, "S": 0.5, "FS": 0.5, "SS": 0.5,
     "LB": 0.5, "ILB": 0.5, "MLB": 0.5,
 }
-# Availability weight by report status (Questionable players usually play).
-_STATUS_W = {"Out": 1.0, "Doubtful": 0.6}
-_CAP = 6.0   # most a single team's injuries can move our number
+# Availability weight by report status. A player who is definitively out for the
+# game or the season (Out/IR/PUP/Suspended) costs full value; Doubtful usually
+# sits; Questionable usually plays — but a *lingering* Questionable (limited or
+# non-participation in practice, week after week) plays compromised, so it earns
+# a small effectiveness dock the market is slow to price.
+_STATUS_W = {"Out": 1.0, "IR": 1.0, "PUP": 1.0, "Suspended": 1.0, "Doubtful": 0.6}
+_LINGER_W = 0.25   # a nagging Questionable who'll play but hobbled
+_CAP = 6.0         # most a single team's injuries can move our number
 
 
-def player_value(pos: str, pct, status: str) -> float:
-    """Point value of one missing player, scaled by role (snap share) and status."""
+def _is_lingering(status: str, practice: str) -> bool:
+    """A Questionable tag backed by limited / DNP practice — playing through it."""
+    if status != "Questionable":
+        return False
+    p = (practice or "").strip().lower()
+    return ("limited" in p) or ("did not" in p) or ("dnp" in p) or ("out" in p)
+
+
+def player_value(pos: str, pct, status: str, practice: str = "") -> float:
+    """Point value of one missing/compromised player, scaled by role and status."""
     sw = _STATUS_W.get(status, 0.0)
+    if not sw and _is_lingering(status, practice):
+        sw = _LINGER_W
     if not sw:
         return 0.0
     base = _BASE.get((pos or "").upper(), 0.5)
@@ -36,11 +51,12 @@ def player_value(pos: str, pct, status: str) -> float:
 
 
 def injury_points(items: list[dict]) -> float:
-    """Total spread points a team loses to Out/Doubtful players (QB excluded —
+    """Total spread points a team loses to absent + lingering players (QB excluded —
     it's already handled by the QB-value model, so we don't double-count)."""
     if not items:
         return 0.0
-    total = sum(player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""))
+    total = sum(player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
+                             p.get("practice", ""))
                for p in items if p.get("pos") != "QB")
     return round(min(total, _CAP), 2)
 
@@ -51,10 +67,13 @@ def injury_detail(items: list[dict]) -> list[dict]:
     for p in items or []:
         if p.get("pos") == "QB":
             continue
-        v = player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""))
+        v = player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
+                         p.get("practice", ""))
         if v > 0:
             rows.append({"name": p.get("name"), "pos": p.get("pos"),
-                         "status": p.get("status"), "pts": round(v, 2)})
+                         "status": p.get("status"), "pts": round(v, 2),
+                         "lingering": bool(p.get("lingering") or _is_lingering(
+                             p.get("status", ""), p.get("practice", "")))})
     return sorted(rows, key=lambda r: r["pts"], reverse=True)
 
 

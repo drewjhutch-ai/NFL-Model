@@ -14,6 +14,27 @@ from data import (adjust, coaching, drives, elo, form, injuries, injury_value,
 from data import betting as betmodel
 
 
+def _injury_feed() -> dict:
+    """Year-round injury feed for the engine: Sleeper first, ESPN fallback.
+
+    Reachable from both the Streamlit Cloud host and the GitHub Action. Any
+    failure degrades to an empty dict so the projection falls back to the weekly
+    game report without breaking.
+    """
+    try:
+        from data.providers import sleeper_injuries
+        feed = sleeper_injuries.by_team()
+        if feed:
+            return feed
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from data.providers import espn_injuries
+        return espn_injuries.by_team()
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def build_frames():
     """Load, weight, and aggregate everything the tabs need. Returns a tuple of
     ``(off, deff, blitz, live, schedule, extras)``."""
@@ -69,8 +90,15 @@ def build_frames():
     rosters = loaders.load_rosters()
     inj_map, inj_week = injuries.build(
         loaders.load_injuries(), loaders.load_snaps(), rosters, config.CURRENT_SEASON)
+    # Fold in the year-round feed (Sleeper primary, ESPN fallback): IR / PUP /
+    # suspensions the weekly report never carries, valued by role from usage, so
+    # a difference-maker on IR docks the team across every betting tab — not just
+    # the in-season game report. Degrades to the weekly map if the feed is down.
+    feed = _injury_feed()
+    inj_map = injuries.merge_feed(inj_map, feed, extras.get("players"))
     extras["injuries"] = inj_map
     extras["injury_week"] = inj_week
+    extras["injury_feed_source"] = "Sleeper/ESPN" if feed else ""
     extras["injury_pts"] = injury_value.team_injury_points(inj_map)  # non-QB spread impact
 
     # special teams + QB value (feed the betting projection)

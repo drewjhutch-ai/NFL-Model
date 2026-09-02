@@ -22,27 +22,40 @@ from data import injury_value, loaders
 _TONE = {"bad": "#ff5468", "warn": "#ffb43d", "good": "#2fe0a0", "flat": "#566a7d"}
 
 
-@st.cache_data(ttl=900, show_spinner="Checking the ESPN injury feed…")
-def _load_espn() -> dict:
-    from data.providers import espn_injuries
-    return espn_injuries.by_team()
+@st.cache_data(ttl=1800, show_spinner="Checking the injury feed…")
+def _load_feed() -> tuple[dict, str, str]:
+    """Year-round injury feed → (by_team, source, error).
+
+    Sleeper first (built for apps, reachable from the cloud, carries IR/PUP/susp.),
+    then ESPN as a fallback. Whichever answers wins.
+    """
+    from data.providers import sleeper_injuries, espn_injuries
+    feed = sleeper_injuries.by_team()
+    if feed:
+        return feed, "Sleeper", ""
+    feed = espn_injuries.by_team()
+    if feed:
+        return feed, "ESPN", ""
+    err = sleeper_injuries.last_error() or espn_injuries.last_error() or ""
+    return {}, "none", err
 
 
 def _impact_table(inj_map: dict, inj_pts: dict) -> None:
     st.markdown("### League injury impact")
-    st.caption("Points the model has **docked each team** for who's Out or Doubtful (snap-share × "
-               "position value, QB handled separately). This is what actually moves the projection.")
+    st.caption("Points the model has **docked each team** for absent (Out/IR/PUP/suspended) and "
+               "**lingering** (limited-practice Questionable) players — snap-share × position value, "
+               "QB handled separately. This flows into the projection on every betting tab.")
     rows = []
     for team, pts in sorted(inj_pts.items(), key=lambda kv: kv[1], reverse=True):
         items = inj_map.get(team, [])
         if pts <= 0 and not items:
             continue
-        outs = sum(1 for p in items if p["status"] == "Out")
-        q = sum(1 for p in items if p["status"] == "Questionable")
+        outs = sum(1 for p in items if p["status"] in ("Out", "IR", "PUP", "Suspended"))
+        q = sum(1 for p in items if p.get("lingering"))
         rows.append({
             "Team": team, "Pts docked": round(pts, 2),
-            "Out": outs, "Doubtful": sum(1 for p in items if p["status"] == "Doubtful"),
-            "Quest.": q, "Key absences": injmod.summary_line(items, limit=3),
+            "Absent": outs, "Doubtful": sum(1 for p in items if p["status"] == "Doubtful"),
+            "Lingering": q, "Key absences": injmod.summary_line(items, limit=3),
         })
     if not rows:
         st.info("No major injuries on the board (offseason, or no report posted yet).")
@@ -51,6 +64,9 @@ def _impact_table(inj_map: dict, inj_pts: dict) -> None:
     st.dataframe(df, width="stretch", hide_index=True, column_config={
         "Pts docked": st.column_config.NumberColumn("Pts docked", format="%.2f",
             help="Spread points subtracted from this team in the projection."),
+        "Absent": st.column_config.NumberColumn("Absent", help="Out / IR / PUP / suspended."),
+        "Lingering": st.column_config.NumberColumn("Lingering",
+            help="Questionable but limited/DNP in practice — playing hurt."),
     })
 
 
@@ -138,15 +154,16 @@ def _team_drill(inj_map: dict, espn: dict) -> None:
                 f"{prac_txt}{watch}</span></div>",
                 unsafe_allow_html=True)
     else:
-        st.caption("No official designations for this team — showing the ESPN feed only.")
+        st.caption("No official designations for this team — showing the live feed only.")
 
-    # ESPN-only names (faster than the official report)
+    # feed names not on the official report (IR/PUP/susp. + faster designations)
     if not espn_df.empty:
         known = {p["name"].lower() for p in items}
         extra = espn_df[~espn_df["name"].str.lower().isin(known)]
-        extra = extra[extra["espn_status"].isin(["Out", "Doubtful", "Questionable", "IR", "Day-To-Day"])]
+        extra = extra[extra["espn_status"].isin(
+            ["Out", "Doubtful", "Questionable", "IR", "PUP", "Suspended", "Day-To-Day"])]
         if not extra.empty:
-            st.markdown("**ESPN feed — faster / not yet on the official report**")
+            st.markdown("**Live feed — season-long & not yet on the official report**")
             st.dataframe(
                 extra[["name", "pos", "espn_status", "detail"]].rename(columns={
                     "name": "Player", "pos": "Pos", "espn_status": "ESPN status", "detail": "Note"}),
@@ -186,10 +203,10 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     inj_map = extras.get("injuries") or {}
     week = extras.get("injury_week")
     inj_pts = extras.get("injury_pts") or {}
-    if st.button("↻ Retry ESPN feed"):
-        _load_espn.clear()
+    if st.button("↻ Retry injury feed"):
+        _load_feed.clear()
         st.rerun()
-    espn = _load_espn()
+    espn, source, err = _load_feed()
 
     in_season = bool(week) and bool(inj_pts)
     flat = _espn_flat(espn)
@@ -199,13 +216,14 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     c1.metric("Report week", week if week else "offseason")
     c2.metric("Teams with absences", sum(1 for v in inj_pts.values() if v > 0))
     c3.metric("IR / PUP / susp.", n_season_long if espn else "—")
-    c4.metric("ESPN feed", "Live ✓" if espn else "Unavailable")
+    c4.metric("Live feed", source if espn else "Unavailable")
     if not espn:
-        from data.providers import espn_injuries
-        reason = espn_injuries.last_error()
-        rtxt = f" — {reason}" if reason else ""
-        st.caption(f"ESPN feed returned nothing{rtxt}. The official report + practice signal below still "
-                   "drive the model; hit ↻ Retry, or it recovers on the Streamlit Cloud host.")
+        rtxt = f" — {err}" if err else ""
+        st.caption(f"Live injury feed returned nothing{rtxt}. The official report + practice signal below "
+                   "still drive the model; hit ↻ Retry to re-pull.")
+    else:
+        st.caption(f"Season-long designations from **{source}** (free, no key, year-round). These "
+                   "absences feed the projection across every betting tab.")
     st.divider()
     # Year-round board first when the weekly report isn't posted (offseason / between slates).
     if in_season:
@@ -221,6 +239,9 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
     st.divider()
     _manual_intel()
     st.divider()
-    st.caption("How it feeds the model: every Out/Doubtful player is scored by position × snap share and "
-               "subtracted from that team's strength in the projection (QB handled by the QB-value model). "
-               "Questionables are flagged to watch, not yet priced — your manual intel is the tiebreaker.")
+    st.caption("How it feeds the model: absent players (Out/IR/PUP/suspended) are scored by position × "
+               "snap share and subtracted from that team's strength; **lingering** injuries "
+               "(Questionables limited or DNP in practice, week after week) take a smaller effectiveness "
+               "dock for playing hurt. Both flow into the projected margin on **every betting tab** — "
+               "Matchups, Game Bets, Picks, Betting, Long Odds, CLV. QB handled by the QB-value model; "
+               "your manual intel is the tiebreaker.")

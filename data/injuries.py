@@ -19,8 +19,69 @@ import config
 from data.teams import normalize_team
 
 _STATUSES = ("Out", "Doubtful", "Questionable")
-STATUS_ICON = {"Out": "OUT", "Doubtful": "DBT", "Questionable": "Q"}
-STATUS_ORDER = {"Out": 0, "Doubtful": 1, "Questionable": 2}
+STATUS_ICON = {"Out": "OUT", "Doubtful": "DBT", "Questionable": "Q",
+               "IR": "IR", "PUP": "PUP", "Suspended": "SUS"}
+STATUS_ORDER = {"Out": 0, "IR": 0, "PUP": 0, "Suspended": 1, "Doubtful": 1, "Questionable": 2}
+
+# Season-long / definite-absence statuses that come from the year-round feed
+# (Sleeper/ESPN) rather than the weekly game report.
+_FEED_ABSENT = ("IR", "PUP", "Suspended", "Out", "Doubtful")
+
+
+def _role_pct(players_df, team: str, name: str) -> float:
+    """Estimate a player's role (snap-share proxy) from the usage frame.
+
+    A feed absence (e.g. a WR on IR) carries no snap count, so we approximate the
+    player's importance from their share of the team's touches. Unknown names are
+    treated as depth so they barely move the number.
+    """
+    if players_df is None or getattr(players_df, "empty", True):
+        return 0.4
+    t = players_df[players_df.get("team") == team]
+    if t.empty:
+        return 0.4
+    touches = t["targets"].fillna(0) + t["carries"].fillna(0)
+    mx = float(touches.max()) or 1.0
+    row = t[t["name"].str.lower() == (name or "").lower()]
+    if row.empty:
+        return 0.35
+    v = float((row["targets"].fillna(0) + row["carries"].fillna(0)).iloc[0])
+    return max(0.3, min(0.95, v / mx * 0.9))
+
+
+def merge_feed(inj_map: dict, feed_by_team: dict, players_df=None) -> dict:
+    """Fold year-round feed absences (IR/PUP/susp./Out/Doubtful) into the weekly map.
+
+    The weekly game report is in-season only and never lists IR/PUP, so a
+    difference-maker on injured reserve would otherwise be invisible to the
+    projection all year. This adds those absences — valued by role from usage —
+    so they dock the team's strength across every betting tab. The weekly report
+    wins on any name it already carries (it has real snap share + practice signal).
+    """
+    out = {t: list(v) for t, v in (inj_map or {}).items()}
+    if not feed_by_team:
+        return out
+    for team, g in feed_by_team.items():
+        if g is None or getattr(g, "empty", True):
+            continue
+        known = {p["name"].lower() for p in out.get(team, [])}
+        for r in g.itertuples():
+            status = getattr(r, "espn_status", "")
+            if status not in _FEED_ABSENT:
+                continue
+            nm = getattr(r, "name", "")
+            if not nm or nm.lower() in known:
+                continue
+            out.setdefault(team, []).append({
+                "gsis": None, "name": nm, "pos": getattr(r, "pos", ""),
+                "status": status, "injury": getattr(r, "detail", "") or "",
+                "practice": "", "pct": _role_pct(players_df, team, nm),
+                "source": "feed", "season_long": status in ("IR", "PUP", "Suspended"),
+                "lingering": False,
+            })
+    for team in out:
+        out[team].sort(key=lambda p: (STATUS_ORDER.get(p["status"], 9), -float(p.get("pct") or 0)))
+    return out
 
 # Practice participation is the tell behind a game-status designation — a
 # Questionable who DNP'd all week trends toward out; one who practiced Full
