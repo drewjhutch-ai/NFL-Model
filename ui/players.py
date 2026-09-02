@@ -285,12 +285,30 @@ def _usage(stats, teams) -> None:
         st.caption("Per-game averages, recency-weighted (recent games count more).")
 
 
+def _roster_moves(extras) -> None:
+    """Show players the model re-assigned to their current team (trades/signings)."""
+    moves = extras.get("roster_moves") or []
+    skill = [m for m in moves if m.get("pos") in ("QB", "RB", "WR", "TE")]
+    if not skill:
+        return
+    src = extras.get("rosters_current")
+    fresh = "live roster feed" if src is not None and not getattr(src, "empty", True) else "committed roster snapshot"
+    with st.expander(f"🔄 Roster moves applied — {len(skill)} skill players on a new team ({fresh})"):
+        st.caption("The model assigns every player to his **current** team, not the team he last "
+                   "played for — so trades, signings and cuts show up here before he logs a snap. "
+                   "This feeds Players, Props, Touchdowns, and the projection on every tab.")
+        df = pd.DataFrame([{"Player": m["name"], "Pos": m["pos"],
+                            "From": m["from"], "Now": m["to"]} for m in skill])
+        st.dataframe(df, width="stretch", hide_index=True)
+
+
 def render(off, deff, schedule, extras) -> None:
     st.subheader("Players — prop edges by matchup")
     stats = extras.get("players")
     if stats is None or stats.empty:
         st.info("Player stats not available yet (they load once games are played).")
         return
+    _roster_moves(extras)
     teams = sorted(stats["team"].dropna().unique())
     season = config.CURRENT_SEASON
     have = (schedule is not None and not schedule.empty and (schedule["season"] == season).any())

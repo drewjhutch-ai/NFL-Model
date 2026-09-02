@@ -29,14 +29,14 @@ def _load_feed() -> tuple[dict, str, str]:
     Sleeper first (built for apps, reachable from the cloud, carries IR/PUP/susp.),
     then ESPN as a fallback. Whichever answers wins.
     """
-    from data.providers import sleeper_injuries, espn_injuries
-    feed = sleeper_injuries.by_team()
+    from data.providers import sleeper, espn_injuries
+    feed = sleeper.injuries_by_team()
     if feed:
         return feed, "Sleeper", ""
     feed = espn_injuries.by_team()
     if feed:
         return feed, "ESPN", ""
-    err = sleeper_injuries.last_error() or espn_injuries.last_error() or ""
+    err = sleeper.last_error() or espn_injuries.last_error() or ""
     return {}, "none", err
 
 

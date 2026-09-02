@@ -22,8 +22,8 @@ def _injury_feed() -> dict:
     game report without breaking.
     """
     try:
-        from data.providers import sleeper_injuries
-        feed = sleeper_injuries.by_team()
+        from data.providers import sleeper
+        feed = sleeper.injuries_by_team()
         if feed:
             return feed
     except Exception:  # noqa: BLE001
@@ -33,6 +33,28 @@ def _injury_feed() -> dict:
         return espn_injuries.by_team()
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _roster_feed():
+    """Current rosters for team-assignment correction: live Sleeper, else committed.
+
+    Shares the one Sleeper player pull with the injury feed via the provider's
+    memo. Falls back to the latest committed roster snapshot (from the weekly
+    Action) if the live pull fails, so team assignments survive a feed outage.
+    """
+    import pandas as pd
+    try:
+        from data.providers import sleeper
+        live = sleeper.current_rosters()
+        if live is not None and not live.empty:
+            return live
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from data import roster_history
+        return roster_history.load_latest(config.CURRENT_SEASON)
+    except Exception:  # noqa: BLE001
+        return pd.DataFrame()
 
 
 def build_frames():
@@ -83,7 +105,17 @@ def build_frames():
         _names = (dict(zip(_rost["player_id"], _rost["player_name"]))
                   if not _rost.empty and "player_name" in _rost.columns else {})
         _weekly = players.player_stats_from_pbp(pbp_w, posmap, _names)
+    # Current-roster override: put every player on the team he's on TODAY, not the
+    # team he last played for. Trades/signings/cuts are invisible to stats until a
+    # snap is logged, so we correct team assignment from the live roster feed. This
+    # frame is read by Players, Props, Touchdowns, and the mismatch finder, so the
+    # fix propagates everywhere. Degrades to stats-derived teams if the feed is down.
+    from data import rosters as roster_mod
+    _roster = _roster_feed()
+    _weekly, _moves = roster_mod.apply_current_teams(_weekly, _roster)
     extras["players"] = _weekly
+    extras["rosters_current"] = _roster
+    extras["roster_moves"] = _moves
     extras["form"] = form.team_form(pbp)
     extras["schedule"] = schedule  # for situational home/away splits
     extras["sos"] = betmodel.strength_of_schedule(schedule, betmodel.power_ratings(off, deff))
@@ -122,7 +154,9 @@ def build_frames():
     name_map = (dict(zip(rosters["player_id"], rosters["player_name"]))
                 if not rosters.empty and "player_name" in rosters.columns else {})
     extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)
-    extras["rz_usage"] = touchdowns.redzone_usage(pbp_w, posmap, name_map)
+    _rz = touchdowns.redzone_usage(pbp_w, posmap, name_map)
+    _rz, _ = roster_mod.apply_current_teams(_rz, _roster)   # goal-line usage on the current team
+    extras["rz_usage"] = _rz
     # accuracy layer: stable points-differential signal + Elo ensemble/prior
     extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
     extras["elo"] = elo.elo_ratings(schedule)
