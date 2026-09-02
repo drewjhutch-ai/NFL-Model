@@ -123,11 +123,42 @@ def _shares(usage: pd.DataFrame, team: str) -> pd.DataFrame:
     return t
 
 
+def _pos_soft(cbp, dvp, opp: str, pos: str):
+    """(multiplier, opp-coverage-rank) for a pass-catcher vs the opponent by position.
+
+    Soft coverage vs this position (high rank) lifts the receiving-TD rate; tough
+    coverage trims it. Blends Sharp YPT-allowed rank with nflverse dvp. This is
+    the 'TE vs a team weak on TEs' context the raw team split misses.
+    """
+    if pos not in ("WR", "TE", "RB"):
+        return 1.0, None
+    ranks = []
+    col = f"ypt_{pos}_rank"
+    if cbp is not None and not cbp.empty and opp in cbp.index and col in cbp.columns and pd.notna(cbp.loc[opp, col]):
+        ranks.append(float(cbp.loc[opp, col]))
+    dfp = (dvp or {}).get(pos)
+    if dfp is not None and opp in dfp.index and "def_rank" in dfp.columns and pd.notna(dfp.loc[opp, "def_rank"]):
+        ranks.append(float(dfp.loc[opp, "def_rank"]))
+    if not ranks:
+        return 1.0, None
+    rk = sum(ranks) / len(ranks)
+    mult = 1.0 + (rk - 16.5) / 16.5 * 0.20    # ±20% at the extremes
+    return mult, rk
+
+
 def td_board(off, deff, extras: dict, games: pd.DataFrame, min_share: float = 0.03) -> pd.DataFrame:
-    """Anytime / 2+ TD probabilities for every meaningful player across a slate."""
+    """Anytime / 2+ TD probabilities for every meaningful player across a slate.
+
+    Context-weighted: the receiving-TD rate is scaled by the opponent's
+    coverage-by-position (soft vs the player's position lifts it), and a
+    regression flag marks red-zone-heavy players who haven't been finishing.
+    """
     usage = extras.get("rz_usage")
     if usage is None or usage.empty or games is None or games.empty:
         return pd.DataFrame()
+    from data import sharp_value as sv
+    cbp = sv.coverage_by_position(extras.get("sharp") or {})
+    dvp = extras.get("dvp") or {}
     rows = []
     for _, g in games.iterrows():
         exp = team_expected_tds(off, deff, extras, g)
@@ -139,17 +170,28 @@ def td_board(off, deff, extras: dict, games: pd.DataFrame, min_share: float = 0.
             info = exp.get(team, {})
             t = _shares(usage, team)
             for _, p in t.iterrows():
-                lam = p["rush_share"] * info.get("rush_td", 0) + p["rec_share"] * info.get("pass_td", 0)
+                pos_mult, pos_rank = _pos_soft(cbp, dvp, opp, p["pos"])
+                lam_rush = p["rush_share"] * info.get("rush_td", 0)
+                lam_rec = p["rec_share"] * info.get("pass_td", 0) * pos_mult
+                lam = lam_rush + lam_rec
                 if lam < min_share:
                     continue
                 anytime = 1 - math.exp(-lam)
                 two_plus = 1 - math.exp(-lam) * (1 + lam)
                 gl = int(p["gl_carries"] + p["gl_targets"])
+                games_pl = max(float(p.get("games", 1)) or 1, 1)
+                rz_looks_pg = (p["rz_targets"] + p["gl_carries"]) / games_pl
+                td_pg = (p.get("rush_td", 0) + p.get("rec_td", 0)) / games_pl
+                regression = rz_looks_pg >= 1.5 and td_pg <= 0.28
                 driver = []
                 if p["gl_carries"] >= 1:
                     driver.append("goal-line back")
                 if p["rz_targets"] >= 3:
                     driver.append("red-zone target")
+                if pos_rank is not None and pos_rank >= 22:
+                    driver.append(f"soft vs {p['pos']}")
+                if regression:
+                    driver.append("regression candidate")
                 opp_rank = deff.loc[opp].get("rush_epa_rank" if p["pos"] in ("RB", "FB", "QB")
                                              else "pass_epa_rank") if opp in deff.index else None
                 rows.append({
@@ -159,6 +201,8 @@ def td_board(off, deff, extras: dict, games: pd.DataFrame, min_share: float = 0.
                     "2+%": round(two_plus * 100), "fair": betting.fair_moneyline(anytime),
                     "GL touches": gl, "TeamTotal": round(info.get("points", 0), 1),
                     "Driver": ", ".join(driver) or "volume",
+                    "PosSoft": round(pos_rank, 0) if pos_rank is not None else None,
+                    "Regression": bool(regression),
                     "OppRank": int(opp_rank) if opp_rank is not None and pd.notna(opp_rank) else None,
                     "Weather": info.get("weather", ""),
                     "_anytime": anytime,

@@ -77,6 +77,38 @@ def _two_plus(board) -> None:
     st.caption("Big prices, but the goal-line workhorses on high-total teams are where multi-TD games live.")
 
 
+def _regression(board) -> None:
+    st.markdown("### Due to score — regression candidates")
+    st.caption("Players seeing red-zone / goal-line work but **not finishing** — the market's slow to "
+               "adjust, and TDs regress toward usage. A soft position matchup makes them prime.")
+    view = board[board["Regression"]].sort_values("GL touches", ascending=False).head(6)
+    if view.empty:
+        st.caption("No clear regression candidates on this slate.")
+        return
+    for i in range(0, len(view), 3):
+        cols = st.columns(3)
+        for j, col in enumerate(cols):
+            if i + j < len(view):
+                _card(col, view.iloc[i + j])
+
+
+def _longshots(board) -> None:
+    st.markdown("### Longshot — just score one")
+    st.caption("The best value at a long price (+250 or longer): a real path to the end zone the market "
+               "is under-pricing — one score cashes it.")
+    view = board[board["fair"] >= 250].sort_values("Anytime%", ascending=False).head(6)
+    if view.empty:
+        st.caption("No compelling longshots at +250 or longer this week.")
+        return
+    show = view[["Player", "Pos", "Team", "Opp", "Anytime%", "fair", "Driver"]].rename(
+        columns={"fair": "Fair"})
+    st.dataframe(show, width="stretch", hide_index=True, column_config={
+        "Anytime%": st.column_config.NumberColumn("Anytime%", format="%d%%"),
+        "Fair": st.column_config.NumberColumn("Fair", format="%+d")})
+    st.caption("Longshots bust often — small tickets. The edge is context (usage + soft matchup) the "
+               "long price ignores.")
+
+
 def _finder(board) -> None:
     st.markdown("### Anytime-TD edge finder")
     st.caption("Enter a book's anytime-TD price to get the edge, fair odds, and Kelly stake.")
@@ -116,6 +148,10 @@ def render(off, deff, blitz, schedule, extras) -> None:
         st.info("No touchdown projections for this week yet (need the week's matchups).")
         return
     _board_section(board, games)
+    st.divider()
+    _regression(board)
+    st.divider()
+    _longshots(board)
     st.divider()
     _two_plus(board)
     st.divider()
