@@ -26,6 +26,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,LV,Corey Rucker,WR,IR,,sleeper
 2026-09-02,2026,,HOU,M.J. Stewart,DB,PUP,,sleeper
 2026-09-02,2026,,CAR,Akayleb Evans,DB,Questionable,,sleeper
+2026-09-02,2026,,LV,Justin Pickett,G,IR,,sleeper
 2026-09-02,2026,,CLE,Kalia Davis,DL,IR,,sleeper
 2026-09-02,2026,,WAS,Rachaad White,RB,Questionable,,sleeper
 2026-09-02,2026,,PHI,Micah Morris,G,Questionable,,sleeper
@@ -33,7 +34,6 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,NO,Chris Rumph,LB,Questionable,,sleeper
 2026-09-02,2026,,JAX,Zach Durfee,DE,IR,,sleeper
 2026-09-02,2026,,LAC,Branson Taylor,OL,IR,,sleeper
-2026-09-02,2026,,ATL,Da'Shawn Hand,DT,Questionable,,sleeper
 2026-09-02,2026,,CIN,Ja'Sir Taylor,DB,IR,,sleeper
 2026-09-02,2026,,CAR,Taylor Moton,T,PUP,,sleeper
 2026-09-02,2026,,GB,Collin Oliver,DE,IR,,sleeper
@@ -45,6 +45,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,CLE,Parker Brailsford,C,Questionable,,sleeper
 2026-09-02,2026,,LAC,Brenen Thompson,WR,Questionable,,sleeper
 2026-09-02,2026,,CLE,Edefuan Ulofoshio,LB,IR,,sleeper
+2026-09-02,2026,,NE,Isaiah Iton,DL,IR,,sleeper
 2026-09-02,2026,,TB,Rueben Bain,DL,Questionable,,sleeper
 2026-09-02,2026,,ARI,Will Johnson,DB,Questionable,,sleeper
 2026-09-02,2026,,NO,Rejzohn Wright,CB,IR,,sleeper
@@ -104,14 +105,17 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,GB,RJ Maryland,TE,Questionable,,sleeper
 2026-09-02,2026,,WAS,Jeremy McNichols,RB,IR,,sleeper
 2026-09-02,2026,,LAC,Dalevon Campbell,WR,IR,,sleeper
+2026-09-02,2026,,MIN,Bryson Nesbit,TE,Questionable,,sleeper
 2026-09-02,2026,,ARI,James Conner,RB,IR,,sleeper
 2026-09-02,2026,,IND,Tyler Warren,TE,Questionable,,sleeper
 2026-09-02,2026,,LAC,Kyle Kennard,DE,IR,,sleeper
 2026-09-02,2026,,ARI,Zach Carter,DL,IR,,sleeper
 2026-09-02,2026,,DEN,Nick Gargiulo,OL,PUP,,sleeper
 2026-09-02,2026,,NYJ,Kenyon Sadiq,TE,Questionable,,sleeper
+2026-09-02,2026,,MIN,Jermar Jefferson,RB,IR,,sleeper
 2026-09-02,2026,,LAC,Tre' Harris,WR,Questionable,,sleeper
 2026-09-02,2026,,JAX,Jakobi Meyers,WR,Questionable,,sleeper
+2026-09-02,2026,,MIN,Dontae Fleming,WR,IR,,sleeper
 2026-09-02,2026,,BUF,Demetrius Flannigan-Fowles,LB,IR,,sleeper
 2026-09-02,2026,,SF,Isaac Guerendo,RB,PUP,,sleeper
 2026-09-02,2026,,MIN,Dwight McGlothern,DB,Questionable,,sleeper
@@ -189,6 +193,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,TEN,Mitchell Trubisky,QB,Questionable,,sleeper
 2026-09-02,2026,,WAS,Dorance Armstrong,DE,Suspended,,sleeper
 2026-09-02,2026,,DET,Payton Turner,DE,IR,,sleeper
+2026-09-02,2026,,NYJ,Chase Curtis,TE,IR,,sleeper
 2026-09-02,2026,,WAS,Jacory Croskey-Merritt,RB,Questionable,,sleeper
 2026-09-02,2026,,KC,L'Jarius Sneed,CB,Questionable,,sleeper
 2026-09-02,2026,,CHI,Dallis Flowers,CB,IR,,sleeper
@@ -216,6 +221,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,ATL,Jalon Walker,DL,IR,,sleeper
 2026-09-02,2026,,ATL,Michael Penix,QB,Questionable,,sleeper
 2026-09-02,2026,,TEN,Carnell Tate,WR,Questionable,,sleeper
+2026-09-02,2026,,GB,Thomas Yassmin,TE,IR,,sleeper
 2026-09-02,2026,,HOU,Jadeveon Clowney,DE,Questionable,,sleeper
 2026-09-02,2026,,NYG,Colton Hood,DB,Questionable,,sleeper
 2026-09-02,2026,,ARI,Jeremiyah Love,RB,Questionable,,sleeper
@@ -223,6 +229,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,PIT,Will Howard,QB,Questionable,,sleeper
 2026-09-02,2026,,DAL,DJ Rogers,TE,IR,,sleeper
 2026-09-02,2026,,LAR,Shaun Dolac,LB,Questionable,,sleeper
+2026-09-02,2026,,JAX,Bhayshul Tuten,RB,Questionable,,sleeper
 2026-09-02,2026,,WAS,Drake Jackson,DL,IR,,sleeper
 2026-09-02,2026,,ARI,Josh Minkins,DB,Questionable,,sleeper
 2026-09-02,2026,,ARI,Kaleb Proctor,DT,IR,,sleeper
@@ -242,6 +249,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,MIA,Ronnie Harrison,DB,Questionable,,sleeper
 2026-09-02,2026,,PHI,Jonathan Greenard,DE,PUP,,sleeper
 2026-09-02,2026,,HOU,Brevin Jordan,TE,Questionable,,sleeper
+2026-09-02,2026,,LV,Chase Roberts,WR,IR,,sleeper
 2026-09-02,2026,,DEN,Matt Henningsen,DE,IR,,sleeper
 2026-09-02,2026,,WAS,Malik Spencer,DB,IR,,sleeper
 2026-09-02,2026,,CHI,Keyshaun Elliott,LB,Questionable,,sleeper
@@ -283,6 +291,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,MIN,Caleb Tiernan,OT,Questionable,,sleeper
 2026-09-02,2026,,CAR,Jaelan Phillips,LB,Questionable,,sleeper
 2026-09-02,2026,,LAR,Daniel Rickert,DE,IR,,sleeper
+2026-09-02,2026,,JAX,Keivie Rose,DL,IR,,sleeper
 2026-09-02,2026,,HOU,Jaylin Noel,WR,Questionable,,sleeper
 2026-09-02,2026,,PIT,DeShon Elliott,DB,IR,,sleeper
 2026-09-02,2026,,KC,Matt Waletzko,OL,IR,,sleeper
@@ -296,9 +305,9 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,SF,Upton Stout,CB,Questionable,,sleeper
 2026-09-02,2026,,WAS,Jer'Zhan Newton,DL,IR,,sleeper
 2026-09-02,2026,,CHI,Jonathan Garvin,LB,IR,,sleeper
-2026-09-02,2026,,JAX,Brian Thomas,WR,Questionable,,sleeper
 2026-09-02,2026,,TEN,Milo Eifler,LB,IR,,sleeper
 2026-09-02,2026,,CAR,Jonathon Brooks,RB,Questionable,,sleeper
+2026-09-02,2026,,MIN,Kenny Dyson,LB,IR,,sleeper
 2026-09-02,2026,,SEA,Tory Horton,WR,Questionable,,sleeper
 2026-09-02,2026,,MIN,Tyreek Chappell,CB,IR,,sleeper
 2026-09-02,2026,,PIT,Jalen Ramsey,CB,Questionable,,sleeper
@@ -327,6 +336,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,SF,Keion White,DL,Questionable,,sleeper
 2026-09-02,2026,,CHI,Noah Sewell,LB,PUP,,sleeper
 2026-09-02,2026,,NYG,Korie Black,CB,IR,,sleeper
+2026-09-02,2026,,MIN,Jacob Roberts,LB,IR,,sleeper
 2026-09-02,2026,,CLE,Dillon Gabriel,QB,IR,,sleeper
 2026-09-02,2026,,NO,Ty Chandler,RB,IR,,sleeper
 2026-09-02,2026,,CLE,Damarri Mathis,DB,IR,,sleeper
@@ -356,10 +366,12 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,IND,Josh Downs,WR,Questionable,,sleeper
 2026-09-02,2026,,TEN,Kalel Mullings,RB,Questionable,,sleeper
 2026-09-02,2026,,BUF,Ty Johnson,RB,Questionable,,sleeper
+2026-09-02,2026,,NYJ,Connor Hulstein,TE,IR,,sleeper
 2026-09-02,2026,,DET,Jimmy Rolder,LB,Questionable,,sleeper
 2026-09-02,2026,,JAX,LeQuint Allen,RB,Questionable,,sleeper
 2026-09-02,2026,,DET,Derrick Moore,DE,Questionable,,sleeper
 2026-09-02,2026,,BAL,Zay Flowers,WR,Questionable,,sleeper
+2026-09-02,2026,,NE,Eric Butler,DB,IR,,sleeper
 2026-09-02,2026,,CHI,Jaylon Jones,CB,IR,,sleeper
 2026-09-02,2026,,GB,Marlon Jones,CB,IR,,sleeper
 2026-09-02,2026,,WAS,Quentin Moore,TE,IR,,sleeper
@@ -368,6 +380,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,CHI,Hayden Large,TE,IR,,sleeper
 2026-09-02,2026,,TB,Dennis Houston,WR,Questionable,,sleeper
 2026-09-02,2026,,JAX,Jared Bartlett,LB,IR,,sleeper
+2026-09-02,2026,,JAX,Carter Bradley,QB,IR,,sleeper
 2026-09-02,2026,,LV,Carter Runyon,TE,IR,,sleeper
 2026-09-02,2026,,NYJ,Joseph Ossai,DE,Questionable,,sleeper
 2026-09-02,2026,,SF,Kyle Juszczyk,FB,Questionable,,sleeper
@@ -384,6 +397,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,BUF,Phidarian Mathis,DL,Suspended,,sleeper
 2026-09-02,2026,,SF,Nick Bosa,DE,Questionable,,sleeper
 2026-09-02,2026,,MIA,Carter Warren,OL,IR,,sleeper
+2026-09-02,2026,,NYJ,Dominic Richardson,RB,IR,,sleeper
 2026-09-02,2026,,DEN,Michael Deiter,OL,IR,,sleeper
 2026-09-02,2026,,CHI,Coby Bryant,DB,IR,,sleeper
 2026-09-02,2026,,BUF,Jedrick Wills,OT,Questionable,,sleeper
@@ -401,6 +415,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,HOU,Ja'Marcus Ingram,CB,IR,,sleeper
 2026-09-02,2026,,JAX,Garrett DiGiorgio,G,IR,,sleeper
 2026-09-02,2026,,SEA,Emanuel Wilson,RB,Questionable,,sleeper
+2026-09-02,2026,,GB,Trey Dean,DB,IR,,sleeper
 2026-09-02,2026,,NYJ,Da'Quan Felton,WR,Questionable,,sleeper
 2026-09-02,2026,,HOU,Tank Dell,WR,IR,,sleeper
 2026-09-02,2026,,CAR,Tyrek Funderburk,CB,IR,,sleeper
@@ -426,10 +441,10 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,BUF,Terrel Bernard,LB,Questionable,,sleeper
 2026-09-02,2026,,CLE,Elijah Chatman,DT,IR,,sleeper
 2026-09-02,2026,,PHI,Jonathan Jones,DB,Questionable,,sleeper
+2026-09-02,2026,,LAR,Alex Johnson,CB,IR,,sleeper
 2026-09-02,2026,,ATL,Storm Norton,T,PUP,,sleeper
 2026-09-02,2026,,WAS,Trey Amos,DB,IR,,sleeper
 2026-09-02,2026,,NO,Nick Saldiveri,OL,PUP,,sleeper
-2026-09-02,2026,,ATL,Gervon Dexter,DL,Questionable,,sleeper
 2026-09-02,2026,,HOU,K.C. Ossai,LB,IR,,sleeper
 2026-09-02,2026,,LAR,Kobie Turner,DT,Questionable,,sleeper
 2026-09-02,2026,,NE,Brenden Schooler,DB,PUP,,sleeper
@@ -449,6 +464,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,WAS,T.J. Maguranyanga,DE,IR,,sleeper
 2026-09-02,2026,,TEN,Tanoh Kpassagnon,DE,IR,,sleeper
 2026-09-02,2026,,BUF,Michael Hoecht,DT,Questionable,,sleeper
+2026-09-02,2026,,IND,Cameron Mitchell,DB,IR,,sleeper
 2026-09-02,2026,,MIA,Zach Sieler,DT,Questionable,,sleeper
 2026-09-02,2026,,IND,Charvarius Ward,CB,Questionable,,sleeper
 2026-09-02,2026,,TB,Josh Hayes,CB,IR,,sleeper
