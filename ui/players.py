@@ -159,6 +159,7 @@ def _finder(stats, off, deff, extras, schedule) -> None:
                      "Season avg": f"{base:.1f}" if base else "—", "Lean vs avg": lean})
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
     _ngs_line(p)
+    _expected_line(p)
 
     st.markdown("**Price a specific line:**")
     d1, d2, d3, d4 = st.columns([2, 1, 1, 1])
@@ -284,6 +285,28 @@ def _ngs_line(p) -> None:
     if bits:
         st.caption("📡 Next Gen tracking: " + " · ".join(bits) +
                    " — the projection is nudged (±4%) for genuine separation / YAC / CPOE.")
+
+
+def _expected_line(p) -> None:
+    """ff_opportunity expected production vs the player's box-score baseline."""
+    pairs = [("exp_rec_yds", "receiving_yards", "rec yds"),
+             ("exp_rush_yds", "rushing_yards", "rush yds"),
+             ("exp_rec", "receptions", "rec")]
+    bits, flags = [], []
+    for exp_c, raw_c, label in pairs:
+        exp = p.get(exp_c)
+        act = p.get(raw_c)
+        if pd.notna(exp) and pd.notna(act) and float(exp) > 0:
+            bits.append(f"**{float(exp):.1f}** exp {label} (vs {float(act):.1f} actual)")
+            gap = (float(act) - float(exp)) / float(exp)
+            if gap >= 0.20:
+                flags.append(f"{label} running **hot** (+{gap*100:.0f}% over expected) — regression risk, lean Under")
+            elif gap <= -0.20:
+                flags.append(f"{label} running **cold** ({gap*100:.0f}% under expected) — buy-low, lean Over")
+    if bits:
+        st.caption("📈 Expected production (ff_opportunity): " + " · ".join(bits))
+        for f in flags:
+            st.caption("↳ " + f)
 
 
 def _usage(stats, teams) -> None:

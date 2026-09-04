@@ -125,6 +125,12 @@ def build_frames():
     for _ngs in (_pr, _pp):
         if _ngs is not None and not _ngs.empty:
             _weekly = _weekly.join(_ngs, how="left")
+    # Expected production (ffverse ff_opportunity) — an independent regression
+    # anchor joined onto the frame for the prop finder & TD cross-check.
+    from data import expected as exp_mod
+    _exp = exp_mod.player_expected(loaders.load_ff_opportunity())
+    if _exp is not None and not _exp.empty:
+        _weekly = _weekly.join(_exp, how="left")
     extras["players"] = _weekly
     extras["depth"] = _depth
     extras["rosters_current"] = _roster
@@ -169,6 +175,8 @@ def build_frames():
     extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)
     _rz = touchdowns.redzone_usage(pbp_w, posmap, name_map)
     _rz, _ = roster_mod.apply_current_teams(_rz, _roster)   # goal-line usage on the current team
+    if _exp is not None and not _exp.empty and "exp_td" in _exp.columns and not _rz.empty:
+        _rz = _rz.join(_exp[["exp_td"]], how="left")   # expected TDs as a regression anchor
     extras["rz_usage"] = _rz
     # accuracy layer: stable points-differential signal + Elo ensemble/prior
     extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)

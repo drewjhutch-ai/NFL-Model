@@ -9,3 +9,4 @@ lxml>=5.0
 # Optional: only needed if a free stats site renders its tables with JavaScript.
 # After installing, run once:  playwright install chromium
 playwright>=1.44
+pyarrow>=12.0

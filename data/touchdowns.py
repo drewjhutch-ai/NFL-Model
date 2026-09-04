@@ -183,6 +183,11 @@ def td_board(off, deff, extras: dict, games: pd.DataFrame, min_share: float = 0.
                 rz_looks_pg = (p["rz_targets"] + p["gl_carries"]) / games_pl
                 td_pg = (p.get("rush_td", 0) + p.get("rec_td", 0)) / games_pl
                 regression = rz_looks_pg >= 1.5 and td_pg <= 0.28
+                # independent cross-check: ff_opportunity expected TDs well above actual
+                exp_td = p.get("exp_td")
+                if exp_td is not None and pd.notna(exp_td) and float(exp_td) >= 0.30 \
+                        and td_pg <= float(exp_td) * 0.6:
+                    regression = True
                 driver = []
                 if p["gl_carries"] >= 1:
                     driver.append("goal-line back")

@@ -385,6 +385,34 @@ def load_pfr(s_type: str, seasons: tuple[int, ...] = tuple(config.SEASONS)) -> p
     return df
 
 
+_FF_OPP_URLS = (
+    "https://github.com/nflverse/nflverse-data/releases/download/ff_opportunity/ff_opportunity_{s}.parquet",
+    "https://github.com/nflverse/nflverse-data/releases/download/ff_opportunity/ff_opportunity_latest_{s}.parquet",
+)
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading expected fantasy production…")
+def load_ff_opportunity(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """ffverse expected fantasy opportunity (expected yards / receptions / TDs).
+
+    A modeled expectation of each player's production given his opportunity — an
+    independent regression anchor for props & the TD model. Read straight from the
+    nflverse-data release (same source nfl_data_py uses); empty on any failure.
+    """
+    frames = []
+    for s in seasons:
+        for url in _FF_OPP_URLS:
+            try:
+                frames.append(pd.read_parquet(url.format(s=s)))
+                break
+            except Exception:  # noqa: BLE001 - try the next pattern / season
+                continue
+    if not frames:
+        print("[loaders] ff_opportunity unavailable (release not reachable / not posted)")
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading game officials…")
 def load_officials(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     """Per-game officials — used to build referee scoring/penalty tendencies."""
