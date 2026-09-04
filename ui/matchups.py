@@ -1101,15 +1101,26 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, blitz: pd.DataFrame,
         s = schedule[schedule["season"] == season]
         weeks = sorted(int(w) for w in s["week"].unique())
         default_wk = loaders.current_week(schedule, season) or weeks[0]
-        idx = weeks.index(default_wk) if default_wk in weeks else 0
+        # honor a jump from the Home page (pre-select the week + game), else default
+        jump_wk = st.session_state.pop("mu_jump_week", None)
+        jump_game = st.session_state.pop("mu_jump_game", None)
+        if jump_wk in weeks:
+            st.session_state["mu_week_sel"] = jump_wk
+        st.session_state.setdefault("mu_week_sel", default_wk)
+        if st.session_state["mu_week_sel"] not in weeks:
+            st.session_state["mu_week_sel"] = default_wk
         cwk, cgm = st.columns([1, 3])
-        wk = cwk.selectbox(f"Week ({season})", weeks, index=idx)
+        wk = cwk.selectbox(f"Week ({season})", weeks, key="mu_week_sel")
         games = s[s["week"] == wk].sort_values("gameday" if "gameday" in s.columns else "week")
         labels = [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]
         if not labels:
             st.info("No games listed for this week.")
             return
-        pick = cgm.selectbox("Game", labels)
+        if jump_game in labels:
+            st.session_state["mu_game_sel"] = jump_game
+        if st.session_state.get("mu_game_sel") not in labels:
+            st.session_state.pop("mu_game_sel", None)
+        pick = cgm.selectbox("Game", labels, key="mu_game_sel")
         row = games.iloc[labels.index(pick)]
         _breakdown(row["away_team"], row["home_team"], off, deff, blitz, extras, row)
         with st.expander("Or build a custom matchup (any two teams)"):

@@ -20,6 +20,14 @@ from ui import kit
 _BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
 
 
+def _go(section: str, **targets) -> None:
+    """Navigate to another section, carrying pre-selection targets, then rerun."""
+    st.session_state["_nav_to"] = section
+    for k, v in targets.items():
+        st.session_state[k] = v
+    st.rerun()
+
+
 def _games_played(extras) -> int:
     pbp = extras.get("pbp")
     if pbp is None or pbp.empty or "season" not in pbp.columns:
@@ -71,10 +79,10 @@ def _logo(meta, team) -> str:
     return ""
 
 
-def _slate(off, deff, schedule, extras, meta, games) -> None:
+def _slate(off, deff, schedule, extras, meta, games, wk) -> None:
     st.markdown("### This week's slate")
     st.caption("Every game: our projected line vs the market, the edge, and a confidence read. "
-               "Open **Matchups** for the full breakdown.")
+               "**Click a game below** to open its full breakdown in Matchups.")
     rows = []
     for _, r in games.iterrows():
         a = betting.assess(r, off, deff, extras)
@@ -112,11 +120,23 @@ def _slate(off, deff, schedule, extras, meta, games) -> None:
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
 
+    # clickable jump row — one button per game → the game in Matchups, pre-selected
+    st.caption("Open a matchup →")
+    per_row = 3
+    for i in range(0, len(rows), per_row):
+        cols = st.columns(per_row)
+        for col, (r, a) in zip(cols, rows[i:i + per_row]):
+            label = f"{a['away']} @ {a['home']}"
+            if col.button(label, key=f"slate_go_{a['away']}_{a['home']}",
+                          use_container_width=True):
+                _go("Matchups", mu_jump_week=int(wk), mu_jump_game=label)
+
 
 # --- top plays --------------------------------------------------------------
-def _top_plays(off, deff, schedule, extras, games, gp) -> None:
+def _top_plays(off, deff, schedule, extras, games, gp, wk) -> None:
     st.markdown("### Top plays")
-    st.caption("Highest-conviction bets on the board — any market. Full card in **Picks**.")
+    st.caption("Highest-conviction bets on the board — any market. Click one for its game, "
+               "or open the full card in Picks.")
     priced = games[games["spread_line"].notna()] if "spread_line" in games.columns else games.iloc[0:0]
     board_rows = []
     for _, r in priced.iterrows():
@@ -132,7 +152,7 @@ def _top_plays(off, deff, schedule, extras, games, gp) -> None:
         st.info("Top plays populate once game lines are posted.")
         return
     view = board.sort_values("confidence", ascending=False).head(5)
-    for _, b in view.iterrows():
+    for idx, b in view.reset_index(drop=True).iterrows():
         conf = b["confidence"]
         col = "edge" if conf >= 50 else ("sharp" if conf >= 32 else "accent")
         accent = {"edge": "var(--edge)", "sharp": "var(--sharp)", "accent": "var(--accent)"}[col]
@@ -145,34 +165,48 @@ def _top_plays(off, deff, schedule, extras, games, gp) -> None:
             f'<span class="mono">fair {betengine.fmt_odds(b["fair_odds"])}</span>'
             f'<span style="color:var(--ink-faint)">{edge_txt}</span></div></div>',
             unsafe_allow_html=True)
+        game = str(b.get("game", ""))
+        if " @ " in game and st.button(f"→ {game}", key=f"play_go_{idx}", use_container_width=True):
+            _go("Matchups", mu_jump_week=int(wk), mu_jump_game=game)
+    if st.button("Full card in Picks of the Week →", key="open_picks",
+                 use_container_width=True):
+        _go("Picks of the Week")
 
 
 # --- tickers ----------------------------------------------------------------
 def _injury_pulse(extras, meta) -> None:
     st.markdown("### Injury pulse")
     imap = extras.get("injuries") or {}
-    if extras.get("injury_week") is None:
-        st.caption("Injury reports light up once the season starts.")
-        return
+    # Year-round now: IR / PUP / suspensions from the live feed, plus the weekly
+    # game report once the season starts. Rank absences first, by point-dock.
+    from data import injury_value
     items = []
     for team, lst in imap.items():
         for p in lst:
-            items.append((team, p))
-    items.sort(key=lambda x: (injmod.STATUS_ORDER.get(x[1]["status"], 9), -float(x[1].get("pct") or 0)))
+            pts = injury_value.player_value(p.get("pos", ""), p.get("pct"), p.get("status", ""),
+                                            p.get("practice", ""), p.get("weeks_lingering", 0))
+            items.append((team, p, pts))
     if not items:
-        st.caption("No major injuries on the board.")
+        st.caption("No injuries on the board yet — the feed fills in as designations post.")
+        if st.button("Open Injuries →", key="open_inj_empty", use_container_width=True):
+            _go("Injuries")
         return
+    items.sort(key=lambda x: (injmod.STATUS_ORDER.get(x[1]["status"], 9), -x[2]))
+    tone = {"Out": "var(--fade)", "IR": "var(--fade)", "Doubtful": "var(--sharp)",
+            "PUP": "var(--sharp)", "Suspended": "var(--sharp)", "Questionable": "var(--sharp)"}
     html = ['<div class="k-tick">']
-    tone = {"Out": "var(--fade)", "Doubtful": "var(--sharp)", "Questionable": "var(--sharp)"}
-    for team, p in items[:6]:
+    for team, p, pts in items[:6]:
         c = tone.get(p["status"], "var(--ink-faint)")
+        dock = f' · −{pts:.1f}' if pts >= 0.1 else ""
         html.append(
             f'<div class="it"><span class="dot" style="background:{c}"></span>'
             f'<span class="t"><b>{team}</b> {p["name"]} <span style="color:var(--ink-faint)">'
             f'{p.get("pos","")}</span></span>'
-            f'<span class="s">{p["status"]}</span></div>')
+            f'<span class="s">{p["status"]}{dock}</span></div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
+    if st.button("Open Injuries →", key="open_inj", use_container_width=True):
+        _go("Injuries")
 
 
 def _line_moves(games, meta) -> None:
@@ -180,7 +214,10 @@ def _line_moves(games, meta) -> None:
     from data import odds_providers as op
     prov = op.get_odds_provider()
     if not prov.is_available():
-        st.caption("Add an odds key to track steam & reverse line moves live.")
+        st.caption("Waiting on live odds — line movement needs an Odds-API key and in-season "
+                   "snapshots to compare open→now. It fills in once games are on the board.")
+        if st.button("Open Betting desk →", key="open_bet_nokey", use_container_width=True):
+            _go("Betting")
         return
     moves = []
     for _, r in games.iterrows():
@@ -188,7 +225,9 @@ def _line_moves(games, meta) -> None:
         if mv and abs(mv.get("delta", 0)) >= 0.5:
             moves.append((r["away_team"], r["home_team"], mv))
     if not moves:
-        st.caption("No significant moves yet — the market's quiet.")
+        st.caption("No significant moves yet — the market's quiet (movement builds through the week).")
+        if st.button("Open Betting desk →", key="open_bet_quiet", use_container_width=True):
+            _go("Betting")
         return
     moves.sort(key=lambda x: abs(x[2]["delta"]), reverse=True)
     html = ['<div class="k-tick">']
@@ -201,6 +240,8 @@ def _line_moves(games, meta) -> None:
             f'<span class="s">{mv["open_spread"]:+.1f} → {mv["current_spread"]:+.1f} ({d:+.1f})</span></div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
+    if st.button("Open Betting desk →", key="open_bet", use_container_width=True):
+        _go("Betting")
 
 
 # --- entry ------------------------------------------------------------------
@@ -229,9 +270,9 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
 
     left, right = st.columns([1.55, 1])
     with left:
-        _slate(off, deff, schedule, extras, meta, games)
+        _slate(off, deff, schedule, extras, meta, games, wk)
     with right:
-        _top_plays(off, deff, schedule, extras, games, gp)
+        _top_plays(off, deff, schedule, extras, games, gp, wk)
     st.divider()
     a, b = st.columns(2)
     with a:

@@ -64,6 +64,19 @@ button[data-baseweb="tab"]:hover{ color:var(--ink-dim); }
 button[data-baseweb="tab"][aria-selected="true"]{ color:var(--accent-bright); }
 div[data-baseweb="tab-highlight"]{ background-color:var(--accent); height:3px; box-shadow:var(--glow); }
 
+/* ---- top nav: a session-state radio styled as the terminal tab strip ---- */
+div[role="radiogroup"]{ display:flex; flex-wrap:wrap; gap:2px; row-gap:0;
+  border-bottom:1px solid var(--line); margin:0 0 12px; }
+div[role="radiogroup"] > label{ margin:0; padding:9px 15px; cursor:pointer;
+  border-bottom:3px solid transparent; display:flex; align-items:center; }
+div[role="radiogroup"] > label > div:first-child{ display:none; }   /* hide the radio dot */
+div[role="radiogroup"] > label p{ font-family:'Archivo',sans-serif; font-weight:700; font-size:.9rem;
+  color:var(--ink-faint); margin:0; letter-spacing:.005em; white-space:nowrap; }
+div[role="radiogroup"] > label:hover p{ color:var(--ink-dim); }
+div[role="radiogroup"] > label:has(input:checked){ border-bottom-color:var(--accent);
+  box-shadow:0 3px 0 -1px var(--glow); }
+div[role="radiogroup"] > label:has(input:checked) p{ color:var(--accent-bright); }
+
 /* ---- metrics → KPI tiles ---- */
 div[data-testid="stMetric"]{ background:var(--surface); border:1px solid var(--line);
   border-radius:12px; padding:13px 16px; position:relative; overflow:hidden; }
