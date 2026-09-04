@@ -180,6 +180,59 @@ def _sharp_tracker(away, home, live_game, a) -> None:
 
 
 # --- report card + performance ----------------------------------------------
+def _calibration_block(extras) -> None:
+    """Is the model honest (calibrated) and does it beat the market? The truth check."""
+    from data import calibration
+    proj = history.load_projections(config.CURRENT_SEASON)
+    schedule = extras.get("schedule")
+    cal = calibration.grade(proj, schedule) if not proj.empty else {}
+    st.markdown("**Calibration & attribution** — the honesty check.")
+    if not cal:
+        st.caption("Fills in as the season is graded: whether our stated win probabilities actually "
+                   "hit at their rate (Brier + reliability), and whether our margin beats the market.")
+        return
+    st.caption(calibration.verdict(cal))
+    c = st.columns(3)
+    if cal.get("model_mae") is not None:
+        c[0].metric("Our margin error", f"{cal['model_mae']:.1f}",
+                    help="Mean absolute error of our projected margin (lower is better).")
+    if cal.get("market_mae") is not None:
+        delta = None
+        if cal.get("model_mae") is not None:
+            d = cal["model_mae"] - cal["market_mae"]
+            delta = f"{d:+.1f} vs market"
+        c[1].metric("Market margin error", f"{cal['market_mae']:.1f}", delta,
+                    delta_color="inverse")
+    if cal.get("brier") is not None:
+        c[2].metric("Brier score", f"{cal['brier']:.3f}",
+                    help="Win-probability accuracy (lower is better; 0.25 = coin flip).")
+    rel = cal.get("reliability") or []
+    if rel:
+        import plotly.graph_objects as go
+        from ui import kit
+        P = kit.PALETTE
+        xs = [r["predicted"] * 100 for r in rel]
+        ys = [r["actual"] * 100 for r in rel]
+        ns = [r["n"] for r in rel]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[0, 100], y=[0, 100], mode="lines", hoverinfo="skip",
+                                 line=dict(color=P["ink_faint"], dash="dash"), showlegend=False))
+        fig.add_trace(go.Scatter(x=xs, y=ys, mode="markers+text",
+                                 text=[f"n={n}" for n in ns], textposition="top center",
+                                 textfont=dict(color=P["ink_dim"], size=10),
+                                 marker=dict(size=[max(9, min(26, n)) for n in ns],
+                                             color=P["accent"], line=dict(color=P["accent_bright"], width=1)),
+                                 hoverinfo="skip", showlegend=False))
+        fig.update_layout(height=300, margin=dict(l=6, r=6, t=8, b=6),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(color=P["ink_dim"]),
+                          xaxis=dict(title="we predicted", range=[0, 100], gridcolor=P["line"]),
+                          yaxis=dict(title="actually happened", range=[0, 100], gridcolor=P["line"]))
+        st.plotly_chart(fig, width="stretch")
+        st.caption("Reliability: points on the dashed line = perfectly calibrated. Above = we were too "
+                   "cautious; below = overconfident (trim those bets, especially in parlays).")
+
+
 def _self_tuning() -> None:
     from data import tuning
     t = tuning.load()
@@ -231,6 +284,8 @@ def _report_card(extras) -> None:
     roi = clvmod.grade_roi(proj, schedule) if not proj.empty else {}
     clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
     with st.expander("Live report card, self-tuning & backtest (the learning loop)"):
+        _calibration_block(extras)
+        st.divider()
         _self_tuning()
         st.divider()
         _facet_review()
