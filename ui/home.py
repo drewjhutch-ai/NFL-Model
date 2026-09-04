@@ -244,6 +244,35 @@ def _line_moves(games, meta) -> None:
         _go("Betting")
 
 
+def _weather_watch(games) -> None:
+    st.markdown("### Weather watch")
+    from data.weather import weather_effects
+    rows = []
+    for _, g in games.iterrows():
+        wx = weather_effects(g)
+        wind = g.get("wind")
+        if wx["total_adj"] <= -1.0 or (pd.notna(wind) and float(wind) >= 12):
+            rows.append((g["away_team"], g["home_team"], wx, wind))
+    if not rows:
+        st.caption("No weather edges on the board — calm/indoor slate, or forecasts not in range yet "
+                   "(live wind fills in within ~10 days of kickoff for open-air stadiums).")
+        return
+    rows.sort(key=lambda x: x[2]["total_adj"])
+    html = ['<div class="k-tick">']
+    for away, home, wx, wind in rows[:6]:
+        c = "var(--fade)" if wx["total_adj"] <= -3 else "var(--sharp)"
+        wtxt = f"{int(wind)} mph" if pd.notna(wind) else wx["note"]
+        html.append(
+            f'<div class="it"><span class="dot" style="background:{c}"></span>'
+            f'<span class="t"><b>{away} @ {home}</b> <span style="color:var(--ink-faint)">{wtxt}'
+            f'{" · FG range hit" if wx.get("fg_hit") else ""}</span></span>'
+            f'<span class="s">total {wx["total_adj"]:+.1f} · lean Under</span></div>')
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+    st.caption("Live game-day wind (Open-Meteo) → points off the total, passing suppressed, run tilt. "
+               "Wind is the NFL's biggest totals mover — the model already baked this into the lines above.")
+
+
 # --- entry ------------------------------------------------------------------
 def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
            extras: dict, live: bool) -> None:
@@ -279,3 +308,5 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         _injury_pulse(extras, meta)
     with b:
         _line_moves(games, meta)
+    st.divider()
+    _weather_watch(games)

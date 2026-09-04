@@ -138,9 +138,13 @@ QB_ADJUST_CAP = 9.0            # max points swing for a QB going out
 SPECIAL_TEAMS_WEIGHT = 1.0     # multiplier on ST points/game in the power rating
 
 # Weather: wind is the dominant factor on scoring; cold a smaller one.
-WIND_THRESHOLD = 10            # mph before wind starts biting
-WIND_PTS_PER_MPH = 0.30        # total points removed per mph over threshold
-WIND_MAX_PTS = 6.0             # cap on wind's total reduction
+# Wind → totals, calibrated to public research (scoring ~44.6 ppg in calm falls
+# to ~35.7 at 20 mph; completion% 60.3→54.7; FG range −7 yds at 20+). The effect
+# is negligible until ~8 mph then accelerates, so it's modeled as a power curve.
+WIND_THRESHOLD = 8             # mph before wind starts biting (avg game ~7 mph)
+WIND_EXPONENT = 1.35           # curvature — effect accelerates with speed
+WIND_COEF = 0.22              # scales the curve to ~−6 pts at 20 mph
+WIND_MAX_PTS = 9.0             # cap on wind's total reduction (severe 25+ mph)
 COLD_THRESHOLD = 25            # °F before cold starts biting
 
 

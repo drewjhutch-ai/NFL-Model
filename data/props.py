@@ -149,14 +149,23 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     from data import sharp_value
     cov = sharp_value.coverage_by_position(extras.get("sharp") or {})
     rows = []
+    from data.weather import weather_effects
     for _, g in games.iterrows():
         home, away = g["home_team"], g["away_team"]
         margin = betting.project_margin(off, deff, home, away, st_ppg, qb)
+        wx = weather_effects(g)   # wind suppresses passing, tilts to the run
         for team, opp, is_home in ((away, home, False), (home, away, True)):
             script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
             tp = P.team_players(stats, team).head(per_team)
             for _, pl in tp.iterrows():
                 proj = project_player(pl, opp, deff, dvp, script=script, cov=cov)
+                if wx.get("pass_factor", 1.0) != 1.0:
+                    for k in ("Pass yds", "Rec yds", "Rec", "Targets"):
+                        if k in proj:
+                            proj[k] *= wx["pass_factor"]
+                    for k in ("Rush yds", "Carries"):
+                        if k in proj:
+                            proj[k] *= wx["rush_factor"]
                 for stat, mean in proj.items():
                     # TD/count props need a real half-point line (0.5/1.5) to read
                     # sensibly — leave those to the finder, not the auto board.

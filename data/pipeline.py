@@ -73,6 +73,14 @@ def build_frames():
     live = loaders.has_current_season_data(pbp_w)
 
     schedule = loaders.load_schedule()
+    # Live game-day wind/temp for upcoming open-air games (nflverse only fills
+    # these post-game). Flows into every weather_effects consumer — totals, sim,
+    # TDs, props. Free (Open-Meteo, no key); degrades to weather-neutral on failure.
+    try:
+        from data.providers import weather_live
+        schedule = weather_live.enrich_schedule(schedule)
+    except Exception:  # noqa: BLE001
+        pass
     posmap = loaders.position_map()
     # pace: offensive plays per game (feeds pace-aware totals)
     _pace = pbp_w.groupby("posteam").agg(n=("epa", "size"), g=("game_id", "nunique"))

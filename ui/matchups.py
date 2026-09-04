@@ -241,6 +241,9 @@ def _market_verdict(away, home, off, deff, extras, row) -> dict | None:
         sub = f"within {config.VALUE_TOTAL_PTS:g} pts of the line"
     else:
         chip = _lean_chip("—", "neutral"); sub = "no market total"
+    wx = weather_effects(row)
+    if wx.get("total_adj", 0) <= -1.0:
+        sub += f" · 🌬 {wx['note']} ({wx['total_adj']:+.1f})"
     _mkt_card(c2, "Total", our_total, mkt_total, chip, sub)
 
     # --- moneyline ---
