@@ -363,6 +363,41 @@ def load_depth_charts(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.Da
     return out.dropna(subset=["player_id"]).reset_index(drop=True)
 
 
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading PFR advanced stats…")
+def load_pfr(s_type: str, seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Pro Football Reference advanced stats — s_type in {'pass','rush','rec','def'}.
+
+    Charted detail beyond box score: pressures/blitzes (def), broken tackles &
+    yards before contact (rush), air yards / YAC / drops (rec). Returned raw
+    (columns vary by type); callers select defensively. Empty on any failure.
+    """
+    import nfl_data_py as nfl
+
+    frames = []
+    for year in seasons:
+        try:
+            frames.append(nfl.import_seasonal_pfr(s_type, [year]))
+        except Exception as exc:  # noqa: BLE001
+            print(f"[loaders] PFR {s_type} unavailable for {year}: {exc}")
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    return df
+
+
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading game officials…")
+def load_officials(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Per-game officials — used to build referee scoring/penalty tendencies."""
+    import nfl_data_py as nfl
+
+    df = _safe_import(nfl.import_officials, list(seasons))
+    if df.empty:
+        return df
+    keep = [c for c in ["game_id", "season", "off", "official_name", "name",
+                        "position", "jersey_number"] if c in df.columns]
+    return df[keep].copy() if keep else df
+
+
 def position_map(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> dict[str, str]:
     """player_id -> position, current season overriding the prior."""
     rosters = load_rosters(seasons)

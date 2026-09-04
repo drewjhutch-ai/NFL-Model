@@ -179,6 +179,14 @@ def build_frames():
     # committed file during the offseason (data.sharp._resolve handles this).
     extras["sharp"] = sharp.load_all(config.CURRENT_SEASON)
 
+    # PFR advanced (second charted opinion on pass rush & coverage) + referee
+    # scoring tendencies (a totals reference). Both degrade to empty gracefully.
+    from data import pfr as pfr_mod, officials as off_mod
+    _pfr_def = loaders.load_pfr("def")
+    extras["pfr_pass_rush"] = pfr_mod.team_pass_rush(_pfr_def)
+    extras["pfr_coverage"] = pfr_mod.team_coverage(_pfr_def)
+    extras["ref_tendencies"] = off_mod.referee_tendencies(loaders.load_officials(), schedule)
+
     # Scheme-fit: read the committed defensive coverage rates (no network — the
     # GitHub Action does the scraping) and derive each offense's zone/man
     # performance from pbp. Together they activate the coverage-scheme edge.

@@ -845,6 +845,7 @@ def _scheme_lab(away, home, off, deff, blitz, extras) -> None:
         any_sharp = True
         st.divider()
     _trench_lab(away, home, deff, extras)
+    _pfr_panel(away, home, extras)
     if _personnel_lab(away, home, extras):
         any_sharp = True
         st.divider()
@@ -859,6 +860,34 @@ def _scheme_lab(away, home, off, deff, blitz, extras) -> None:
     if not any_sharp:
         st.info("The full scheme lab lights up once the Sharp Football feed is loaded "
                 "(coverage-by-position, scheme rates, personnel).")
+
+
+def _pfr_panel(away, home, extras) -> None:
+    """PFR advanced pass-rush & coverage — a second charted opinion beside Sharp."""
+    pr = extras.get("pfr_pass_rush")
+    cov = extras.get("pfr_coverage")
+    has_pr = pr is not None and not getattr(pr, "empty", True)
+    has_cov = cov is not None and not getattr(cov, "empty", True)
+    if not (has_pr or has_cov):
+        return
+    with st.expander("PFR advanced — pass rush & coverage (charted second opinion)"):
+        rows = []
+        for t in (away, home):
+            row = {"Team": t}
+            if has_pr and t in pr.index:
+                if "pressures" in pr.columns:
+                    row["Pressures"] = f"{pr.loc[t, 'pressures']:.0f}"
+                if "pressure_rank" in pr.columns and pd.notna(pr.loc[t, "pressure_rank"]):
+                    row["Rush rank"] = ordinal(int(pr.loc[t, "pressure_rank"]))
+            if has_cov and t in cov.index:
+                if "rating_allowed" in cov.columns and pd.notna(cov.loc[t, "rating_allowed"]):
+                    row["Passer rtg allowed"] = f"{cov.loc[t, 'rating_allowed']:.1f}"
+                if "cover_rank" in cov.columns and pd.notna(cov.loc[t, "cover_rank"]):
+                    row["Coverage rank"] = ordinal(int(cov.loc[t, "cover_rank"]))
+            rows.append(row)
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        st.caption("From Pro Football Reference charting — cross-check against the Sharp pass-rush / "
+                   "coverage reads above. Agreement between two independent charters is conviction.")
 
 
 def _wr_tiers(away, home, extras) -> None:

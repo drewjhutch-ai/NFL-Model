@@ -483,6 +483,29 @@ def _market_map(scan) -> None:
     st.markdown('<div class="k-splits">' + "".join(rows) + "</div>", unsafe_allow_html=True)
 
 
+def _ref_tendencies(extras) -> None:
+    refs = extras.get("ref_tendencies")
+    if refs is None or getattr(refs, "empty", True):
+        return
+    with st.expander("Referee tendencies — a totals angle by crew"):
+        st.caption("Each referee's historical games vs league-average scoring. Crews at the top run "
+                   "over, the bottom run under. A reference read — the NFL's upcoming crew assignments "
+                   "aren't in a reliable free feed, so match it to the ref once it's announced.")
+        show = refs.reset_index().copy()
+        cols = {"avg_total": "Avg total", "vs_league": "vs league", "over_rate": "Over %",
+                "games": "Games"}
+        show = show.rename(columns=cols)
+        cfg = {}
+        if "Avg total" in show.columns:
+            cfg["Avg total"] = st.column_config.NumberColumn("Avg total", format="%.1f")
+        if "vs league" in show.columns:
+            cfg["vs league"] = st.column_config.NumberColumn("vs league", format="%+.1f")
+        if "Over %" in show.columns:
+            show["Over %"] = (show["Over %"] * 100).round(0)
+            cfg["Over %"] = st.column_config.NumberColumn("Over %", format="%d%%")
+        st.dataframe(show, width="stretch", hide_index=True, column_config=cfg)
+
+
 def render(off, deff, schedule, extras) -> None:
     st.subheader("Betting — the market desk")
     st.caption("The market's-eye view: where lines are moving, where sharp money sits, and where "
@@ -520,6 +543,8 @@ def render(off, deff, schedule, extras) -> None:
     _market_map(scan)
     st.divider()
     _edge_board(games, off, deff, extras, live, gp)
+    st.divider()
+    _ref_tendencies(extras)
     st.divider()
     _report_card(extras)
     st.divider()
