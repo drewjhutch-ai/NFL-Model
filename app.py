@@ -116,42 +116,34 @@ def main() -> None:
     week_txt = _week_label(schedule, live)
     st.markdown(kit.brand_header(week_txt, live), unsafe_allow_html=True)
 
-    # A session-state nav (not st.tabs) so cross-page links work: a card on the
-    # Home page can set st.session_state["_nav_to"] + a target and rerun, landing
-    # the user on the right section, pre-selected. Styled as a tab strip in kit.
-    sections = ["This Week", "Team Data", "League", "Matchups", "Players",
-                "Touchdowns", "Game Bets", "Betting", "Picks of the Week",
-                "Long Odds", "CLV", "Injuries"]
-    jump = st.session_state.pop("_nav_to", None)
-    if jump in sections:
-        st.session_state["nav"] = jump
-    st.session_state.setdefault("nav", "This Week")
-    nav = st.radio("Section", sections, key="nav", horizontal=True,
-                   label_visibility="collapsed")
-
-    if nav == "This Week":
+    (tab_home, tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
+     tab_betting, tab_picks, tab_long, tab_clv, tab_inj) = st.tabs(
+        ["This Week", "Team Data", "League", "Matchups", "Players", "Touchdowns",
+         "Game Bets", "Betting", "Picks of the Week", "Long Odds", "CLV",
+         "Injuries"])
+    with tab_home:
         _safe(home.render, off, deff, schedule, extras, live)
-    elif nav == "Team Data":
+    with tab_data:
         _safe(team_tendencies.render, off, deff, blitz, extras)
-    elif nav == "League":
+    with tab_league:
         _safe(league.render, off, deff, blitz, extras)
-    elif nav == "Matchups":
+    with tab_matchups:
         _safe(matchups.render, off, deff, blitz, schedule, extras)
-    elif nav == "Players":
+    with tab_players:
         _safe(ui_players.render, off, deff, schedule, extras)
-    elif nav == "Touchdowns":
+    with tab_td:
         _safe(touchdowns.render, off, deff, blitz, schedule, extras)
-    elif nav == "Game Bets":
+    with tab_gamebets:
         _safe(gamebets.render, off, deff, blitz, schedule, extras)
-    elif nav == "Betting":
+    with tab_betting:
         _safe(betting.render, off, deff, schedule, extras)
-    elif nav == "Picks of the Week":
+    with tab_picks:
         _safe(picks.render, off, deff, schedule, extras)
-    elif nav == "Long Odds":
+    with tab_long:
         _safe(longodds.render, off, deff, schedule, extras)
-    elif nav == "CLV":
+    with tab_clv:
         _safe(clv.render, off, deff, schedule, extras)
-    elif nav == "Injuries":
+    with tab_inj:
         _safe(injuries.render, off, deff, schedule, extras)
 
 

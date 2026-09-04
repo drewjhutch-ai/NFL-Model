@@ -20,14 +20,6 @@ from ui import kit
 _BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
 
 
-def _go(section: str, **targets) -> None:
-    """Navigate to another section, carrying pre-selection targets, then rerun."""
-    st.session_state["_nav_to"] = section
-    for k, v in targets.items():
-        st.session_state[k] = v
-    st.rerun()
-
-
 def _games_played(extras) -> int:
     pbp = extras.get("pbp")
     if pbp is None or pbp.empty or "season" not in pbp.columns:
@@ -119,17 +111,7 @@ def _slate(off, deff, schedule, extras, meta, games, wk) -> None:
             f'<span class="pin" style="left:{pin:.0f}%"></span></div></div></div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
-
-    # clickable jump row — one button per game → the game in Matchups, pre-selected
-    st.caption("Open a matchup →")
-    per_row = 3
-    for i in range(0, len(rows), per_row):
-        cols = st.columns(per_row)
-        for col, (r, a) in zip(cols, rows[i:i + per_row]):
-            label = f"{a['away']} @ {a['home']}"
-            if col.button(label, key=f"slate_go_{a['away']}_{a['home']}",
-                          use_container_width=True):
-                _go("Matchups", mu_jump_week=int(wk), mu_jump_game=label)
+    st.caption("Full breakdown of any game is in the **Matchups** tab.")
 
 
 # --- top plays --------------------------------------------------------------
@@ -165,12 +147,7 @@ def _top_plays(off, deff, schedule, extras, games, gp, wk) -> None:
             f'<span class="mono">fair {betengine.fmt_odds(b["fair_odds"])}</span>'
             f'<span style="color:var(--ink-faint)">{edge_txt}</span></div></div>',
             unsafe_allow_html=True)
-        game = str(b.get("game", ""))
-        if " @ " in game and st.button(f"→ {game}", key=f"play_go_{idx}", use_container_width=True):
-            _go("Matchups", mu_jump_week=int(wk), mu_jump_game=game)
-    if st.button("Full card in Picks of the Week →", key="open_picks",
-                 use_container_width=True):
-        _go("Picks of the Week")
+    st.caption("Full card — parlays, confidence straights, and every market — in the **Picks** tab.")
 
 
 # --- tickers ----------------------------------------------------------------
@@ -187,9 +164,8 @@ def _injury_pulse(extras, meta) -> None:
                                             p.get("practice", ""), p.get("weeks_lingering", 0))
             items.append((team, p, pts))
     if not items:
-        st.caption("No injuries on the board yet — the feed fills in as designations post.")
-        if st.button("Open Injuries →", key="open_inj_empty", use_container_width=True):
-            _go("Injuries")
+        st.caption("No injuries on the board yet — the feed fills in as designations post. "
+                   "Full room in the **Injuries** tab.")
         return
     items.sort(key=lambda x: (injmod.STATUS_ORDER.get(x[1]["status"], 9), -x[2]))
     tone = {"Out": "var(--fade)", "IR": "var(--fade)", "Doubtful": "var(--sharp)",
@@ -205,8 +181,7 @@ def _injury_pulse(extras, meta) -> None:
             f'<span class="s">{p["status"]}{dock}</span></div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
-    if st.button("Open Injuries →", key="open_inj", use_container_width=True):
-        _go("Injuries")
+    st.caption("Full injury room, point-values, and lingering tracker in the **Injuries** tab.")
 
 
 def _line_moves(games, meta) -> None:
@@ -215,9 +190,8 @@ def _line_moves(games, meta) -> None:
     prov = op.get_odds_provider()
     if not prov.is_available():
         st.caption("Waiting on live odds — line movement needs an Odds-API key and in-season "
-                   "snapshots to compare open→now. It fills in once games are on the board.")
-        if st.button("Open Betting desk →", key="open_bet_nokey", use_container_width=True):
-            _go("Betting")
+                   "snapshots to compare open→now. It fills in once games are on the board. "
+                   "Sharp-money board lives in the **Betting** tab.")
         return
     moves = []
     for _, r in games.iterrows():
@@ -226,8 +200,6 @@ def _line_moves(games, meta) -> None:
             moves.append((r["away_team"], r["home_team"], mv))
     if not moves:
         st.caption("No significant moves yet — the market's quiet (movement builds through the week).")
-        if st.button("Open Betting desk →", key="open_bet_quiet", use_container_width=True):
-            _go("Betting")
         return
     moves.sort(key=lambda x: abs(x[2]["delta"]), reverse=True)
     html = ['<div class="k-tick">']
@@ -240,8 +212,6 @@ def _line_moves(games, meta) -> None:
             f'<span class="s">{mv["open_spread"]:+.1f} → {mv["current_spread"]:+.1f} ({d:+.1f})</span></div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
-    if st.button("Open Betting desk →", key="open_bet", use_container_width=True):
-        _go("Betting")
 
 
 def _weather_watch(games) -> None:

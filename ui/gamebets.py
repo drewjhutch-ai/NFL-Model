@@ -75,8 +75,8 @@ def _edge_sheet(away, home, off, deff, extras, sim) -> None:
             side = m.get("side")
             if side and m.get("line") is not None:
                 sc = "var(--edge)" if side == "Over" else "var(--fade)"
-                lean_html = (f'<span style="color:{sc}">lean: <b>{who} {m["stat"]} {side} {m["line"]:g}</b></span> '
-                             f'<span class="meta">· proj {m["proj"]:g} · {m["hit"]:.0f}%</span>')
+                lean_html = (f'<span style="color:{sc}">lean: <b>{who} {m["stat"]} {side}</b></span> '
+                             f'<span class="meta">· proj {m["proj"]:g} vs {m["line"]:g} avg · {m["hit"]:.0f}%</span>')
             else:
                 lean_html = '<span class="meta">high-usage target · line pending</span>'
             st.markdown(

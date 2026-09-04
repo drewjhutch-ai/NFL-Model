@@ -53,10 +53,10 @@ def _slate_mismatches(games, off, deff, extras) -> None:
         color = "var(--edge)" if strong else "var(--accent)"
         side = m.get("side")
         if side and m.get("line") is not None:
-            # projection-derived lean + the line it's against (agrees with the prop board)
+            # projection-derived lean vs the player's own average (NOT a book line)
             sc = "var(--edge)" if side == "Over" else "var(--fade)"
-            lean_html = (f'<span style="color:{sc}">lean <b>{who} {m["stat"]} {side} {m["line"]:g}</b></span> '
-                         f'<span class="meta">· proj {m["proj"]:g} · {m["hit"]:.0f}%</span>')
+            lean_html = (f'<span style="color:{sc}">lean <b>{who} {m["stat"]} {side}</b></span> '
+                         f'<span class="meta">· proj {m["proj"]:g} vs {m["line"]:g} avg · {m["hit"]:.0f}%</span>')
         else:
             # no projectable line yet — present as a target, not a directional bet
             lean_html = f'<span class="meta">high-usage target · line pending</span>'
@@ -244,14 +244,14 @@ def _confidence(board, gp) -> None:
 
 def _prop_leans(prop_df) -> None:
     st.markdown("### Player prop leans")
-    st.caption("The strongest player-prop mismatches for the slate (projection vs baseline). These "
-               "also compete in Most Edge, Parlays, and Confidence above. Price the exact line in "
-               "Players → Prop edge finder.")
+    st.caption("Starters only — projection vs each player's **own season average**, not a sportsbook "
+               "line. Directional targets; price them against the book's real number in "
+               "Players → Prop edge finder for the true edge.")
     if prop_df is None or prop_df.empty:
         st.info("No prop leans surfaced for this slate.")
         return
     show = prop_df.head(10)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
-                             "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+                             "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf", "Baseline": "Season avg"})
     st.dataframe(show, width="stretch", hide_index=True, column_config={
         "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
         "Conf": st.column_config.NumberColumn("Conf", format="%d"),

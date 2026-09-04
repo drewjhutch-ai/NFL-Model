@@ -78,8 +78,9 @@ def _coverage_matchups(extras) -> None:
 
 def _auto_picks(stats, off, deff, extras, games) -> None:
     st.markdown("### Top prop picks this week")
-    st.caption("The model's strongest player-prop leans — biggest gaps between a matchup-adjusted "
-               "projection and the player's baseline. No line needed; these are the mismatches to target.")
+    st.caption("Starters only — the model's projection vs each player's **own season average** (not a "
+               "sportsbook line). These are *targets*: enter the book's real number in the Prop edge "
+               "finder below for the actual edge & Kelly.")
     gp = _games_played(extras)
     board = props.auto_prop_picks(stats, off, deff, extras, games, games_played=gp)
     if board.empty:
@@ -112,7 +113,7 @@ def _auto_picks(stats, off, deff, extras, games) -> None:
     # full ranked table
     with st.expander(f"All {len(view)} prop leans (ranked)"):
         show = view[["Player", "Pos", "Team", "Game", "Stat", "Side",
-                     "Projection", "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+                     "Projection", "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf", "Baseline": "Season avg"})
         st.dataframe(show, width="stretch", hide_index=True, column_config={
             "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
             "Conf": st.column_config.NumberColumn("Conf", format="%d"),
@@ -205,7 +206,7 @@ def _matchup_props(row, stats, off, deff, extras) -> None:
                 _pick_card(col, top.iloc[i + j])
     with st.expander(f"All {len(board)} prop leans in this game (ranked)"):
         show = board[["Player", "Pos", "Team", "Stat", "Side", "Projection",
-                      "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf"})
+                      "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf", "Baseline": "Season avg"})
         st.dataframe(show, width="stretch", hide_index=True, column_config={
             "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
             "Conf": st.column_config.NumberColumn("Conf", format="%d"),

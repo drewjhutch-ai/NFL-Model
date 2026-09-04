@@ -132,6 +132,48 @@ def _prop_confidence(p_side: float, delta: float, volume: float, vol_ref: float,
     return round(100 * core * sample, 1)
 
 
+# deepest depth-chart rank per position still worth a prop (WR1-3, RB1-2, TE1-2, QB1)
+_MAX_DEPTH = {"WR": 3, "RB": 2, "TE": 2, "QB": 1, "FB": 1}
+
+
+def _starter_qb_ids(stats: pd.DataFrame) -> dict:
+    """team -> player_id of the starting QB (depth-chart QB1, else most attempts).
+
+    Backups with garbage-time or prior-season attempts otherwise leak passing
+    props priced at their own tiny average — a number no book would ever post.
+    """
+    if stats is None or stats.empty or "pos" not in stats.columns:
+        return {}
+    qbs = stats[stats["pos"] == "QB"]
+    out = {}
+    for team, g in qbs.groupby("team"):
+        pick = None
+        if "depth_rank" in g.columns:
+            dr = pd.to_numeric(g["depth_rank"], errors="coerce")
+            if dr.notna().any():
+                pick = dr.idxmin()
+        if pick is None and "attempts" in g.columns and g["attempts"].fillna(0).max() > 0:
+            pick = g["attempts"].fillna(0).idxmax()
+        out[team] = pick if pick is not None else g.index[0]
+    return out
+
+
+def _is_startable(pl, starter_qb_id) -> bool:
+    """True if this player is a credible prop subject (a starter/rotational role).
+
+    QBs must be the team's starter; other positions can't be buried on the depth
+    chart. When depth data is absent we don't over-filter — volume thresholds
+    downstream still apply.
+    """
+    pos = str(pl.get("pos", ""))
+    if pos == "QB":
+        return pl.name == starter_qb_id
+    dr = pl.get("depth_rank")
+    if pd.notna(dr) and pos in _MAX_DEPTH and float(dr) > _MAX_DEPTH[pos]:
+        return False
+    return True
+
+
 def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.DataFrame,
                     per_team: int = 5, games_played: int = 0) -> pd.DataFrame:
     """Auto-surface the strongest player-prop leans for a slate — no book line needed.
@@ -149,6 +191,7 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     from data import sharp_value
     cov = sharp_value.coverage_by_position(extras.get("sharp") or {})
     rows = []
+    starter_qbs = _starter_qb_ids(stats)
     from data.weather import weather_effects
     for _, g in games.iterrows():
         home, away = g["home_team"], g["away_team"]
@@ -158,6 +201,8 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
             script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
             tp = P.team_players(stats, team).head(per_team)
             for _, pl in tp.iterrows():
+                if not _is_startable(pl, starter_qbs.get(team)):
+                    continue   # no backup-QB / deep-bench props at made-up lines
                 proj = project_player(pl, opp, deff, dvp, script=script, cov=cov)
                 if wx.get("pass_factor", 1.0) != 1.0:
                     for k in ("Pass yds", "Rec yds", "Rec", "Targets"):
