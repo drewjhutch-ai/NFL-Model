@@ -158,6 +158,7 @@ def _finder(stats, off, deff, extras, schedule) -> None:
         rows.append({"Stat": stat, "Projection": f"{mean:.1f}" + (f" ±{mean*cv:.0f}" if cv else ""),
                      "Season avg": f"{base:.1f}" if base else "—", "Lean vs avg": lean})
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    _ngs_line(p)
 
     st.markdown("**Price a specific line:**")
     d1, d2, d3, d4 = st.columns([2, 1, 1, 1])
@@ -266,6 +267,23 @@ def _coverage_matchup(row, extras) -> None:
                             f'<span class="sv"><b>{cbp.loc[d, vc]:.1f}</b>{rtxt}</span></div>')
         rows.append("</div>")
         col.markdown("".join(rows), unsafe_allow_html=True)
+
+
+def _ngs_line(p) -> None:
+    """Next Gen Stats playmaking context for the selected player, if charted."""
+    bits = []
+    sep, yac, cpoe, ttt = p.get("sep"), p.get("yac_oe"), p.get("cpoe"), p.get("ttt")
+    if pd.notna(sep):
+        bits.append(f"**{float(sep):.1f} yd** separation")
+    if pd.notna(yac):
+        bits.append(f"**{float(yac):+.1f}** YAC over expected")
+    if pd.notna(cpoe):
+        bits.append(f"**{float(cpoe):+.1f}%** CPOE")
+    if pd.notna(ttt):
+        bits.append(f"**{float(ttt):.2f}s** time to throw")
+    if bits:
+        st.caption("📡 Next Gen tracking: " + " · ".join(bits) +
+                   " — the projection is nudged (±4%) for genuine separation / YAC / CPOE.")
 
 
 def _usage(stats, teams) -> None:

@@ -117,6 +117,14 @@ def build_frames():
     # after the team correction so a role always matches the current team.
     _depth = loaders.load_depth_charts()
     _weekly = depth_mod.apply_roles(_weekly, _depth)
+    # Per-player NGS tracking (separation / YAC-over-expected for receivers, CPOE
+    # for passers) joined onto the frame so the prop projection can nudge for
+    # genuine playmaking a raw stat line misses.
+    _pr = ngs.player_receiving(loaders.load_ngs_receiving())
+    _pp = ngs.player_passing(loaders.load_ngs_passing())
+    for _ngs in (_pr, _pp):
+        if _ngs is not None and not _ngs.empty:
+            _weekly = _weekly.join(_ngs, how="left")
     extras["players"] = _weekly
     extras["depth"] = _depth
     extras["rosters_current"] = _roster

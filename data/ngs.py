@@ -44,6 +44,40 @@ def team_passing(ngs_pass: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def player_receiving(ngs_rec: pd.DataFrame) -> pd.DataFrame:
+    """Per-player receiving tracking, keyed by gsis id: separation & YAC-over-expected.
+
+    These are the playmaking signals a raw target count misses — a receiver who
+    gets open and creates after the catch beats his yardage baseline more often.
+    """
+    df = _season_slice(ngs_rec)
+    if df.empty or "player_gsis_id" not in df.columns:
+        return pd.DataFrame()
+    keep = {"avg_separation": "sep", "avg_cushion": "cushion",
+            "avg_yac_above_expectation": "yac_oe"}
+    cols = {v: df[k] for k, v in keep.items() if k in df.columns}
+    if not cols:
+        return pd.DataFrame()
+    out = pd.DataFrame(cols)
+    out["player_id"] = df["player_gsis_id"].astype(str).values
+    return out.dropna(subset=["player_id"]).groupby("player_id").last()
+
+
+def player_passing(ngs_pass: pd.DataFrame) -> pd.DataFrame:
+    """Per-player passing tracking, keyed by gsis id: CPOE & time-to-throw."""
+    df = _season_slice(ngs_pass)
+    if df.empty or "player_gsis_id" not in df.columns:
+        return pd.DataFrame()
+    keep = {"completion_percentage_above_expectation": "cpoe",
+            "avg_time_to_throw": "ttt", "aggressiveness": "aggr"}
+    cols = {v: df[k] for k, v in keep.items() if k in df.columns}
+    if not cols:
+        return pd.DataFrame()
+    out = pd.DataFrame(cols)
+    out["player_id"] = df["player_gsis_id"].astype(str).values
+    return out.dropna(subset=["player_id"]).groupby("player_id").last()
+
+
 def team_receiving(ngs_rec: pd.DataFrame) -> pd.DataFrame:
     """Target-weighted team receiving tracking + the team's most-open target."""
     df = _season_slice(ngs_rec)

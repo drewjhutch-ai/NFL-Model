@@ -65,7 +65,33 @@ def project_player(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
         for k in ("Rush yds", "Carries"):
             if k in proj:
                 proj[k] *= rush_bump
+    _ngs_nudge(player, proj)
     return proj
+
+
+def _ngs_nudge(player: pd.Series, proj: dict) -> None:
+    """Refine receiving/passing projections by NGS playmaking (capped ±4%).
+
+    A receiver who separates and beats YAC expectation clears his yardage line
+    more often; a QB with positive CPOE sustains yardage. Deliberately small — it
+    sharpens the projection, never overrides the matchup and volume.
+    """
+    if not proj:
+        return
+    yac = player.get("yac_oe") if hasattr(player, "get") else None
+    sep = player.get("sep") if hasattr(player, "get") else None
+    rec_factor = 1.0
+    if pd.notna(yac):
+        rec_factor += max(-0.03, min(0.03, float(yac) / 100.0))   # yac_oe is in yards
+    if pd.notna(sep):
+        rec_factor += max(-0.01, min(0.01, (float(sep) - 3.0) / 100.0))  # ~3 yd avg sep
+    rec_factor = max(0.96, min(1.04, rec_factor))
+    for k in ("Rec yds", "Rec"):
+        if k in proj:
+            proj[k] *= rec_factor
+    cpoe = player.get("cpoe") if hasattr(player, "get") else None
+    if pd.notna(cpoe) and "Pass yds" in proj:
+        proj["Pass yds"] *= max(0.96, min(1.04, 1.0 + float(cpoe) / 200.0))  # cpoe in pct pts
 
 
 # raw-stat column behind each display stat, and the minimum volume worth a pick
