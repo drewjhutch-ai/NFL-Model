@@ -82,7 +82,7 @@ def _edge_sheet(away, home, off, deff, extras, sim) -> None:
             st.markdown(
                 f'<div class="k-bet" style="--kbet:{color}">'
                 f'<div class="sel">{who} {kit.chip(lbl, "edge" if m["score"] >= 0.30 else "accent")}</div>'
-                f'<div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% of team targets '
+                f'<div class="meta">{m["off"]} {(m.get("role") or m["pos"])} · {m["share"]*100:.0f}% of team targets '
                 f'(#{m["share_rank"]}){epa}</div>'
                 f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b> '
                 f'(1=tough, 32=soft)</span> · {lean_html}</div></div>',

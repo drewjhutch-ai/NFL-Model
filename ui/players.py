@@ -276,7 +276,9 @@ def _usage(stats, teams) -> None:
             st.info("No player data for this team yet.")
             return
         show = pd.DataFrame({
-            "Player": t["name"], "Pos": t["pos"], "G": t["games"].round(0),
+            "Player": t["name"], "Pos": t["pos"],
+            "Role": t["role"] if "role" in t.columns else "",
+            "G": t["games"].round(0),
             "Pass yds": t["passing_yards"].round(1), "Rush yds": t["rushing_yards"].round(1),
             "Car": t["carries"].round(1), "Tgt": t["targets"].round(1),
             "Rec": t["receptions"].round(1), "Rec yds": t["receiving_yards"].round(1),

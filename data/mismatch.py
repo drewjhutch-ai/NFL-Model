@@ -20,13 +20,20 @@ _STAT_KEY = {"WR": "Rec yds", "TE": "Rec yds", "RB": "Rec"}
 
 
 def _top_target_row(stats, team: str, pos: str):
-    """The most-targeted player row at a position for a team (or None)."""
+    """The lead pass-catcher at a position: most-targeted, depth chart breaking ties.
+
+    Ranking by volume then depth_rank means a proven target wins in-season, but a
+    depth-chart WR1 with no snaps yet (new signing / week 1) still surfaces.
+    """
     if stats is None or getattr(stats, "empty", True):
         return None
     t = stats[(stats["team"] == team) & (stats["pos"] == pos)]
     if t.empty or "targets" not in t.columns:
         return None
-    t = t.sort_values("targets", ascending=False)
+    t = t.copy()
+    t["_tgt"] = t["targets"].fillna(0)
+    t["_dr"] = pd.to_numeric(t["depth_rank"], errors="coerce").fillna(9) if "depth_rank" in t.columns else 9
+    t = t.sort_values(["_tgt", "_dr"], ascending=[False, True])
     return t.iloc[0]
 
 
@@ -104,6 +111,7 @@ def game_mismatches(away: str, home: str, off, deff, extras: dict) -> list[dict]
             out.append({
                 "off": o, "def": d, "pos": pos,
                 "player": row.get("name") if row is not None else None,
+                "role": (row.get("role") or "") if row is not None else "",
                 "share": float(share), "share_rank": int(sr),
                 "cov_rank": round(cov_rank, 1),
                 "epa_tgt": float(epa) if pd.notna(epa) else None,

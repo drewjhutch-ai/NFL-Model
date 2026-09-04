@@ -332,6 +332,37 @@ def load_snaps(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame
     return df[keep].copy()
 
 
+@st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading depth charts…")
+def load_depth_charts(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
+    """Team depth charts — starter/role (WR1, RB1…) per player, latest week.
+
+    Columns normalized to: player_id (gsis), team, pos, depth_rank (1 = starter).
+    The authoritative role, which confirms the top target before volume exists —
+    a new-team WR1 with zero snaps still reads as the WR1.
+    """
+    import nfl_data_py as nfl
+
+    df = _safe_import(nfl.import_depth_charts, list(seasons))
+    if df.empty:
+        return df
+    team_c = next((c for c in ("club_code", "team", "recent_team", "team_abbr") if c in df.columns), None)
+    id_c = next((c for c in ("gsis_id", "gsis_it_id", "player_id") if c in df.columns), None)
+    pos_c = next((c for c in ("depth_position", "position", "pos") if c in df.columns), None)
+    rank_c = next((c for c in ("depth_team", "depth_chart_order", "rank") if c in df.columns), None)
+    if not (team_c and id_c and pos_c):
+        return pd.DataFrame()
+    # keep the latest week per player (depth charts update weekly)
+    if "week" in df.columns and "season" in df.columns:
+        df = df.sort_values(["season", "week"]).groupby([id_c], as_index=False).tail(1)
+    out = pd.DataFrame({
+        "player_id": df[id_c].astype(str),
+        "team": df[team_c],
+        "pos": df[pos_c].astype(str).str.upper(),
+    })
+    out["depth_rank"] = (pd.to_numeric(df[rank_c], errors="coerce") if rank_c else pd.NA)
+    return out.dropna(subset=["player_id"]).reset_index(drop=True)
+
+
 def position_map(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> dict[str, str]:
     """player_id -> position, current season overriding the prior."""
     rosters = load_rosters(seasons)

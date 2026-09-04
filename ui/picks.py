@@ -63,7 +63,7 @@ def _slate_mismatches(games, off, deff, extras) -> None:
         st.markdown(
             f'<div class="k-bet" style="--kbet:{color}">'
             f'<div class="sel">{who} {kit.chip(mismatch.strength_label(m["score"]), "edge" if strong else "accent")}'
-            f'</div><div class="meta">{m["off"]} {m["pos"]} · {m["share"]*100:.0f}% team targets (#{m["share_rank"]}) '
+            f'</div><div class="meta">{m["off"]} {(m.get("role") or m["pos"])} · {m["share"]*100:.0f}% team targets (#{m["share_rank"]}) '
             f'· {m["off"]} @ / vs {m["def"]}</div>'
             f'<div class="row"><span>vs <b>{m["def"]}</b> coverage <b>#{m["cov_rank"]:.0f}</b></span> · '
             f'{lean_html}</div></div>',

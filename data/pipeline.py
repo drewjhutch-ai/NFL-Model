@@ -110,10 +110,15 @@ def build_frames():
     # snap is logged, so we correct team assignment from the live roster feed. This
     # frame is read by Players, Props, Touchdowns, and the mismatch finder, so the
     # fix propagates everywhere. Degrades to stats-derived teams if the feed is down.
-    from data import rosters as roster_mod
+    from data import rosters as roster_mod, depth as depth_mod
     _roster = _roster_feed()
     _weekly, _moves = roster_mod.apply_current_teams(_weekly, _roster)
+    # Depth-chart roles (WR1/RB1/TE1) — authoritative starter picture, attached
+    # after the team correction so a role always matches the current team.
+    _depth = loaders.load_depth_charts()
+    _weekly = depth_mod.apply_roles(_weekly, _depth)
     extras["players"] = _weekly
+    extras["depth"] = _depth
     extras["rosters_current"] = _roster
     extras["roster_moves"] = _moves
     extras["form"] = form.team_form(pbp)
