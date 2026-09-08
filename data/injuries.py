@@ -26,6 +26,7 @@ STATUS_ORDER = {"Out": 0, "IR": 0, "PUP": 0, "Suspended": 1, "Doubtful": 1, "Que
 # Season-long / definite-absence statuses that come from the year-round feed
 # (Sleeper/ESPN) rather than the weekly game report.
 _FEED_ABSENT = ("IR", "PUP", "Suspended", "Out", "Doubtful")
+_OFFENSE_POS = {"QB", "RB", "FB", "HB", "WR", "TE", "OL", "T", "OT", "G", "OG", "C"}
 
 
 def _role_pct(players_df, team: str, name: str) -> float:
@@ -72,8 +73,10 @@ def merge_feed(inj_map: dict, feed_by_team: dict, players_df=None) -> dict:
             nm = getattr(r, "name", "")
             if not nm or nm.lower() in known:
                 continue
+            pos = getattr(r, "pos", "")
             out.setdefault(team, []).append({
-                "gsis": None, "name": nm, "pos": getattr(r, "pos", ""),
+                "gsis": None, "name": nm, "pos": pos,
+                "side": "offense" if str(pos).upper() in _OFFENSE_POS else "defense",
                 "status": status, "injury": getattr(r, "detail", "") or "",
                 "practice": "", "pct": _role_pct(players_df, team, nm),
                 "source": "feed", "season_long": status in ("IR", "PUP", "Suspended"),

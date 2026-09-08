@@ -193,11 +193,15 @@ def injury_card_html(items: list[dict], week=None, has_report: bool = True) -> s
                 f"<span style='opacity:.85;'>No major injuries reported.</span></div>")
     lis = ""
     for p in items:
-        ic = _INJ_ICON.get(p["status"], "•")
+        ic = _INJ_ICON.get(p.get("status"), "•")
         inj = f" — {p['injury']}" if p.get("injury") else ""
-        lis += (f"<li style='margin:2px 0;'>{ic} <b>{p['name']}</b> "
-                f"<span style='opacity:.7;'>({p['pos']}, {p['side']})</span> · "
-                f"{p['status']}{inj} · {p['pct'] * 100:.0f}% snaps</li>")
+        side = p.get("side")
+        meta = p.get("pos", "") + (f", {side}" if side else "")
+        pct = p.get("pct")
+        snaps = f" · {pct * 100:.0f}% snaps" if pd.notna(pct) else ""
+        lis += (f"<li style='margin:2px 0;'>{ic} <b>{p.get('name', '?')}</b> "
+                f"<span style='opacity:.7;'>({meta})</span> · "
+                f"{p.get('status', '')}{inj}{snaps}</li>")
     return (f"<div style='background:rgba(231,76,60,0.10);border-left:4px solid "
             f"#e74c3c;border-radius:8px;padding:8px 12px;'><b>{title}</b>"
             f"<ul style='margin:4px 0 0;padding-left:18px;'>{lis}</ul></div>")
