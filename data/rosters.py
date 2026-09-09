@@ -41,6 +41,50 @@ def name_team_map(roster: pd.DataFrame) -> dict:
     return out
 
 
+# Injury statuses that make a player unavailable — no prop/pick should list them.
+_OUT_STATUSES = {"Out", "IR", "PUP", "Suspended", "Doubtful"}
+
+
+def mark_active(frame: pd.DataFrame, roster: pd.DataFrame, inj_map: dict) -> pd.DataFrame:
+    """Add an `active` flag: on the current roster AND not ruled out.
+
+    Two failure modes this closes: a player who has left a team but still carries
+    that team's stats (roster confirms he's gone), and a player who is Out/IR/PUP/
+    suspended (the injury feed says he can't play). Pick generators filter on this
+    so neither can ever surface as a bet. When the roster feed is unavailable we
+    don't treat everyone as departed — only the injury filter applies.
+    """
+    if frame is None or frame.empty:
+        return frame
+    out = frame.copy()
+    names = out["name"].astype(str) if "name" in out.columns else pd.Series("", index=out.index)
+
+    if roster is not None and not getattr(roster, "empty", True) and "player_id" in roster.columns:
+        ids = set(roster["player_id"].dropna().astype(str))
+        rnames = set(roster["name"].astype(str).str.lower()) if "name" in roster.columns else set()
+        rostered = [(str(pid) in ids) or (str(nm).strip().lower() in rnames)
+                    for pid, nm in zip(out.index, names)]
+    else:
+        rostered = [True] * len(out)   # no roster feed → don't drop anyone on that basis
+
+    out_names = {(p.get("name") or "").strip().lower()
+                 for items in (inj_map or {}).values() for p in items
+                 if p.get("status") in _OUT_STATUSES}
+    injured_out = [str(nm).strip().lower() in out_names for nm in names]
+
+    out["rostered"] = rostered
+    out["injured_out"] = injured_out
+    out["active"] = [r and not i for r, i in zip(rostered, injured_out)]
+    return out
+
+
+def unavailable_names(inj_map: dict) -> set:
+    """Lowercased names of players ruled out (Out/IR/PUP/suspended/doubtful)."""
+    return {(p.get("name") or "").strip().lower()
+            for items in (inj_map or {}).values() for p in items
+            if p.get("status") in _OUT_STATUSES}
+
+
 def apply_current_teams(frame: pd.DataFrame, roster: pd.DataFrame) -> tuple[pd.DataFrame, list]:
     """Override each player's team with the current roster; report who moved.
 

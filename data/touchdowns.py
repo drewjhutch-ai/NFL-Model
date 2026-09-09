@@ -170,6 +170,8 @@ def td_board(off, deff, extras: dict, games: pd.DataFrame, min_share: float = 0.
             info = exp.get(team, {})
             t = _shares(usage, team)
             for _, p in t.iterrows():
+                if not p.get("active", True):
+                    continue   # departed (off roster) or ruled out (Out/IR/PUP)
                 pos_mult, pos_rank = _pos_soft(cbp, dvp, opp, p["pos"])
                 lam_rush = p["rush_share"] * info.get("rush_td", 0)
                 lam_rec = p["rec_share"] * info.get("pass_td", 0) * pos_mult

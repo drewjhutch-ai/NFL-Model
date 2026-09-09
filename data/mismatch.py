@@ -28,6 +28,8 @@ def _top_target_row(stats, team: str, pos: str):
     if stats is None or getattr(stats, "empty", True):
         return None
     t = stats[(stats["team"] == team) & (stats["pos"] == pos)]
+    if "active" in t.columns:
+        t = t[t["active"]]   # never name a departed / ruled-out player as the target
     if t.empty or "targets" not in t.columns:
         return None
     t = t.copy()

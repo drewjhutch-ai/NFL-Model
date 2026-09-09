@@ -201,6 +201,8 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
             script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
             tp = P.team_players(stats, team).head(per_team)
             for _, pl in tp.iterrows():
+                if not pl.get("active", True):
+                    continue   # departed (off the roster) or ruled out (Out/IR/PUP)
                 if not _is_startable(pl, starter_qbs.get(team)):
                     continue   # no backup-QB / deep-bench props at made-up lines
                 proj = project_player(pl, opp, deff, dvp, script=script, cov=cov)

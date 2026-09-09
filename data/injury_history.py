@@ -66,6 +66,29 @@ def load_history(season: int) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+def latest_feed(season: int) -> dict:
+    """Most recent committed snapshot as a by-team feed (a blocked-host fallback).
+
+    Same shape the live injury providers return (name, pos, espn_status, detail),
+    so the pipeline can reconstruct current IR/PUP/Out status from the weekly
+    committed snapshot when the live Sleeper/ESPN pull can't reach the host.
+    """
+    h = load_history(season)
+    if h.empty or "snapshot" not in h.columns:
+        return {}
+    latest = h[h["snapshot"].astype(str) == str(h["snapshot"].max())]
+    if latest.empty:
+        return {}
+    out = {}
+    for team, g in latest.groupby("team"):
+        out[str(team)] = pd.DataFrame({
+            "name": g["name"], "pos": g.get("pos", ""),
+            "espn_status": g["status"], "detail": "",
+            "updated": g.get("snapshot", ""),
+        }).reset_index(drop=True)
+    return out
+
+
 def persistence(season: int) -> dict:
     """(team, name_lower) -> {weeks, first, last, statuses} across limiting snapshots.
 

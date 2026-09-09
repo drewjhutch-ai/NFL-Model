@@ -28,6 +28,15 @@ def _injury_feed() -> dict:
             return feed
     except Exception:  # noqa: BLE001
         pass
+    # committed weekly snapshot (refreshed by the Action from GitHub, where the
+    # feed is reachable) — the reliable fallback when the live host is blocked.
+    try:
+        from data import injury_history
+        feed = injury_history.latest_feed(config.CURRENT_SEASON)
+        if feed:
+            return feed
+    except Exception:  # noqa: BLE001
+        pass
     try:
         from data.providers import espn_injuries
         return espn_injuries.by_team()
@@ -171,6 +180,11 @@ def build_frames():
     extras["injuries"] = inj_map
     extras["injury_week"] = inj_week
     extras["injury_feed_source"] = "Sleeper/ESPN" if feed else ""
+    # Availability gate: a player must be on the current roster AND not ruled out
+    # to be eligible for a pick. Closes two holes — a departed player still
+    # carrying his old team's stats, and an Out/IR player getting a prop.
+    extras["players"] = roster_mod.mark_active(extras["players"], _roster, inj_map)
+    extras["unavailable"] = roster_mod.unavailable_names(inj_map)
     extras["injury_pts"] = injury_value.team_injury_points(inj_map)  # non-QB spread impact
 
     # special teams + QB value (feed the betting projection)
@@ -185,6 +199,7 @@ def build_frames():
     _rz, _ = roster_mod.apply_current_teams(_rz, _roster)   # goal-line usage on the current team
     if _exp is not None and not _exp.empty and "exp_td" in _exp.columns and not _rz.empty:
         _rz = _rz.join(_exp[["exp_td"]], how="left")   # expected TDs as a regression anchor
+    _rz = roster_mod.mark_active(_rz, _roster, inj_map)    # drop departed / ruled-out scorers
     extras["rz_usage"] = _rz
     # accuracy layer: stable points-differential signal + Elo ensemble/prior
     extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
