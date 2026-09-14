@@ -168,12 +168,18 @@ def _priced_board(off, deff, extras, row, away, home, sim) -> None:
     legs = pool[:3] if len(pool) >= 2 else []
     if len(legs) >= 2:
         par = betengine.parlay(legs)
-        k = st.columns(3)
+        k = st.columns(4)
         k[0].metric("Combined odds", betengine.fmt_odds(par["american"]))
-        k[1].metric("Model hit %", f"{par['model_prob']*100:.0f}%")
+        lift = par.get("correlation_lift", 0.0)
+        k[1].metric("Model hit %", f"{par['model_prob']*100:.0f}%",
+                    f"{lift*100:+.1f} vs independent" if abs(lift) >= 0.005 else None)
         k[2].metric("EV / unit", f"{par['ev']*100:+.0f}%")
-        st.caption("Legs: " + " + ".join(l["selection"] for l in legs) + " — priced for correlation, not "
-                   "naïve multiplication. High variance; keep the ticket small.")
+        k[3].metric("Naïve (indep)", f"{par.get('indep_prob', float('nan'))*100:.0f}%",
+                    help="What multiplying the legs would say — the copula corrects it for correlation.")
+        st.caption("Legs: " + " + ".join(l["selection"] for l in legs) + " — priced with a Gaussian copula "
+                   "over the legs' correlations (a QB and his receiver rise together), not naïve "
+                   "multiplication. A positive lift means the legs reinforce each other. High variance; "
+                   "keep the ticket small.")
     else:
         st.info("Not enough +EV legs for a parlay in this game.")
     _game_props(off, deff, extras, row)

@@ -42,7 +42,14 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
             total_mean -= 0.5 * (qb_adjustment(qb, home) + qb_adjustment(qb, away))
 
     rng = np.random.default_rng(42)
-    margins = rng.normal(margin_mean, config.MARGIN_STD, n)
+    # Margins are drawn from the key-number-aware NFL distribution (clusters on
+    # 3/7/…), so cover and push probabilities are priced the way books do, not off
+    # a smooth normal. Degrades to a normal if the distribution model is absent.
+    try:
+        from data import margins as _margins
+        margins = _margins.sample_margins(margin_mean, config.MARGIN_STD, n, rng)
+    except Exception:  # noqa: BLE001
+        margins = rng.normal(margin_mean, config.MARGIN_STD, n)
     totals = np.clip(rng.normal(total_mean, config.TOTAL_STD, n), 20, None)
     home_pts = (totals + margins) / 2
     away_pts = (totals - margins) / 2
@@ -59,6 +66,8 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
         mkt_total = row.get("total_line")
         if pd.notna(mkt_spread):
             out["home_cover"] = float((margins > mkt_spread).mean())
+            # push mass is real now that margins are integers on a whole-number line
+            out["home_push"] = float((margins == mkt_spread).mean())
             out["mkt_spread"] = mkt_spread
         if pd.notna(mkt_total):
             out["over"] = float((totals > mkt_total).mean())

@@ -16,7 +16,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from data import betengine, players
+from data import betengine, distributions as _dist, players
 
 # Coefficient of variation (sd / mean) for a single game, by stat. Rough but
 # grounded: yardage is high-variance, volume counts less so, passing yards tight.
@@ -25,26 +25,36 @@ _CV = {
     "Rec": 0.42, "Targets": 0.34, "Carries": 0.30,
 }
 _POISSON = {"Pass TD"}
+# Integer-count props: modeled discretely (negative binomial), not as continuous
+# yards — the half-point line (2.5) is what matters and counts are over-dispersed.
+_COUNT = {"Rec", "Targets", "Carries"}
+# Counts are at least mildly boom/bust; floor their variance a touch above the
+# Poisson var=mean so a heavy-usage receiver's spread isn't understated.
+_COUNT_MIN_OVERDISP = 1.15
 # The props worth surfacing, in display order.
 PROP_STATS = ["Pass yds", "Pass TD", "Rush yds", "Carries", "Rec yds", "Rec", "Targets"]
 
 
-def _norm_cdf(x: float) -> float:
-    return 0.5 * (1 + math.erf(x / math.sqrt(2)))
-
-
 def over_prob(mean: float, line: float, stat: str) -> float:
-    """P(stat > line) for a projected ``mean``. Normal for yards/volume, Poisson for TDs."""
+    """P(stat > line) for a projected ``mean``, modeled by the stat's true shape.
+
+    * Touchdowns  → Poisson (rare integer events).
+    * Receptions / targets / carries → negative binomial (over-dispersed integer
+      counts; respects the half-point line and boom/bust variance).
+    * Yards (rec / rush / pass) → right-skewed Gamma centered on the projection
+      as its median, so it's non-negative, has a realistic long tail, and never
+      flips the over/under sign relative to the projection.
+    """
     if pd.isna(mean) or pd.isna(line) or mean <= 0:
         return np.nan
-    if stat in _POISSON:
-        # P(X > line) with X ~ Poisson(mean); line usually 0.5/1.5
-        k = math.floor(line)
-        cdf = sum(math.exp(-mean) * mean ** i / math.factorial(i) for i in range(k + 1))
-        return float(1 - cdf)
+    if stat in _POISSON:                       # touchdowns
+        return float(_dist.poisson_sf(math.floor(line), float(mean)))
     cv = _CV.get(stat, 0.45)
-    sd = max(mean * cv, 1e-6)
-    return float(1 - _norm_cdf((line - mean) / sd))
+    if stat in _COUNT:                          # receptions / targets / carries
+        var = max((mean * cv) ** 2, mean * _COUNT_MIN_OVERDISP)
+        return float(_dist.nbinom_sf(math.floor(line), float(mean), float(var)))
+    # yards — median-centered Gamma (right-skewed, non-negative)
+    return float(_dist.gamma_sf_median(float(line), float(mean), cv))
 
 
 def project_player(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
@@ -277,7 +287,9 @@ def leans_to_bets(leans: pd.DataFrame, games_played: int = 0) -> list[dict]:
         out.append(betengine._bet(
             r["Game"], r["Game"], "Player prop", sel, p, -110, -110,
             corr_group=r["Game"], games_played=games_played,
-            rationale=f"Proj {r['Projection']:g} vs {r['Baseline']:g} · {r['Matchup']}"))
+            rationale=f"Proj {r['Projection']:g} vs {r['Baseline']:g} · {r['Matchup']}",
+            team=r.get("Team"), ou=1 if r.get("Side") == "Over" else -1,
+            pos=r.get("Pos"), stat=r.get("Stat"), player=r.get("Player")))
     return out
 
 
@@ -301,10 +313,12 @@ def prop_bets(player: pd.Series, proj: dict, game_id: str, game: str, opp: str,
         if pd.isna(p_over):
             continue
         if p_over >= 0.5:
-            sel, p = f"{name} {stat} Over {line:g}", p_over
+            sel, p, side = f"{name} {stat} Over {line:g}", p_over, "Over"
         else:
-            sel, p = f"{name} {stat} Under {line:g}", 1 - p_over
+            sel, p, side = f"{name} {stat} Under {line:g}", 1 - p_over, "Under"
         out.append(betengine._bet(
             game_id, game, "Player prop", sel, p, -110, -110, game_id, games_played,
-            f"Projected {mean:.1f} vs line {line:g} ({stat}) vs {opp}."))
+            f"Projected {mean:.1f} vs line {line:g} ({stat}) vs {opp}.",
+            team=player.get("team"), ou=1 if side == "Over" else -1,
+            pos=player.get("pos"), stat=stat, player=name))
     return out

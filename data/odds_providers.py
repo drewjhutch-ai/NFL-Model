@@ -202,23 +202,35 @@ class TheOddsAPIProvider(LiveOddsProvider):
 
 # --- consensus / shopping helpers -------------------------------------------
 def consensus(df: pd.DataFrame) -> dict:
-    """Consensus + best available across books for one game's rows."""
+    """Consensus + best available across books for one game's rows.
+
+    Lines use the **median** across books (robust to one stray/stale book), and
+    the moneyline consensus is de-vigged with Shin's method into a fair home win
+    probability — the number model edges should be measured against.
+    """
     if df.empty:
         return {}
     hs = df["home_spread"].dropna()
     tot = df["total"].dropna()
     out = {
-        "home_spread": float(hs.mean()) if not hs.empty else None,
-        "total": float(tot.mean()) if not tot.empty else None,
+        "home_spread": float(hs.median()) if not hs.empty else None,
+        "total": float(tot.median()) if not tot.empty else None,
         "n_books": int(df["book"].nunique()),
         "spread_range": (float(hs.min()), float(hs.max())) if not hs.empty else None,
         # best number for a backer: fewest points laid on home / most for away
         "best_home_spread": float(hs.min()) if not hs.empty else None,
         "best_away_spread": float(hs.max()) if not hs.empty else None,
     }
+    # consensus no-vig home win probability (median ML across books, Shin de-vig)
+    mlh, mla = df["ml_home"].dropna(), df["ml_away"].dropna()
+    if not mlh.empty and not mla.empty:
+        from data import betting
+        p = betting.devig_home_prob(float(mlh.median()), float(mla.median()))
+        if pd.notna(p):
+            out["novig_home_prob"] = float(p)
     sharp = df[df["is_sharp"]]
     if not sharp.empty and not sharp["home_spread"].dropna().empty:
-        out["sharp_spread"] = float(sharp["home_spread"].dropna().mean())
+        out["sharp_spread"] = float(sharp["home_spread"].dropna().median())
         out["sharp_book"] = ", ".join(sorted(sharp["book"].unique()))
     return out
 

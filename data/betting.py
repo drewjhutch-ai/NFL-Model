@@ -158,9 +158,18 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
 
 
 def win_prob(margin: float) -> float:
-    """Home win probability from projected margin (normal CDF on the margin std)."""
+    """Home win probability from projected margin, using the key-number-aware
+    NFL margin distribution (margins cluster on 3/7/…, which a plain normal
+    misprices). Falls back to the normal CDF only if that model is unavailable."""
     if pd.isna(margin):
         return np.nan
+    try:
+        from data import margins as _margins
+        p = _margins.win_prob(float(margin))
+        if pd.notna(p):
+            return float(p)
+    except Exception:  # noqa: BLE001 - never break pricing on the enhancement
+        pass
     return 0.5 * (1 + math.erf(margin / (config.MARGIN_STD * math.sqrt(2))))
 
 
@@ -239,11 +248,50 @@ def implied_prob(moneyline) -> float:
     return (-ml) / (-ml + 100) if ml < 0 else 100 / (ml + 100)
 
 
+def shin_devig(implieds) -> list:
+    """Remove the vig with **Shin's method** — the fair probabilities implied by a
+    quoted market, accounting for the favorite–longshot bias.
+
+    Proportional de-vigging (just dividing by the book sum) assumes the vig is
+    spread evenly; Shin models a share ``z`` of informed money, which loads more
+    of the margin onto favorites — closer to how a book actually prices, and more
+    accurate on lopsided lines. Solves ``z`` so the fair probabilities sum to 1.
+    Returns [] on bad input; falls back to proportional if no solution is found.
+    """
+    q = [float(x) for x in implieds if x is not None and not pd.isna(x) and float(x) > 0]
+    s = sum(q)
+    if len(q) < 2 or s <= 0:
+        return []
+    if s <= 1.0:                       # no overround (or underround) — just normalize
+        return [qi / s for qi in q]
+
+    def _fair(z: float, qi: float) -> float:
+        z = min(z, 0.999999)
+        return (math.sqrt(z * z + 4 * (1 - z) * qi * qi / s) - z) / (2 * (1 - z))
+
+    def _sum(z: float) -> float:
+        return sum(_fair(z, qi) for qi in q)
+
+    lo, hi = 0.0, 0.9
+    if (_sum(hi) - 1.0) > 0:            # no crossing → proportional fallback
+        return [qi / s for qi in q]
+    for _ in range(80):                 # bisection: Σ fair(z) is decreasing in z
+        mid = 0.5 * (lo + hi)
+        if _sum(mid) - 1.0 > 0:
+            lo = mid
+        else:
+            hi = mid
+    z = 0.5 * (lo + hi)
+    return [_fair(z, qi) for qi in q]
+
+
 def devig_home_prob(home_ml, away_ml) -> float:
+    """Fair home win probability from a two-way moneyline (Shin's method)."""
     ph, pa = implied_prob(home_ml), implied_prob(away_ml)
     if pd.isna(ph) or pd.isna(pa) or (ph + pa) == 0:
         return np.nan
-    return ph / (ph + pa)
+    fair = shin_devig([ph, pa])
+    return fair[0] if fair else ph / (ph + pa)
 
 
 # --- context the market prices (that our efficiency model may not) -----------
