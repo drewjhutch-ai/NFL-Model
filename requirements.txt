@@ -1,12 +1,21 @@
-streamlit>=1.37
-pandas>=2.0
-numpy>=1.24
-nfl_data_py>=0.3.2
-plotly>=5.20
-matplotlib>=3.7
-requests>=2.31
-lxml>=5.0
+# Upper bounds are intentional. Streamlit Community Cloud RE-RESOLVES dependencies
+# on every redeploy, and open-ended ">=" pins let it pull a bleeding-edge stack
+# (pandas 3.0, numpy 2.5, plotly 7, pyarrow 25 on Python 3.14) that segfaults the
+# app on the first data load — it boots, then spins forever with no traceback.
+# These ranges hold it to the stable, battle-tested stack the app was built on.
+#
+# IMPORTANT: set the app's Python version to 3.12 in Community Cloud
+# (Manage app -> Settings -> Python version). These pins ship prebuilt wheels for
+# 3.12; Python 3.14 has no wheels for them and would fail to install.
+streamlit>=1.37,<2
+pandas>=2.1,<2.3
+numpy>=1.24,<2
+nfl_data_py==0.3.2
+plotly>=5.20,<6
+matplotlib>=3.7,<4
+requests>=2.31,<3
+lxml>=5.0,<6
 # Optional: only needed if a free stats site renders its tables with JavaScript.
 # After installing, run once:  playwright install chromium
-playwright>=1.44
-pyarrow>=12.0
+playwright>=1.44,<2
+pyarrow>=14,<18
