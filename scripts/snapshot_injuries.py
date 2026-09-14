@@ -30,6 +30,15 @@ from data import injury_history, loaders
 from data.teams import normalize_team
 
 
+def _clean(x) -> str:
+    """Coerce any cell to a stripped string. A DataFrame cell can be NaN (a
+    ``float``), and ``getattr(row, col, "")`` returns that NaN — not the default —
+    because the attribute *exists*; NaN is also truthy, so ``x or ""`` keeps it.
+    Guarding on ``isinstance(str)`` is what actually protects the ``.strip()``.
+    """
+    return x.strip() if isinstance(x, str) else ""
+
+
 def _nflverse_rows(season: int):
     """Weekly report rows (status + practice) for the latest reported week."""
     rows, week = [], None
@@ -46,38 +55,48 @@ def _nflverse_rows(season: int):
     week = int(inj["week"].max())
     cur = inj[inj["week"] == week]
     for r in cur.itertuples():
-        status = (getattr(r, "report_status", "") or "").strip()
-        practice = (getattr(r, "practice_status", "") or "").strip()
+        status = _clean(getattr(r, "report_status", ""))
+        practice = _clean(getattr(r, "practice_status", ""))
         if not status and not practice:
             continue
-        team = normalize_team(getattr(r, "team", None))
+        team = normalize_team(_clean(getattr(r, "team", "")) or None)
         if not team:
             continue
         rows.append({
-            "team": team, "name": getattr(r, "full_name", "") or "",
-            "pos": (getattr(r, "position", "") or "").upper(),
+            "team": team, "name": _clean(getattr(r, "full_name", "")),
+            "pos": _clean(getattr(r, "position", "")).upper(),
             "status": status, "practice": practice, "source": "nflverse",
         })
     return rows, week
 
 
 def _sleeper_rows():
-    """Season-long designations (IR/PUP/suspended + current game status)."""
+    """Season-long designations (IR/PUP/suspended + current game status).
+
+    Uses the shared Sleeper provider — the same single memoized player pull the
+    roster snapshot uses — so both snapshots ride one 5 MB download and share one
+    code path, rather than a second, separately-maintained fetch.
+    """
     rows = []
     try:
-        from data.providers import sleeper_injuries
-        df = sleeper_injuries.fetch()
+        from data.providers import sleeper
+        by_team = sleeper.injuries_by_team()
     except Exception as exc:  # noqa: BLE001
         print(f"[snapshot_injuries] Sleeper feed unavailable: {exc}")
         return rows
-    if df is None or df.empty:
+    if not by_team:
         return rows
-    for r in df.itertuples():
-        rows.append({
-            "team": getattr(r, "team", ""), "name": getattr(r, "name", ""),
-            "pos": getattr(r, "pos", ""), "status": getattr(r, "espn_status", ""),
-            "practice": "", "source": "sleeper",
-        })
+    for team, df in by_team.items():
+        if df is None or df.empty:
+            continue
+        for r in df.itertuples():
+            rows.append({
+                "team": _clean(getattr(r, "team", "")) or team,
+                "name": _clean(getattr(r, "name", "")),
+                "pos": _clean(getattr(r, "pos", "")).upper(),
+                "status": _clean(getattr(r, "espn_status", "")),
+                "practice": "", "source": "sleeper",
+            })
     return rows
 
 
@@ -87,8 +106,20 @@ def main() -> int:
     args = ap.parse_args()
     season = args.season
 
-    nfl_rows, week = _nflverse_rows(season)
-    sleeper_rows = _sleeper_rows()
+    # Each source is isolated: a failure in one must not abort the other, so a
+    # broken weekly report can't wipe out the season-long Sleeper feed (the bug
+    # that froze this snapshot for a week), and vice versa.
+    try:
+        nfl_rows, week = _nflverse_rows(season)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[snapshot_injuries] nflverse rows failed: {exc}")
+        nfl_rows, week = [], None
+    try:
+        sleeper_rows = _sleeper_rows()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[snapshot_injuries] sleeper rows failed: {exc}")
+        sleeper_rows = []
+    print(f"[snapshot_injuries] sources: nflverse={len(nfl_rows)} sleeper={len(sleeper_rows)}")
 
     # Prefer the nflverse row for a player (it carries practice detail); add
     # Sleeper rows for anyone not on the weekly report (IR/PUP/suspended).
