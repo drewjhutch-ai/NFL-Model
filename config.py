@@ -125,7 +125,10 @@ ELO_WEIGHT = 0.15
 SHARP_WEIGHT = 0.12
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
-SIM_N = 20000                # Monte Carlo iterations per game
+# Monte Carlo iterations per game. 6k keeps the betting probabilities within ~0.6%
+# of the 20k estimate while cutting the per-render CPU ~3x — the app runs on
+# Streamlit Community Cloud's shared free-tier CPU, which throttles heavy loads.
+SIM_N = 6000
 KEY_NUMBERS = (3, 7, 6, 10, 4, 14)  # margins cluster here; straddling one adds value
 PACE_PTS_PER_PLAY = 0.32     # extra combined plays -> extra total points
 

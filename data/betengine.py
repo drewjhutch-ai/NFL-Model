@@ -295,7 +295,7 @@ def _joint_prob(legs: list[dict], R: list[list[float]]) -> float:
     A = A / np.outer(d, d)
     L = np.linalg.cholesky(A + 1e-9 * np.eye(n))
     rng = np.random.default_rng(7)
-    Z = L @ rng.standard_normal((n, 60000))
+    Z = L @ rng.standard_normal((n, 15000))   # 15k: ~0.4% error, light on shared CPU
     hit = np.ones(Z.shape[1], dtype=bool)
     for i in range(n):
         hit &= Z[i] > thr[i]

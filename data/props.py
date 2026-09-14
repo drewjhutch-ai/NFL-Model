@@ -184,6 +184,9 @@ def _is_startable(pl, starter_qb_id) -> bool:
     return True
 
 
+_PROP_MEMO: dict = {}
+
+
 def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.DataFrame,
                     per_team: int = 5, games_played: int = 0) -> pd.DataFrame:
     """Auto-surface the strongest player-prop leans for a slate — no book line needed.
@@ -192,10 +195,22 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     game script, then compare to their own season baseline. The biggest swings vs
     a line set at their norm are the mismatches worth betting. Returns a ranked
     frame of leans (side, projection, baseline, hit probability, matchup, confidence).
+
+    Memoized per build + slate: it's deterministic given the frames and games, and
+    several tabs request the same slate's leans on every Streamlit rerun. Keying on
+    the frame object ids invalidates automatically when build_frames refreshes.
     """
     from data import betting, players as P
     if stats is None or stats.empty or games is None or games.empty:
         return pd.DataFrame()
+    try:
+        _gids = tuple(games["game_id"]) if "game_id" in games.columns else \
+            tuple(zip(games["away_team"], games["home_team"]))
+    except Exception:  # noqa: BLE001
+        _gids = None
+    _key = (id(stats), id(off), id(deff), id(extras), _gids, per_team, games_played)
+    if _gids is not None and _key in _PROP_MEMO:
+        return _PROP_MEMO[_key]
     dvp = extras.get("dvp", {})
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
     from data import sharp_value
@@ -251,9 +266,14 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
                         "_delta": abs(delta),
                     })
     if not rows:
-        return pd.DataFrame()
-    df = pd.DataFrame(rows).sort_values("conf", ascending=False).reset_index(drop=True)
-    return df
+        out = pd.DataFrame()
+    else:
+        out = pd.DataFrame(rows).sort_values("conf", ascending=False).reset_index(drop=True)
+    if _gids is not None:
+        if len(_PROP_MEMO) > 400:
+            _PROP_MEMO.clear()
+        _PROP_MEMO[_key] = out
+    return out
 
 
 def prop_bets_for_games(off, deff, extras: dict, games: pd.DataFrame,

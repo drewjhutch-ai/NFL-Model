@@ -15,10 +15,23 @@ from data import betting
 from data.weather import weather_effects
 
 
+# Per-build memo: the sim is deterministic (fixed seed) given the frames + game +
+# lines, and several tabs simulate the same slate on every Streamlit rerun. Keying
+# on the frame object ids invalidates automatically when build_frames refreshes.
+_SIM_MEMO: dict = {}
+
+
 def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
              extras: dict, row: pd.Series | None = None, n: int | None = None) -> dict:
     """Simulate a game n times; return distributions + probabilities."""
     n = n or config.SIM_N
+    gid = None if row is None else row.get("game_id")
+    _sp = None if row is None or pd.isna(row.get("spread_line")) else float(row.get("spread_line"))
+    _tl = None if row is None or pd.isna(row.get("total_line")) else float(row.get("total_line"))
+    _key = (id(off), id(deff), id(extras), gid, home, away, _sp, _tl, n)
+    _hit = _SIM_MEMO.get(_key)
+    if _hit is not None:
+        return _hit
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
     # Sharp Football's charted-EPA ensemble member — same signal assess() uses,
     # so every priced bet (sim-based) and every headline (assess-based) agree.
@@ -31,6 +44,7 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
                                          extras.get("injury_pts"), sharp_mgn)  # + = home
     total_mean = betting.project_total(off, deff, home, away, extras.get("pace"))
     if pd.isna(margin_mean) or pd.isna(total_mean):
+        _SIM_MEMO[_key] = {}
         return {}
 
     if row is not None:
@@ -72,6 +86,9 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
         if pd.notna(mkt_total):
             out["over"] = float((totals > mkt_total).mean())
             out["mkt_total"] = mkt_total
+    if len(_SIM_MEMO) > 4000:      # bound the memo across many builds/weeks
+        _SIM_MEMO.clear()
+    _SIM_MEMO[_key] = out
     return out
 
 
