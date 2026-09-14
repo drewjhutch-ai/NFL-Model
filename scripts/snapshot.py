@@ -38,23 +38,38 @@ def main() -> int:
     args = ap.parse_args()
 
     off, deff, blitz, live, schedule, extras = pipeline.build_frames()
-    if not live:
-        print(f"[snapshot] no {args.season} games yet — offseason, nothing to freeze.")
-        return 2
 
     week = args.week or loaders.current_week(schedule, args.season)
     if not week:
-        print("[snapshot] couldn't determine the current week.")
+        print(f"[snapshot] no {args.season} schedule / week yet — nothing to freeze.")
         return 2
 
-    team_frame = history.snapshot_frame(off, deff, extras, args.season, week)
-    path = history.write_snapshot(team_frame, args.season, week)
-    print(f"[snapshot] wrote {len(team_frame)} teams for week {week} -> {path}")
+    wrote_any = False
 
+    # Projections first: freeze the UPCOMING week's pre-game picks whenever that
+    # week's games have posted lines — even before the season is "live" — so the
+    # very first week gets logged and can be graded later. (Before this, the
+    # offseason `not live` bail skipped Week 1 entirely, so it never got graded.)
     proj = history.snapshot_projections(schedule, off, deff, extras, args.season, week)
     ppath = history.write_projections(proj, args.season, week)
     if ppath is not None:
-        print(f"[snapshot] wrote {len(proj)} game projections -> {ppath}")
+        wrote_any = True
+        print(f"[snapshot] wrote {len(proj)} game projections (week {week}) -> {ppath}")
+    else:
+        print(f"[snapshot] no game projections to freeze for week {week} yet.")
+
+    # Team ranks/power only carry signal once real games exist; skip in the deep
+    # offseason (they'd just be the phantom baseline repeated).
+    if live:
+        team_frame = history.snapshot_frame(off, deff, extras, args.season, week)
+        path = history.write_snapshot(team_frame, args.season, week)
+        wrote_any = True
+        print(f"[snapshot] wrote {len(team_frame)} teams for week {week} -> {path}")
+    else:
+        print(f"[snapshot] {args.season} not live yet — skipped team-rank snapshot.")
+
+    if not wrote_any:
+        return 2
 
     # Report the running grade so the Action log shows the model's accuracy.
     grade = history.grade_projections(history.load_projections(args.season), schedule)

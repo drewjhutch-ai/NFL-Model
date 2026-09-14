@@ -233,19 +233,27 @@ def grade_projections(proj: pd.DataFrame, schedule: pd.DataFrame) -> dict:
         r = res.loc[gid]
         home_margin = r.get("result")            # home score - away score
         total_pts = r.get("total")
+        if pd.isna(total_pts):                    # schedule keeps scores, not a 'total' column
+            hs, as_ = r.get("home_score"), r.get("away_score")
+            if pd.notna(hs) and pd.notna(as_):
+                total_pts = float(hs) + float(as_)
         if pd.notna(home_margin):
             # straight up
             if pd.notna(p.get("model_margin")):
                 su_n += 1
                 pick_home = p["model_margin"] > 0
                 su_hit += int(pick_home == (home_margin > 0))
-            # against the spread (did our value side cover?)
+            # against the spread (did our value side cover?). spread_line is
+            # positive when the home team is favored, so the home team covers when
+            # it beats that number: home_margin - spread > 0. (A push, ==0, is
+            # skipped — it's neither a win nor a loss.)
             side, spread = p.get("value_side"), p.get("mkt_spread")
             if isinstance(side, str) and pd.notna(spread):
-                ats_n += 1
-                cover_margin = home_margin + spread  # >0 = home covered
-                covered_home = cover_margin > 0
-                ats_hit += int((side == p["home"]) == covered_home)
+                cover_margin = home_margin - spread   # >0 = home covered, 0 = push
+                if cover_margin != 0:
+                    ats_n += 1
+                    covered_home = cover_margin > 0
+                    ats_hit += int((side == p["home"]) == covered_home)
         if pd.notna(total_pts) and isinstance(p.get("total_side"), str) and pd.notna(p.get("total_line")):
             tot_n += 1
             went_over = total_pts > p["total_line"]
@@ -258,3 +266,61 @@ def grade_projections(proj: pd.DataFrame, schedule: pd.DataFrame) -> dict:
     if tot_n:
         out["total"] = {"hit": tot_hit, "n": tot_n, "pct": tot_hit / tot_n}
     return out
+
+
+def graded_picks(proj: pd.DataFrame, schedule: pd.DataFrame) -> pd.DataFrame:
+    """Itemized ledger — every stored pick with its line, our number, and outcome.
+
+    One row per graded market (spread + total) so the exact picks that hit and
+    missed are visible, not just the aggregate rate. Empty until games settle.
+    Columns: week, game, market, pick, line, our_number, final, result.
+    """
+    if proj is None or proj.empty or schedule is None or schedule.empty:
+        return pd.DataFrame()
+    if "result" not in schedule.columns or "game_id" not in schedule.columns:
+        return pd.DataFrame()
+    res = schedule.dropna(subset=["result"]).set_index("game_id")
+    if res.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, p in proj.iterrows():
+        gid = p.get("game_id")
+        if gid not in res.index:
+            continue
+        r = res.loc[gid]
+        home, away = p.get("home"), p.get("away")
+        game = f"{away} @ {home}"
+        wk = int(p["week"]) if pd.notna(p.get("week")) else None
+        hm = r.get("result")                      # home margin
+        hs, as_ = r.get("home_score"), r.get("away_score")
+        total_pts = (float(hs) + float(as_)) if pd.notna(hs) and pd.notna(as_) else np.nan
+        # spread pick — line shown from the picked side's perspective
+        side, sp = p.get("value_side"), p.get("mkt_spread")
+        if isinstance(side, str) and pd.notna(sp) and pd.notna(hm):
+            cover = float(hm) - float(sp)
+            outcome = ("Push" if cover == 0
+                       else ("Win" if ((side == home) == (cover > 0)) else "Loss"))
+            picked_line = (-float(sp)) if side == home else float(sp)
+            rows.append({
+                "week": wk, "game": game, "market": "Spread",
+                "pick": f"{side} {picked_line:+.1f}", "line": round(float(sp), 1),
+                "our_number": (round(float(p["blended_margin"]), 1)
+                               if pd.notna(p.get("blended_margin")) else None),
+                "final": f"{home} {hm:+.0f}", "result": outcome,
+            })
+        # total pick
+        ts, tl = p.get("total_side"), p.get("total_line")
+        if isinstance(ts, str) and pd.notna(tl) and pd.notna(total_pts) and total_pts != tl:
+            went_over = total_pts > float(tl)
+            outcome = "Win" if ((ts == "Over") == went_over) else "Loss"
+            rows.append({
+                "week": wk, "game": game, "market": "Total",
+                "pick": f"{ts} {float(tl):.1f}", "line": round(float(tl), 1),
+                "our_number": (round(float(p["model_total"]), 1)
+                               if pd.notna(p.get("model_total")) else None),
+                "final": f"{total_pts:.0f}", "result": outcome,
+            })
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    return df.sort_values(["week", "game", "market"], ascending=[False, True, True]).reset_index(drop=True)

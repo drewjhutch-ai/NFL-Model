@@ -51,7 +51,7 @@ def grade_roi(proj: pd.DataFrame, schedule: pd.DataFrame) -> dict:
         # spread pick
         side, sp = p.get("value_side"), p.get("mkt_spread")
         if isinstance(side, str) and pd.notna(sp) and pd.notna(hm):
-            cover = hm + sp                       # >0 home covered, 0 push
+            cover = hm - sp                       # >0 home covered, 0 push (spread_line + = home favored)
             if cover != 0:
                 won = (side == p["home"]) == (cover > 0)
                 rec["spread"][0 if won else 1] += 1
