@@ -16,6 +16,7 @@ import streamlit as st
 
 import config
 from data import betengine, betting, history, loaders, props
+from ui import week as week_mod
 from data import odds_providers as op
 
 _BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
@@ -293,8 +294,24 @@ def _report_card(extras) -> None:
         if grade:
             st.markdown("**This season — our graded picks:**")
             cols = st.columns(len(grade))
+            _lbl = {"su": "Straight-up", "ats": "ATS (spread)", "total": "Over/Under"}
             for col, (k, v) in zip(cols, grade.items()):
-                col.metric(k.upper(), f"{v['pct']*100:.0f}%", f"{v['hit']}/{v['n']}")
+                col.metric(_lbl.get(k, k.upper()), f"{v['pct']*100:.0f}%", f"{v['hit']}/{v['n']}")
+            # itemized: every pick, so you can see which hit and which missed
+            picks_tbl = history.graded_picks(proj, schedule)
+            if not picks_tbl.empty:
+                wins = int((picks_tbl["result"] == "Win").sum())
+                losses = int((picks_tbl["result"] == "Loss").sum())
+                with st.expander(f"Every graded pick — {wins}-{losses} on the board"):
+                    show = picks_tbl.rename(columns={
+                        "week": "Wk", "game": "Game", "market": "Market", "pick": "Our pick",
+                        "our_number": "Our #", "final": "Final", "result": "Result"})
+                    show = show.drop(columns=["line"], errors="ignore")
+                    st.dataframe(show, width="stretch", hide_index=True, column_config={
+                        "Result": st.column_config.TextColumn("Result", help="Win / Loss / Push vs the line we logged."),
+                    })
+                    st.caption("Each pick is graded against the line frozen when we made it. "
+                               "Spread: home-favored lines are positive. This is the honest per-pick record.")
         else:
             st.caption("The live report card fills in as the season's picks are graded "
                        "(the Evolution Engine logs projections each week).")
@@ -584,11 +601,12 @@ def render(off, deff, schedule, extras) -> None:
     prov = op.get_odds_provider()
 
     s = schedule[(schedule["season"] == season) & schedule["spread_line"].notna()]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    wk = st.selectbox(f"Week ({season})", weeks,
-                      index=weeks.index(default_wk) if default_wk in weeks else 0)
+    wk = week_mod.selected(schedule, season)   # follows the global week control
+    st.caption(f"Week {wk} · {season}")
     games = s[s["week"] == wk]
+    if games.empty:
+        st.info(f"No posted game lines for Week {wk} yet — the desk fills in as books release them.")
+        return
 
     scan = _scan_slate(games, off, deff, extras, live, prov)
     _desk_header(scan, live)

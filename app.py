@@ -9,7 +9,7 @@ import streamlit as st
 import config
 from data import loaders, pipeline
 from ui import (betting, clv, gamebets, home, injuries, kit, league, longodds,
-                matchups, picks, team_tendencies, touchdowns)
+                matchups, picks, team_tendencies, touchdowns, week)
 from ui import players as ui_players
 
 st.set_page_config(page_title="NFL Model", page_icon="◆", layout="wide")
@@ -96,7 +96,7 @@ def _safe(render_fn, *args) -> None:
 def _week_label(schedule, live: bool) -> str:
     season = config.CURRENT_SEASON
     if live and schedule is not None and not schedule.empty:
-        wk = loaders.current_week(schedule, season)
+        wk = week.selected(schedule, season)   # reflects the global picker
         if wk:
             return f"Week {int(wk)} · {season}"
     return f"{season} · offseason"
@@ -112,6 +112,9 @@ def main() -> None:
         return
 
     sidebar(live)
+    # One global week control: auto-set to the current week, followed by every
+    # tab (via ui.week.selected), so the week is chosen once, not per tab.
+    week.render_picker(schedule, config.CURRENT_SEASON)
 
     week_txt = _week_label(schedule, live)
     st.markdown(kit.brand_header(week_txt, live), unsafe_allow_html=True)

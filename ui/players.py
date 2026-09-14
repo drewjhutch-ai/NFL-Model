@@ -13,6 +13,7 @@ import streamlit as st
 import config
 from data import betengine, betting, loaders, players, props
 from ui import kit
+from ui import week as week_mod
 from ui.components import fmt, ordinal
 
 
@@ -366,14 +367,12 @@ def render(off, deff, schedule, extras) -> None:
         return
 
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    cwk, cgm = st.columns([1, 3])
-    wk = cwk.selectbox(f"Week ({season})", weeks,
-                       index=weeks.index(default_wk) if default_wk in weeks else 0, key="pl_wk")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
     games = s[s["week"] == wk]
     labels = ["🔎 Whole slate"] + [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]
-    pick = cgm.selectbox("Matchup", labels, key="pl_game")
+    if st.session_state.get("pl_game") not in labels:   # heal a stale pick after a week change
+        st.session_state.pop("pl_game", None)
+    pick = st.selectbox(f"Matchup · Week {wk}", labels, key="pl_game")
 
     if pick == "🔎 Whole slate":
         _auto_picks(stats, off, deff, extras, games)

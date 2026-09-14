@@ -18,6 +18,7 @@ import streamlit as st
 import config
 from data import betengine, loaders, mismatch, props
 from ui import kit
+from ui import week as week_mod
 
 
 def _kpi_header(board, prop_df) -> None:
@@ -299,10 +300,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         _pick_log()
         return
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    wk = st.selectbox(f"Week ({season})", weeks,
-                      index=weeks.index(default_wk) if default_wk in weeks else 0, key="picks_week")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
+    st.caption(f"Week {wk} · {season}")
     games = s[s["week"] == wk]
     gp = _games_played(extras)
     # game-market board needs posted lines; prop leans do not — merge both so

@@ -16,6 +16,7 @@ import streamlit as st
 import config
 from data import betengine, betting, clv as clvmod, history, injuries as injmod, loaders, props
 from ui import kit
+from ui import week as week_mod
 
 _BACKTEST_FILE = Path(__file__).resolve().parents[1] / "backtest_results.json"
 
@@ -261,10 +262,7 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         st.info("The weekly slate appears once the current-season schedule is posted.")
         return
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    wk = st.selectbox(f"Week ({season})", weeks,
-                      index=weeks.index(default_wk) if default_wk in weeks else 0, key="home_week")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
     games = s[s["week"] == wk]
 
     left, right = st.columns([1.55, 1])

@@ -13,6 +13,7 @@ import streamlit as st
 
 import config
 from data import loaders, touchdowns as td
+from ui import week as week_mod
 
 
 def _card(col, r) -> None:
@@ -138,10 +139,8 @@ def render(off, deff, blitz, schedule, extras) -> None:
         st.info("Schedule not loaded for the current season yet.")
         return
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    wk = st.selectbox(f"Week ({season})", weeks,
-                      index=weeks.index(default_wk) if default_wk in weeks else 0, key="td_wk")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
+    st.caption(f"Week {wk} · {season}")
     games = s[s["week"] == wk]
     board = td.td_board(off, deff, extras, games)
     if board.empty:

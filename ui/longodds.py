@@ -20,6 +20,7 @@ import streamlit as st
 
 import config
 from data import betengine, edges, loaders, props
+from ui import week as week_mod
 
 # A "long" price. +200 = 3.00 decimal = the market implies <= 33%.
 _LONG_AMERICAN = 200
@@ -275,10 +276,8 @@ def render(off: pd.DataFrame, deff: pd.DataFrame, schedule: pd.DataFrame,
         st.info("Schedule not loaded for the current season yet.")
         return
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    wk = st.selectbox(f"Week ({season})", weeks,
-                      index=weeks.index(default_wk) if default_wk in weeks else 0, key="long_week")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
+    st.caption(f"Week {wk} · {season}")
     games = s[s["week"] == wk]
     gp = _games_played(extras)
 

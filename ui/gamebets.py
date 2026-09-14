@@ -16,6 +16,7 @@ import config
 from data import betengine, betting, loaders, mismatch, props, simulation
 from data import sharp_value as sv
 from ui import kit
+from ui import week as week_mod
 
 
 # --- broadcast header --------------------------------------------------------
@@ -228,15 +229,13 @@ def render(off, deff, blitz, schedule, extras) -> None:
         st.info("Schedule not loaded for the current season yet.")
         return
     s = schedule[schedule["season"] == season]
-    weeks = sorted(int(w) for w in s["week"].unique())
-    default_wk = loaders.current_week(schedule, season) or weeks[0]
-    cwk, cgm = st.columns([1, 3])
-    wk = cwk.selectbox(f"Week ({season})", weeks,
-                       index=weeks.index(default_wk) if default_wk in weeks else 0, key="gb_wk")
+    wk = week_mod.selected(schedule, season)   # follows the global week control
     games = s[s["week"] == wk].sort_values("gameday" if "gameday" in s.columns else "week")
     labels = [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]
     if not labels:
         st.info("No games listed for this week.")
         return
-    pick = cgm.selectbox("Game", labels, key="gb_game")
+    if st.session_state.get("gb_game") not in labels:   # heal a stale pick after a week change
+        st.session_state.pop("gb_game", None)
+    pick = st.selectbox(f"Game · Week {wk}", labels, key="gb_game")
     _breakdown(off, deff, extras, games.iloc[labels.index(pick)])
