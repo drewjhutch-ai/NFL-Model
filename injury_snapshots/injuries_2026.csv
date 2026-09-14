@@ -469,3 +469,581 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-02,2026,,IND,Charvarius Ward,CB,Questionable,,sleeper
 2026-09-02,2026,,TB,Josh Hayes,CB,IR,,sleeper
 2026-09-02,2026,,DET,Kendrick Law,WR,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Josh Sweat,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ARI,Blake Gillikin,P,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ARI,Garrett Williams,CB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,ARI,Isaiah Adams,G,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,ARI,Dadrion Taylor-Demerson,S,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,ARI,Will Johnson,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ARI,Jeremiyah Love,RB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Jake Matthews,T,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,ATL,Za'Darius Smith,DE,Questionable,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Da'Shawn Hand,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Jawaan Taylor,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Tua Tagovailoa,QB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,ATL,Kyle Hinton,G,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Brandon Dorlus,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Michael Penix Jr.,QB,Out,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Billy Bowman Jr.,CB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Cameron Williams,T,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,ATL,Zachariah Branch,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,ATL,Kendal Daniels,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,BAL,Calais Campbell,DE,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,BAL,Nnamdi Madubuike,DT,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,BAL,Zay Flowers,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,BAL,Devontez Walker,WR,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,BAL,Teddye Buchanan,LB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,BUF,Ty Johnson,RB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,BUF,Jordan Hancock,CB,Questionable,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,BUF,T.J. Sanders,DE,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CAR,Bobby Brown III,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CAR,Patrick Jones II,LB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CAR,Jonathon Brooks,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CHI,Grady Jarrett,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CHI,Joe Thuney,G,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CHI,Xavier Woods,S,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CHI,Tyson Bagent,QB,Questionable,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CHI,Rome Odunze,WR,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CHI,Ozzy Trapilo,T,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CIN,Jonathan Allen,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CIN,B.J. Hill,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CIN,Dexter Lawrence,DT,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CIN,Tee Higgins,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CIN,Ja'Marr Chase,WR,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CIN,DJ Turner II,CB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CIN,Shemar Stewart,DE,Doubtful,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CLE,Maliek Collins,DT,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,CLE,Teven Jenkins,G,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,CLE,Carson Schwesinger,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,CLE,Parker Brailsford,C,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,DAL,Jonathan Bullard,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DAL,Malik Davis,RB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,DAL,Luke Schoonmaker,TE,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,DAL,Ajani Cornelius,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DEN,Marvin Mims Jr.,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Trevor Nowaske,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Christian Izien,S,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Mekhi Wingo,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Thomas Harper,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Ennis Rakestraw Jr.,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Derrick Moore,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Jimmy Rolder,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,DET,Keith Abney II,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Javon Hargrave,DT,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Aaron Banks,G,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Devonte Wyatt,DT,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Zach Bako-Bewele,T,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Ty'Ron Hopper,LB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Jordan Morgan,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Barryn Sorrell,LB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,GB,Warren Brinson,DT,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,HOU,Trent Brown,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,HOU,Will Anderson Jr.,DE,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,HOU,Kayden McDonald,DT,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,HOU,Wade Woodaz,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,DeForest Buckner,DT,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,IND,Grover Stewart,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,Charvarius Ward,CB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,Andrew Ogletree,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,Alec Pierce,WR,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,Anthony Richardson,QB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,Austin Ajiake,LB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,IND,Sedrick Van Pran-Granger,C,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,IND,A.J. Haulcy,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,JAX,Jakobi Meyers,WR,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,JAX,Cole Van Lanen,T,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,JAX,Anton Harrison,T,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,JAX,LeQuint Allen Jr.,RB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Chris Jones,DT,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,KC,Patrick Mahomes,QB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,L'Jarius Sneed,CB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Trey Smith,G,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Jack Cochrane,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Chamarri Conner,S,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,KC,Rashee Rice,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Xavier Worthy,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,Josh Simmons,T,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,KC,Ashton Gillotte,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,KC,R Mason Thomas,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Aaron Donald,DE,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,LAR,Tyler Higbee,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Myles Garrett,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Alaric Jackson,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Grant Stuard,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Jaylen Watson,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAR,Byron Young,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAC,Khalil Mack,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAC,Deane Leonard,CB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,LAC,Keaton Mitchell,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAC,Tuli Tuipulotu,DE,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAC,R.J. Mickens,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LAC,Brenen Thompson,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,LV,Brock Bowers,TE,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,LV,Ashton Jeanty,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIA,Ronnie Harrison,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIA,Dante Trader Jr.,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIA,Will Kacmarek,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIA,Seydou Traore,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIN,Harrison Smith,S,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIN,Christian Darrisaw,T,,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,MIN,Caleb Tiernan,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIN,Jakobe Thomas,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,MIN,Jacob Thomas,S,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NE,Christian Barmore,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NE,Ben Brown,C,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NE,TreVeyon Henderson,RB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NO,Cameron Jordan,LB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,NO,Davon Godchaux,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NO,Alvin Kamara,RB,Questionable,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NO,Audric Estimé,RB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NO,Oscar Delp,TE,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NYG,Shelby Harris,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYG,Patrick Ricard,FB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYG,Andrew Thomas,T,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYG,Malik Nabers,WR,Questionable,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYG,Bryan Hudson,C,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYG,Theo Johnson,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Tim Patrick,WR,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Kene Nwangwu,RB,Doubtful,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Joseph Ossai,DE,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Breece Hall,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Isaiah Davis,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYJ,Kenyon Sadiq,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,NYJ,D'Angelo Ponds,CB,Doubtful,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,PHI,Jonathan Greenard,LB,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,PHI,Eli Stowers,TE,Out,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,PIT,Joey Porter Jr.,CB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Josh Jones,T,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Ty Okada,S,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,SEA,Emanuel Wilson,RB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Anthony Bradford,G,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,AJ Barner,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Tory Horton,WR,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Nick Emmanwori,S,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SEA,Julian Neal,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Kyle Juszczyk,FB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,George Kittle,TE,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Dre Greenlaw,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Luke Gifford,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Nick Bosa,DE,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Renardo Green,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Upton Stout,CB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Alfred Collins,DT,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,SF,James Thompson Jr.,DT,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Romello Height,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,SF,Gracen Halton,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Justin Skule,T,Doubtful,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Christian Rozeboom,LB,Questionable,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Sean Tucker,RB,Doubtful,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Jalen McMillan,WR,Doubtful,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Emeka Egbuka,WR,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Rueben Bain Jr.,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,TB,Billy Schrauth,G,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,TEN,Cedric Gray,LB,Out,Did Not Participate In Practice,nflverse
+2026-09-14,2026,1.0,TEN,Keldric Faulk,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Marcus Mariota,QB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Daron Payne,DT,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Nick Allegretti,C,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Charles Omenihu,DE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Javon Kinlaw,DT,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,K'Lavon Chaisson,LB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Odafe Oweh,LB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Jordan Magee,LB,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Ben Sinnott,TE,,Full Participation in Practice,nflverse
+2026-09-14,2026,1.0,WAS,Jacory Croskey-Merritt,RB,,Limited Participation in Practice,nflverse
+2026-09-14,2026,1.0,ARI,Trey Benson,RB,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Chase Bisontis,G,IR,,sleeper
+2026-09-14,2026,1.0,ARI,James Conner,RB,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Zach Carter,DL,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Carson Beck,QB,Out,,sleeper
+2026-09-14,2026,1.0,ARI,Joey Blount,DB,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Kaleb Proctor,DT,IR,,sleeper
+2026-09-14,2026,1.0,ARI,Kitan Crawford,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,ARI,Reggie Virgil,WR,Out,,sleeper
+2026-09-14,2026,1.0,ARI,Andrew Billings,DT,Out,,sleeper
+2026-09-14,2026,1.0,ARI,Tip Reiman,TE,PUP,,sleeper
+2026-09-14,2026,1.0,ARI,Jameson Geers,TE,IR,,sleeper
+2026-09-14,2026,1.0,ATL,JD Bertrand,LB,IR,,sleeper
+2026-09-14,2026,1.0,ATL,Anterio Thompson,DT,PUP,,sleeper
+2026-09-14,2026,1.0,ATL,Trey Sermon,RB,IR,,sleeper
+2026-09-14,2026,1.0,ATL,Chris Lindstrom,G,Questionable,,sleeper
+2026-09-14,2026,1.0,ATL,Christian Harris,LB,Out,,sleeper
+2026-09-14,2026,1.0,ATL,DeAngelo Malone,DL,PUP,,sleeper
+2026-09-14,2026,1.0,ATL,Billy Bowman,DB,Out,,sleeper
+2026-09-14,2026,1.0,ATL,James Pearce,DL,Suspended,,sleeper
+2026-09-14,2026,1.0,ATL,Tyrone Wheatley,OL,Questionable,,sleeper
+2026-09-14,2026,1.0,ATL,Jalon Walker,DL,IR,,sleeper
+2026-09-14,2026,1.0,ATL,Michael Penix,QB,Out,,sleeper
+2026-09-14,2026,1.0,ATL,Ethan Onianwa,G,Out,,sleeper
+2026-09-14,2026,1.0,ATL,Storm Norton,T,PUP,,sleeper
+2026-09-14,2026,1.0,ATL,Beaux Collins,WR,IR,,sleeper
+2026-09-14,2026,1.0,BAL,Adam Randall,RB,IR,,sleeper
+2026-09-14,2026,1.0,BAL,Elijah Sarratt,WR,Out,,sleeper
+2026-09-14,2026,1.0,BAL,Danny Pinter,G,IR,,sleeper
+2026-09-14,2026,1.0,BAL,Skylar Thompson,QB,IR,,sleeper
+2026-09-14,2026,1.0,BAL,Bilhal Kone,CB,IR,,sleeper
+2026-09-14,2026,1.0,BAL,T.J. Tampa,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,BAL,Jahquez Robinson,DB,IR,,sleeper
+2026-09-14,2026,1.0,BAL,Chandler Rivers,CB,Out,,sleeper
+2026-09-14,2026,1.0,BAL,Ja'Kobi Lane,WR,Out,,sleeper
+2026-09-14,2026,1.0,BAL,Emery Jones,OL,Out,,sleeper
+2026-09-14,2026,1.0,BAL,Joe Fagnano,QB,Out,,sleeper
+2026-09-14,2026,1.0,BUF,Mike Danna,DE,Out,,sleeper
+2026-09-14,2026,1.0,BUF,Cole Bishop,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,BUF,Jude Bowry,OT,Out,,sleeper
+2026-09-14,2026,1.0,BUF,Zane Durant,DT,IR,,sleeper
+2026-09-14,2026,1.0,BUF,Tyrell Shavers,WR,PUP,,sleeper
+2026-09-14,2026,1.0,BUF,Skyler Bell,WR,Out,,sleeper
+2026-09-14,2026,1.0,BUF,Phidarian Mathis,DL,Suspended,,sleeper
+2026-09-14,2026,1.0,BUF,Jedrick Wills,OT,Questionable,,sleeper
+2026-09-14,2026,1.0,BUF,Dorian Strong,CB,PUP,,sleeper
+2026-09-14,2026,1.0,BUF,Jalon Kilgore,CB,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Taylor Moton,T,PUP,,sleeper
+2026-09-14,2026,1.0,CAR,Tershawn Wharton,DT,PUP,,sleeper
+2026-09-14,2026,1.0,CAR,John Metchie,WR,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Bam Martin-Scott,LB,IR,,sleeper
+2026-09-14,2026,1.0,CAR,Patrick Jones,DE,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Haynes King,QB,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Chris Brazzell,WR,IR,,sleeper
+2026-09-14,2026,1.0,CAR,Ikem Ekwonu,T,PUP,,sleeper
+2026-09-14,2026,1.0,CAR,Trevor Etienne,RB,IR,,sleeper
+2026-09-14,2026,1.0,CAR,Ja'Tavion Sanders,TE,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Zakee Wheatley,DB,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Cam Jackson,DT,Out,,sleeper
+2026-09-14,2026,1.0,CAR,Brady Christensen,T,IR,,sleeper
+2026-09-14,2026,1.0,CAR,Nic Scourton,DL,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Miller Moss,QB,Out,,sleeper
+2026-09-14,2026,1.0,CHI,Jordan McFadden,OL,Out,,sleeper
+2026-09-14,2026,1.0,CHI,Tony Fields,LB,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Nikola Kalinic,TE,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Tyrique Stevenson,CB,Questionable,,sleeper
+2026-09-14,2026,1.0,CHI,Brittain Brown,RB,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Kyler Gordon,DB,PUP,,sleeper
+2026-09-14,2026,1.0,CHI,Noah Sewell,LB,PUP,,sleeper
+2026-09-14,2026,1.0,CHI,Hayden Large,TE,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Coby Bryant,DB,IR,,sleeper
+2026-09-14,2026,1.0,CHI,Shemar Turner,DE,PUP,,sleeper
+2026-09-14,2026,1.0,CHI,Jamree Kromah,DL,Out,,sleeper
+2026-09-14,2026,1.0,CHI,Nephi Sewell,LB,IR,,sleeper
+2026-09-14,2026,1.0,CIN,Josh Newton,CB,Out,,sleeper
+2026-09-14,2026,1.0,CIN,Landon Robinson,NT,Out,,sleeper
+2026-09-14,2026,1.0,CIN,Ja'Sir Taylor,DB,IR,,sleeper
+2026-09-14,2026,1.0,CIN,Jack Endries,TE,Out,,sleeper
+2026-09-14,2026,1.0,CIN,Connor Lew,C,Out,,sleeper
+2026-09-14,2026,1.0,CIN,Myles Hinton,OT,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Toriano Pride,CB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Kalia Davis,DL,IR,,sleeper
+2026-09-14,2026,1.0,CLE,Justin Jefferson,LB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Noah Igbinoghene,CB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Daniel Thomas,DB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Alex Wright,DL,IR,,sleeper
+2026-09-14,2026,1.0,CLE,Dylan Sampson,RB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Dillon Gabriel,QB,IR,,sleeper
+2026-09-14,2026,1.0,CLE,Damarri Mathis,DB,IR,,sleeper
+2026-09-14,2026,1.0,CLE,Jeremiah Owusu-Koramoah,LB,PUP,,sleeper
+2026-09-14,2026,1.0,CLE,Kendrick Green,C,IR,,sleeper
+2026-09-14,2026,1.0,CLE,Taylen Green,QB,Out,,sleeper
+2026-09-14,2026,1.0,CLE,Joe Royer,TE,PUP,,sleeper
+2026-09-14,2026,1.0,DAL,Tyrus Wheat,DE,Out,,sleeper
+2026-09-14,2026,1.0,DAL,Kelvin Gilliam,DT,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Devin Moore,CB,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Tyler Smith,OL,IR,,sleeper
+2026-09-14,2026,1.0,DAL,DeMarvion Overshown,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,DAL,DJ Rogers,TE,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Malik Hooker,DB,Out,,sleeper
+2026-09-14,2026,1.0,DAL,Marist Liufau,LB,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Camden Brown,WR,Out,,sleeper
+2026-09-14,2026,1.0,DAL,Matt Hennessy,OL,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Princeton Fant,TE,IR,,sleeper
+2026-09-14,2026,1.0,DAL,Caelen Carson,DB,Out,,sleeper
+2026-09-14,2026,1.0,DAL,Israel Abanikanda,RB,Out,,sleeper
+2026-09-14,2026,1.0,DEN,Levelle Bailey,LB,IR,,sleeper
+2026-09-14,2026,1.0,DEN,Nick Gargiulo,OL,PUP,,sleeper
+2026-09-14,2026,1.0,DEN,Caleb Lohner,TE,IR,,sleeper
+2026-09-14,2026,1.0,DEN,Matt Henningsen,DE,IR,,sleeper
+2026-09-14,2026,1.0,DEN,Frank Crum,OT,IR,,sleeper
+2026-09-14,2026,1.0,DEN,Michael Deiter,OL,IR,,sleeper
+2026-09-14,2026,1.0,DET,Cade Mays,OL,IR,,sleeper
+2026-09-14,2026,1.0,DET,Brian Branch,DB,PUP,,sleeper
+2026-09-14,2026,1.0,DET,Ennis Rakestraw,DB,Out,,sleeper
+2026-09-14,2026,1.0,DET,Isiah Pacheco,RB,IR,,sleeper
+2026-09-14,2026,1.0,DET,Kerby Joseph,DB,PUP,,sleeper
+2026-09-14,2026,1.0,DET,Giovanni Manu,OL,PUP,,sleeper
+2026-09-14,2026,1.0,DET,Payton Turner,DE,IR,,sleeper
+2026-09-14,2026,1.0,DET,Damone Clark,LB,IR,,sleeper
+2026-09-14,2026,1.0,DET,Christian Mahogany,OL,Questionable,,sleeper
+2026-09-14,2026,1.0,DET,Ahmed Hassanein,DE,Out,,sleeper
+2026-09-14,2026,1.0,DET,Kendrick Law,WR,IR,,sleeper
+2026-09-14,2026,1.0,GB,Pierre Strong,RB,Questionable,,sleeper
+2026-09-14,2026,1.0,GB,Collin Oliver,DE,IR,,sleeper
+2026-09-14,2026,1.0,GB,Jordon Riley,DL,PUP,,sleeper
+2026-09-14,2026,1.0,GB,Savion Williams,WR,IR,,sleeper
+2026-09-14,2026,1.0,GB,Brandon Cisse,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,GB,Thomas Yassmin,TE,IR,,sleeper
+2026-09-14,2026,1.0,GB,Travis Glover,OT,Out,,sleeper
+2026-09-14,2026,1.0,GB,Micah Parsons,LB,PUP,,sleeper
+2026-09-14,2026,1.0,GB,Luke Musgrave,TE,PUP,,sleeper
+2026-09-14,2026,1.0,GB,Josh Whyle,TE,Questionable,,sleeper
+2026-09-14,2026,1.0,GB,Anthony Campbell,DT,Out,,sleeper
+2026-09-14,2026,1.0,GB,Bo Melton,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,GB,Marlon Jones,CB,IR,,sleeper
+2026-09-14,2026,1.0,GB,Trey Dean,DB,IR,,sleeper
+2026-09-14,2026,1.0,GB,J. Michael Sturdivant,WR,Out,,sleeper
+2026-09-14,2026,1.0,GB,Johnathan Baldwin,DB,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Jake Hummel,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,HOU,Henry To'oTo'o,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,HOU,M.J. Stewart,DB,PUP,,sleeper
+2026-09-14,2026,1.0,HOU,Jaden Crumedy,DT,Out,,sleeper
+2026-09-14,2026,1.0,HOU,E.J. Speed,LB,PUP,,sleeper
+2026-09-14,2026,1.0,HOU,Braden Smith,OL,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Brevin Jordan,TE,Out,,sleeper
+2026-09-14,2026,1.0,HOU,Ali Gaye,DE,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Nate Thomas,OL,Out,,sleeper
+2026-09-14,2026,1.0,HOU,Aiden Fisher,LB,Out,,sleeper
+2026-09-14,2026,1.0,HOU,Dylan Horton,DL,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Graham Mertz,QB,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Jayden Higgins,WR,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Febechi Nwaiwu,OL,Out,,sleeper
+2026-09-14,2026,1.0,HOU,Sam Hagen,OL,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Ja'Marcus Ingram,CB,IR,,sleeper
+2026-09-14,2026,1.0,HOU,Tank Dell,WR,IR,,sleeper
+2026-09-14,2026,1.0,HOU,K.C. Ossai,LB,IR,,sleeper
+2026-09-14,2026,1.0,IND,Will Mallory,TE,IR,,sleeper
+2026-09-14,2026,1.0,IND,George Gumbs,DE,Out,,sleeper
+2026-09-14,2026,1.0,IND,Riley Leonard,QB,Out,,sleeper
+2026-09-14,2026,1.0,IND,Carson Towt,TE,IR,,sleeper
+2026-09-14,2026,1.0,IND,Dalton Tucker,OL,Out,,sleeper
+2026-09-14,2026,1.0,IND,D.J. Montgomery,WR,IR,,sleeper
+2026-09-14,2026,1.0,IND,DJ Giddens,RB,Out,,sleeper
+2026-09-14,2026,1.0,IND,Johnathan Edwards,DB,Out,,sleeper
+2026-09-14,2026,1.0,IND,Cam Taylor-Britt,DB,Suspended,,sleeper
+2026-09-14,2026,1.0,IND,Cameron Mitchell,DB,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Zach Durfee,DE,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Patrick Mekari,OL,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Wesley Williams,DE,Out,,sleeper
+2026-09-14,2026,1.0,JAX,Jalen Huskey,DB,Out,,sleeper
+2026-09-14,2026,1.0,JAX,Parker Hughes,LB,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Sam Mustipher,OL,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Brian Thomas,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,JAX,Tanner Koziol,TE,Out,,sleeper
+2026-09-14,2026,1.0,JAX,Quinn Ewers,QB,Out,,sleeper
+2026-09-14,2026,1.0,JAX,Jared Bartlett,LB,IR,,sleeper
+2026-09-14,2026,1.0,JAX,Garrett DiGiorgio,G,IR,,sleeper
+2026-09-14,2026,1.0,JAX,B.J. Green,DE,Questionable,,sleeper
+2026-09-14,2026,1.0,JAX,Daniel Faalele,T,Out,,sleeper
+2026-09-14,2026,1.0,KC,Omarr Norman-Lott,DT,PUP,,sleeper
+2026-09-14,2026,1.0,KC,John Michael Gyllenborg,TE,IR,,sleeper
+2026-09-14,2026,1.0,KC,Jimmy Holiday,WR,IR,,sleeper
+2026-09-14,2026,1.0,KC,Ethan Downs,DE,IR,,sleeper
+2026-09-14,2026,1.0,KC,Jeff Caldwell,WR,IR,,sleeper
+2026-09-14,2026,1.0,LAC,RJ Mickens,DB,Out,,sleeper
+2026-09-14,2026,1.0,LAC,Branson Taylor,OL,IR,,sleeper
+2026-09-14,2026,1.0,LAC,Ladd McConkey,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,LAC,Tyler Biadasz,C,IR,,sleeper
+2026-09-14,2026,1.0,LAC,Alex Harkey,OT,Out,,sleeper
+2026-09-14,2026,1.0,LAC,Denzel Perryman,LB,IR,,sleeper
+2026-09-14,2026,1.0,LAC,Logan Taylor,G,Out,,sleeper
+2026-09-14,2026,1.0,LAC,Elijah Molden,CB,Questionable,,sleeper
+2026-09-14,2026,1.0,LAC,Scott Matlock,DT,IR,,sleeper
+2026-09-14,2026,1.0,LAC,Trevor Penning,T,Out,,sleeper
+2026-09-14,2026,1.0,LAC,KeAndre Lambert-Smith,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,LAC,Isaiah World,OT,PUP,,sleeper
+2026-09-14,2026,1.0,LAR,Duplicate Player,DE,Out,,sleeper
+2026-09-14,2026,1.0,LAR,CJ Daniels,WR,Out,,sleeper
+2026-09-14,2026,1.0,LAR,Tutu Atwell,WR,Out,,sleeper
+2026-09-14,2026,1.0,LAR,Kam Curl,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,LAR,Bill Murray,DT,Out,,sleeper
+2026-09-14,2026,1.0,LAR,Davis Allen,TE,Questionable,,sleeper
+2026-09-14,2026,1.0,LAR,Ty Simpson,QB,Out,,sleeper
+2026-09-14,2026,1.0,LAR,Eddie Walls,DL,IR,,sleeper
+2026-09-14,2026,1.0,LAR,Matthew Caldwell,QB,IR,,sleeper
+2026-09-14,2026,1.0,LAR,Keir Thomas,DE,IR,,sleeper
+2026-09-14,2026,1.0,LAR,Max Klare,TE,Out,,sleeper
+2026-09-14,2026,1.0,LAR,Justin Dedich,OL,IR,,sleeper
+2026-09-14,2026,1.0,LAR,Keagen Trost,OL,IR,,sleeper
+2026-09-14,2026,1.0,LV,Dalton Johnson,DB,Out,,sleeper
+2026-09-14,2026,1.0,LV,Darien Porter,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,LV,Corey Rucker,WR,IR,,sleeper
+2026-09-14,2026,1.0,LV,Justin Pickett,G,IR,,sleeper
+2026-09-14,2026,1.0,LV,JJ Pegues,DT,Out,,sleeper
+2026-09-14,2026,1.0,LV,Keyron Crawford,DE,IR,,sleeper
+2026-09-14,2026,1.0,LV,Bryce Cabeldue,OT,Out,,sleeper
+2026-09-14,2026,1.0,LV,Aidan O'Connell,QB,Out,,sleeper
+2026-09-14,2026,1.0,LV,Brennan Jackson,DE,IR,,sleeper
+2026-09-14,2026,1.0,LV,Dont'e Thornton,WR,IR,,sleeper
+2026-09-14,2026,1.0,LV,Chigozie Anusiem,CB,IR,,sleeper
+2026-09-14,2026,1.0,LV,Darrell Luter,CB,Out,,sleeper
+2026-09-14,2026,1.0,LV,Justin Shorter,WR,IR,,sleeper
+2026-09-14,2026,1.0,LV,Cody Lindenberg,LB,Out,,sleeper
+2026-09-14,2026,1.0,LV,Carter Runyon,TE,IR,,sleeper
+2026-09-14,2026,1.0,LV,Chris Collier,RB,IR,,sleeper
+2026-09-14,2026,1.0,MIA,Kyle Louis,LB,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Kenneth Grant,DL,IR,,sleeper
+2026-09-14,2026,1.0,MIA,Justin Joly,TE,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Rene Konga,DL,IR,,sleeper
+2026-09-14,2026,1.0,MIA,Jalen Tolbert,WR,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Trey Moore,LB,IR,,sleeper
+2026-09-14,2026,1.0,MIA,Darrell Baker,CB,PUP,,sleeper
+2026-09-14,2026,1.0,MIA,Reese Taylor,CB,Out,,sleeper
+2026-09-14,2026,1.0,MIA,DJ Campbell,G,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Brady Cook,QB,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Tucker Addington,LS,Questionable,,sleeper
+2026-09-14,2026,1.0,MIA,Chukwuebuka Godrick,OL,Out,,sleeper
+2026-09-14,2026,1.0,MIA,Cole Turner,TE,IR,,sleeper
+2026-09-14,2026,1.0,MIA,Storm Duck,CB,PUP,,sleeper
+2026-09-14,2026,1.0,MIN,Naquan Jones,DT,Questionable,,sleeper
+2026-09-14,2026,1.0,MIN,Tyler Batty,DL,IR,,sleeper
+2026-09-14,2026,1.0,MIN,Demond Claiborne,RB,Out,,sleeper
+2026-09-14,2026,1.0,MIN,Taki Taimani,DL,IR,,sleeper
+2026-09-14,2026,1.0,MIN,Dontae Fleming,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,MIN,Michael Jurgens,OL,IR,,sleeper
+2026-09-14,2026,1.0,MIN,J.J. McCarthy,QB,Out,,sleeper
+2026-09-14,2026,1.0,MIN,Elijah Williams,DL,Out,,sleeper
+2026-09-14,2026,1.0,MIN,Nick Samac,C,Out,,sleeper
+2026-09-14,2026,1.0,MIN,Ben Yurosek,TE,IR,,sleeper
+2026-09-14,2026,1.0,MIN,Jamal Adams,SS,IR,,sleeper
+2026-09-14,2026,1.0,MIN,Tyreek Chappell,CB,IR,,sleeper
+2026-09-14,2026,1.0,MIN,Jacob Roberts,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,MIN,Jeshaun Jones,WR,Suspended,,sleeper
+2026-09-14,2026,1.0,MIN,Kyler Murray,QB,Out,,sleeper
+2026-09-14,2026,1.0,MIN,Zemaiah Vaughn,CB,Out,,sleeper
+2026-09-14,2026,1.0,NE,Behren Morton,QB,Out,,sleeper
+2026-09-14,2026,1.0,NE,Efton Chism,WR,Out,,sleeper
+2026-09-14,2026,1.0,NE,Bryce Baringer,P,IR,,sleeper
+2026-09-14,2026,1.0,NE,Khalil Jacobs,LB,IR,,sleeper
+2026-09-14,2026,1.0,NE,Myles Montgomery,RB,IR,,sleeper
+2026-09-14,2026,1.0,NE,Karon Prunty,DB,Out,,sleeper
+2026-09-14,2026,1.0,NE,Marcus Bryant,OL,IR,,sleeper
+2026-09-14,2026,1.0,NE,A.J. Brown,WR,IR,,sleeper
+2026-09-14,2026,1.0,NE,Julian Hill,TE,IR,,sleeper
+2026-09-14,2026,1.0,NE,Walter Rouse,OL,Out,,sleeper
+2026-09-14,2026,1.0,NE,Jeremiah Webb,WR,IR,,sleeper
+2026-09-14,2026,1.0,NE,Harold Landry,LB,PUP,,sleeper
+2026-09-14,2026,1.0,NE,Brenden Schooler,DB,PUP,,sleeper
+2026-09-14,2026,1.0,NO,Audric Estime,RB,IR,,sleeper
+2026-09-14,2026,1.0,NO,Rejzohn Wright,CB,IR,,sleeper
+2026-09-14,2026,1.0,NO,Zach Wilson,QB,Out,,sleeper
+2026-09-14,2026,1.0,NO,Mason Tipton,WR,PUP,,sleeper
+2026-09-14,2026,1.0,NO,David Long,CB,IR,,sleeper
+2026-09-14,2026,1.0,NO,Moliki Matavao,TE,IR,,sleeper
+2026-09-14,2026,1.0,NO,Jordyn Tyson,WR,IR,,sleeper
+2026-09-14,2026,1.0,NO,Khristian Boyd,DL,Out,,sleeper
+2026-09-14,2026,1.0,NO,Jaylan Ford,LB,IR,,sleeper
+2026-09-14,2026,1.0,NO,Ty Chandler,RB,IR,,sleeper
+2026-09-14,2026,1.0,NO,Dillon Radunz,OL,IR,,sleeper
+2026-09-14,2026,1.0,NO,Lorenzo Styles,DB,IR,,sleeper
+2026-09-14,2026,1.0,NO,John Ridgeway,DL,Out,,sleeper
+2026-09-14,2026,1.0,NO,Bryan Bresee,DT,IR,,sleeper
+2026-09-14,2026,1.0,NO,Nick Saldiveri,OL,PUP,,sleeper
+2026-09-14,2026,1.0,NYG,Jason Pinnock,CB,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Calvin Austin,WR,IR,,sleeper
+2026-09-14,2026,1.0,NYG,Gunner Olszewski,WR,IR,,sleeper
+2026-09-14,2026,1.0,NYG,Dalen Cambre,WR,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Thaddeus Dixon,CB,IR,,sleeper
+2026-09-14,2026,1.0,NYG,Nic Jones,CB,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Thomas Fidone,TE,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Bobby Jamison-Travis,DL,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Roy Robertson-Harris,DE,IR,,sleeper
+2026-09-14,2026,1.0,NYG,J.C. Davis,OT,Out,,sleeper
+2026-09-14,2026,1.0,NYG,Jarrick Bernard-Converse,CB,IR,,sleeper
+2026-09-14,2026,1.0,NYG,Korie Black,CB,IR,,sleeper
+2026-09-14,2026,1.0,NYG,Najee Harris,RB,Out,,sleeper
+2026-09-14,2026,1.0,NYJ,VJ Payne,DB,IR,,sleeper
+2026-09-14,2026,1.0,NYJ,Kingsley Jonathan,DT,IR,,sleeper
+2026-09-14,2026,1.0,NYJ,Tyler Baron,DE,PUP,,sleeper
+2026-09-14,2026,1.0,NYJ,Anez Cooper,G,IR,,sleeper
+2026-09-14,2026,1.0,NYJ,Blake Grupe,K,Out,,sleeper
+2026-09-14,2026,1.0,NYJ,Omar Cooper,WR,Out,,sleeper
+2026-09-14,2026,1.0,NYJ,Trevin Wallace,LB,Out,,sleeper
+2026-09-14,2026,1.0,NYJ,Minkah Fitzpatrick,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,NYJ,Tre Brown,CB,IR,,sleeper
+2026-09-14,2026,1.0,NYJ,Jarvis Brownlee,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,PHI,Johnny Wilson,WR,IR,,sleeper
+2026-09-14,2026,1.0,PHI,Micah Morris,G,Out,,sleeper
+2026-09-14,2026,1.0,PHI,Grant Calcaterra,TE,IR,,sleeper
+2026-09-14,2026,1.0,PHI,Jakorian Bennett,DB,IR,,sleeper
+2026-09-14,2026,1.0,PHI,Andre' Sam,DB,IR,,sleeper
+2026-09-14,2026,1.0,PHI,Elijah Moore,WR,Out,,sleeper
+2026-09-14,2026,1.0,PHI,Cole Payton,QB,Out,,sleeper
+2026-09-14,2026,1.0,PHI,Tanner McKee,QB,Out,,sleeper
+2026-09-14,2026,1.0,PHI,Tucker Large,DB,PUP,,sleeper
+2026-09-14,2026,1.0,PHI,Marcus Epps,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,PHI,Danny Gray,WR,Questionable,,sleeper
+2026-09-14,2026,1.0,PIT,Logan Lee,DL,IR,,sleeper
+2026-09-14,2026,1.0,PIT,Donte Kent,CB,PUP,,sleeper
+2026-09-14,2026,1.0,PIT,Gennings Dunker,OT,Out,,sleeper
+2026-09-14,2026,1.0,PIT,Will Howard,QB,Out,,sleeper
+2026-09-14,2026,1.0,PIT,Gabriel Rubio,DL,Out,,sleeper
+2026-09-14,2026,1.0,PIT,DeShon Elliott,DB,IR,,sleeper
+2026-09-14,2026,1.0,PIT,Joey Porter,DB,Out,,sleeper
+2026-09-14,2026,1.0,PIT,Jack Driscoll,T,IR,,sleeper
+2026-09-14,2026,1.0,PIT,Drew Allar,QB,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Beau Stephens,G,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Aaron Smith,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,SEA,Sam Darnold,QB,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Jake Bobo,WR,IR,,sleeper
+2026-09-14,2026,1.0,SEA,Mike Morris,DE,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Irv Charles,WR,IR,,sleeper
+2026-09-14,2026,1.0,SEA,Robbie Ouzts,RB,IR,,sleeper
+2026-09-14,2026,1.0,SEA,Nick Kallerup,TE,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Bud Clark,DB,IR,,sleeper
+2026-09-14,2026,1.0,SEA,Power Echols,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,SEA,Mason Richman,OL,IR,,sleeper
+2026-09-14,2026,1.0,SEA,Jalen Milroe,QB,Out,,sleeper
+2026-09-14,2026,1.0,SEA,Zach Charbonnet,RB,PUP,,sleeper
+2026-09-14,2026,1.0,SEA,Amari Kight,OT,Questionable,,sleeper
+2026-09-14,2026,1.0,SF,Mykel Williams,DL,PUP,,sleeper
+2026-09-14,2026,1.0,SF,Nate Hobbs,CB,IR,,sleeper
+2026-09-14,2026,1.0,SF,Andrew Farmer,LB,IR,,sleeper
+2026-09-14,2026,1.0,SF,Jake Tonges,TE,Questionable,,sleeper
+2026-09-14,2026,1.0,SF,Isaac Guerendo,RB,PUP,,sleeper
+2026-09-14,2026,1.0,SF,Ricky Pearsall,WR,IR,,sleeper
+2026-09-14,2026,1.0,SF,De'Zhaun Stribling,WR,Out,,sleeper
+2026-09-14,2026,1.0,SF,Darrick Forrest,DB,IR,,sleeper
+2026-09-14,2026,1.0,SF,Ephesians Prysock,CB,Out,,sleeper
+2026-09-14,2026,1.0,SF,Kurtis Rourke,QB,Out,,sleeper
+2026-09-14,2026,1.0,SF,Austen Pleasants,OL,IR,,sleeper
+2026-09-14,2026,1.0,SF,Jordan Watkins,WR,Out,,sleeper
+2026-09-14,2026,1.0,SF,Nick Martin,LB,IR,,sleeper
+2026-09-14,2026,1.0,SF,Christian Kirk,WR,IR,,sleeper
+2026-09-14,2026,1.0,SF,Jordan James,RB,Out,,sleeper
+2026-09-14,2026,1.0,SF,Enrique Cruz,OL,Out,,sleeper
+2026-09-14,2026,1.0,SF,Mikail Kamara,DE,IR,,sleeper
+2026-09-14,2026,1.0,SF,Tatum Bethune,LB,Out,,sleeper
+2026-09-14,2026,1.0,SF,Brett Toth,OL,IR,,sleeper
+2026-09-14,2026,1.0,SF,Sam Okuayinonu,DE,IR,,sleeper
+2026-09-14,2026,1.0,SF,Nick Zakelj,OL,IR,,sleeper
+2026-09-14,2026,1.0,TB,Deshawn McKnight,DL,IR,,sleeper
+2026-09-14,2026,1.0,TB,Mohamed Kamara,DL,IR,,sleeper
+2026-09-14,2026,1.0,TB,Jacob Parrish,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,TB,Elijah Simmons,DL,Out,,sleeper
+2026-09-14,2026,1.0,TB,DeMonte Capehart,DT,Out,,sleeper
+2026-09-14,2026,1.0,TB,David Sills,WR,IR,,sleeper
+2026-09-14,2026,1.0,TB,Josh Hayes,CB,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Jaren Kanak,TE,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Donnie Ernsberger,TE,Questionable,,sleeper
+2026-09-14,2026,1.0,TEN,Joshua Williams,CB,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Owen Pappoe,LB,Out,,sleeper
+2026-09-14,2026,1.0,TEN,Atonio Mafi,OL,Out,,sleeper
+2026-09-14,2026,1.0,TEN,Dorian Mausi,LB,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Dominique Hampton,CB,Questionable,,sleeper
+2026-09-14,2026,1.0,TEN,Jaylen Harrell,DE,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Milo Eifler,LB,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Jackie Marshall,DE,Out,,sleeper
+2026-09-14,2026,1.0,TEN,Jaylon Jones,DB,Out,,sleeper
+2026-09-14,2026,1.0,TEN,Nicholas Singleton,RB,Out,,sleeper
+2026-09-14,2026,1.0,TEN,Kendell Brooks,DB,IR,,sleeper
+2026-09-14,2026,1.0,TEN,Tanoh Kpassagnon,DE,IR,,sleeper
+2026-09-14,2026,1.0,WAS,Ricky Barber,DT,Out,,sleeper
+2026-09-14,2026,1.0,WAS,Athan Kaliakmanis,QB,Out,,sleeper
+2026-09-14,2026,1.0,WAS,Jeremy McNichols,RB,IR,,sleeper
+2026-09-14,2026,1.0,WAS,Luke McCaffrey,WR,Out,,sleeper
+2026-09-14,2026,1.0,WAS,Treylon Burks,WR,Out,,sleeper
+2026-09-14,2026,1.0,WAS,Laremy Tunsil,OL,IR,,sleeper
+2026-09-14,2026,1.0,WAS,Dorance Armstrong,DE,Suspended,,sleeper
+2026-09-14,2026,1.0,WAS,Deatrich Wise,DE,PUP,,sleeper
+2026-09-14,2026,1.0,WAS,Jer'Zhan Newton,DL,IR,,sleeper
+2026-09-14,2026,1.0,WAS,Frankie Luvu,LB,Questionable,,sleeper
+2026-09-14,2026,1.0,WAS,Tyler Owens,DB,Questionable,,sleeper
+2026-09-14,2026,1.0,WAS,Chig Okonkwo,TE,Questionable,,sleeper
+2026-09-14,2026,1.0,WAS,Trey Amos,DB,IR,,sleeper
