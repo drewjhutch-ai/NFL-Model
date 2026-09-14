@@ -284,7 +284,7 @@ def _report_card(extras) -> None:
     from data import clv as clvmod
     roi = clvmod.grade_roi(proj, schedule) if not proj.empty else {}
     clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
-    with st.expander("Live report card, self-tuning & backtest (the learning loop)"):
+    with st.expander("Live report card, self-tuning & backtest (the learning loop)", expanded=True):
         _calibration_block(extras)
         st.divider()
         _self_tuning()
@@ -345,6 +345,21 @@ def _report_card(extras) -> None:
             if facets:
                 st.markdown("**What's working** — facet correlation with real margins vs weight:")
                 st.dataframe(pd.DataFrame(facets), width="stretch", hide_index=True)
+
+
+def render_report_card(off=None, deff=None, schedule=None, extras=None) -> None:
+    """The model's report card as its own tab: how its weekly picks have graded out.
+
+    Accepts the standard tab args but only needs ``extras`` (which carries the
+    schedule); the extra params keep the call signature uniform with other tabs.
+    """
+    if extras is None:
+        extras = {}
+    st.subheader("Model Report Card")
+    st.caption("How the model's own weekly picks have actually graded out — accuracy, "
+               "calibration, ROI, closing-line value, and the self-tuning loop. It fills "
+               "in as each week's picks are frozen pre-game and settled after the games.")
+    _report_card(extras)
 
 
 # --- per-game detail ---------------------------------------------------------
@@ -619,7 +634,8 @@ def render(off, deff, schedule, extras) -> None:
     st.divider()
     _ref_tendencies(extras)
     st.divider()
-    _report_card(extras)
+    st.caption("📊 The full model report card — accuracy, calibration, ROI/CLV, graded picks — "
+               "is now its own **Report Card** tab.")
     st.divider()
     st.markdown("### Single-game market read")
     labels = [f"{r.away_team} @ {r.home_team}" for r in games.itertuples()]

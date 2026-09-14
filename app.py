@@ -120,9 +120,9 @@ def main() -> None:
     st.markdown(kit.brand_header(week_txt, live), unsafe_allow_html=True)
 
     (tab_home, tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
-     tab_betting, tab_picks, tab_long, tab_clv, tab_inj) = st.tabs(
+     tab_betting, tab_picks, tab_report, tab_long, tab_clv, tab_inj) = st.tabs(
         ["This Week", "Team Data", "League", "Matchups", "Players", "Touchdowns",
-         "Game Bets", "Betting", "Picks of the Week", "Long Odds", "CLV",
+         "Game Bets", "Betting", "Picks of the Week", "Report Card", "Long Odds", "CLV",
          "Injuries"])
     with tab_home:
         _safe(home.render, off, deff, schedule, extras, live)
@@ -142,6 +142,8 @@ def main() -> None:
         _safe(betting.render, off, deff, schedule, extras)
     with tab_picks:
         _safe(picks.render, off, deff, schedule, extras)
+    with tab_report:
+        _safe(betting.render_report_card, off, deff, schedule, extras)
     with tab_long:
         _safe(longodds.render, off, deff, schedule, extras)
     with tab_clv:
