@@ -94,8 +94,14 @@ def load_pbp(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     """Regular-season play-by-play for the requested seasons."""
     import nfl_data_py as nfl
 
+    # include_participation=False is essential: nfl_data_py 0.3.2 defaults it True
+    # and then merges pbp_participation_<year>.parquet, which does NOT exist for the
+    # current season (it lags). That read raises, and the library's broken
+    # `except Error` (an undefined name) turns it into a NameError that discards the
+    # ENTIRE season's pbp — so the current season silently fell back to the prior-
+    # year baseline and rankings never updated. We use no participation columns.
     df = _safe_import(nfl.import_pbp_data, list(seasons), columns=_PBP_COLUMNS,
-                      downcast=True, cache=False)
+                      include_participation=False, downcast=True, cache=False)
     if df.empty:
         return df
     if "season_type" in df.columns:
@@ -111,8 +117,10 @@ def load_special_teams(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.D
     import nfl_data_py as nfl
 
     cols = ["game_id", "season", "week", "season_type", "posteam", "special", "epa", "play_type"]
+    # include_participation=False — see load_pbp: the participation merge fails for
+    # the current season and would discard the whole year via the library's bug.
     df = _safe_import(nfl.import_pbp_data, list(seasons), columns=cols,
-                      downcast=True, cache=False)
+                      include_participation=False, downcast=True, cache=False)
     if df.empty:
         return df
     if "season_type" in df.columns:
