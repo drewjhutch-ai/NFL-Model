@@ -36,17 +36,21 @@ def _report_card(extras) -> None:
     grade = history.grade_projections(proj, schedule) if not proj.empty else {}
     roi = clvmod.grade_roi(proj, schedule) if not proj.empty else {}
     clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
-    bt = json.loads(_BACKTEST_FILE.read_text()).get("summary", {}) if _BACKTEST_FILE.exists() else {}
+    _bt_all = json.loads(_BACKTEST_FILE.read_text()) if _BACKTEST_FILE.exists() else {}
+    bt = _bt_all.get("summary", {})
+    bt_season = _bt_all.get("season")
+    bt_tag = f"'{str(bt_season)[-2:]} backtest" if bt_season else "backtest"
 
     ats = grade.get("ats") if grade else None
     ats_txt = f"{ats['pct']*100:.0f}%" if ats else (f"{bt['ats_pct']:.0f}%" if bt.get("ats_pct") else "—")
-    ats_sub = f"{ats['hit']}/{ats['n']} this yr" if ats else ("backtest" if bt.get("ats_pct") else "no games yet")
+    ats_sub = (f"{ats['hit']}/{ats['n']} this season" if ats
+               else (bt_tag if bt.get("ats_pct") else "live — starts Week 2"))
     roi_txt = f"{roi['overall']['roi']:+.1f}%" if roi.get("overall") else "—"
-    roi_sub = (f"{roi['overall']['units']:+.1f}u" if roi.get("overall") else "fills in-season")
+    roi_sub = (f"{roi['overall']['units']:+.1f}u this season" if roi.get("overall") else "live — fills weekly")
     clv_txt = f"{clv['avg_clv']:+.1f}" if clv else "—"
-    clv_sub = f"beat {clv['beat_pct']:.0f}%" if clv else "closing-line value"
+    clv_sub = f"beat {clv['beat_pct']:.0f}% this season" if clv else "live — fills weekly"
     mae_txt = f"{bt['model_mae']:.1f}" if bt.get("model_mae") else "—"
-    mae_sub = (f"mkt {bt['market_mae']:.1f}" if bt.get("market_mae") else "margin error")
+    mae_sub = (f"vs mkt {bt['market_mae']:.1f} · {bt_tag}" if bt.get("market_mae") else "margin error")
 
     c = st.columns(4)
     with c[0]:

@@ -105,8 +105,17 @@ jobs:
           python scripts/review.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Backtest the last completed season (out-of-sample validation)
+        id: backtest
+        # Regenerates backtest_results.json on the prior (finished) season so the
+        # Report Card's historical validation stays current instead of going stale.
+        run: |
+          set +e
+          python scripts/backtest.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.rosters.outputs.exit_code == '0' || steps.injuries.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.rosters.outputs.exit_code == '0' || steps.injuries.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0' || steps.backtest.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -118,6 +127,7 @@ jobs:
           git add -f rosters_data/*.csv 2>/dev/null || true
           git add -f history/*.csv 2>/dev/null || true
           git add -f model_tuning.json tuning_log.csv review_log.csv 2>/dev/null || true
+          git add -f backtest_results.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data change since last run."
           else

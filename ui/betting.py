@@ -313,8 +313,11 @@ def _report_card(extras) -> None:
                     st.caption("Each pick is graded against the line frozen when we made it. "
                                "Spread: home-favored lines are positive. This is the honest per-pick record.")
         else:
-            st.caption("The live report card fills in as the season's picks are graded "
-                       "(the Evolution Engine logs projections each week).")
+            st.info("**Live current-season grades start Week 2.** Each week the Action freezes "
+                    "our pre-game picks; once that week's games settle they're graded here (ATS, "
+                    "O/U, straight-up, ROI, CLV). Week 1 wasn't frozen, so live grading begins with "
+                    "Week 2. The backtest below is the model's out-of-sample record on a completed "
+                    "season — the historical proof, separate from this season's live results.")
         if roi.get("overall") or clv:
             st.markdown("**Profit & closing-line value** — the scoreboard that matters:")
             c = st.columns(3)

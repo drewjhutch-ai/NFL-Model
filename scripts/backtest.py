@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate model-performance results the app can display.
 
-    python scripts/backtest.py [season]     # default: 2024
+    python scripts/backtest.py [season]     # default: most recent COMPLETED season
 
 Runs an out-of-sample walk-forward backtest + facet-predictiveness analysis for
-the season and writes backtest_results.json at the repo root. The Betting tab's
-"Model performance" panel reads that file.
+the season and writes backtest_results.json at the repo root. The Report Card
+reads that file as the model's historical validation. A backtest needs finished
+games, so it always runs on a completed season (the prior season by default), not
+the season in progress — live current-season accuracy comes from the graded
+weekly projections instead.
 """
 import json
 import sys
@@ -13,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import config  # noqa: E402
 from data import backtest, loaders  # noqa: E402
 
 
@@ -43,4 +47,5 @@ def main(season: int) -> None:
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 2024)
+    # Default to the most recent completed season so the validation stays current.
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else config.PRIOR_SEASON)
