@@ -1404,7 +1404,6 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-15,2026,1.0,IND,Dalton Tucker,OL,Out,,sleeper
 2026-09-15,2026,1.0,IND,D.J. Montgomery,WR,IR,,sleeper
 2026-09-15,2026,1.0,IND,DJ Giddens,RB,Out,,sleeper
-2026-09-15,2026,1.0,IND,Johnathan Edwards,DB,Out,,sleeper
 2026-09-15,2026,1.0,IND,Cam Taylor-Britt,DB,Suspended,,sleeper
 2026-09-15,2026,1.0,IND,Cameron Mitchell,DB,IR,,sleeper
 2026-09-15,2026,1.0,JAX,Zach Durfee,DE,IR,,sleeper
@@ -1536,7 +1535,6 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-15,2026,1.0,NYG,Jason Pinnock,CB,Out,,sleeper
 2026-09-15,2026,1.0,NYG,Calvin Austin,WR,IR,,sleeper
 2026-09-15,2026,1.0,NYG,Gunner Olszewski,WR,IR,,sleeper
-2026-09-15,2026,1.0,NYG,Dalen Cambre,WR,Out,,sleeper
 2026-09-15,2026,1.0,NYG,Thaddeus Dixon,CB,IR,,sleeper
 2026-09-15,2026,1.0,NYG,Nic Jones,CB,Out,,sleeper
 2026-09-15,2026,1.0,NYG,Thomas Fidone,TE,Out,,sleeper
@@ -1560,7 +1558,7 @@ snapshot,season,week,team,name,pos,status,practice,source
 2026-09-15,2026,1.0,PHI,Micah Morris,G,Out,,sleeper
 2026-09-15,2026,1.0,PHI,Grant Calcaterra,TE,IR,,sleeper
 2026-09-15,2026,1.0,PHI,Jakorian Bennett,DB,IR,,sleeper
-2026-09-15,2026,1.0,PHI,Landon Dickerson,OL,Out,,sleeper
+2026-09-15,2026,1.0,PHI,Landon Dickerson,OL,IR,,sleeper
 2026-09-15,2026,1.0,PHI,Andre' Sam,DB,IR,,sleeper
 2026-09-15,2026,1.0,PHI,Elijah Moore,WR,Out,,sleeper
 2026-09-15,2026,1.0,PHI,Cole Payton,QB,Out,,sleeper
