@@ -33,6 +33,15 @@ SEASONS = [PRIOR_SEASON, CURRENT_SEASON]
 # roster changes). Per-week multiplier applied by how many weeks back a play is.
 RECENCY_DECAY = 0.96
 
+# Early-season talent prior (data/priors.py): regress thin current-season ratings
+# toward last year's proven EPA + Vegas win totals, decaying as games accumulate.
+# Current-season weight = games_played / (games_played + K). K≈5 means ~half-weight
+# at 5 games (Week 6) — one or two games can't override established team quality,
+# but the model still fully takes over by midseason. This is the "don't crown a
+# bad team on one noisy game" guardrail; it feeds every tab through off/deff.
+EARLY_SEASON_PRIOR_K = 5
+POINTS_PER_WIN = 2.2   # points of net margin per win above/below a .500 win total
+
 # Empirical-Bayes shrinkage: regress a team's noisy rate stats toward the league
 # mean by this many "pseudo-plays". Bigger = more regression (for less stable
 # stats). Small samples (early season) get pulled to the mean; full samples don't.

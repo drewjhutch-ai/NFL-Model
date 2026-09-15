@@ -78,6 +78,18 @@ def build_frames():
     # opponent-adjust EPA (strength of schedule) — flows into ranks, edges, betting
     off, deff = adjust.apply_epa_adjustment(off, deff, pbp_w)
     tendencies.compute_qb_rank(off)
+    # Early-season talent prior: regress the (still thin) current-season ratings
+    # toward last year's proven EPA + Vegas win totals so one noisy game can't
+    # crown a weak team. Decays to pure current-season by ~Week 6. This is the
+    # single chokepoint every tab inherits — ranks, edges, spreads, totals, props,
+    # TDs — so the "contextual" talent read is baked into the whole engine.
+    from data import priors
+    _games_played = priors.current_games_played(pbp, config.CURRENT_SEASON)
+    _alpha = priors.blend_alpha(_games_played)
+    _off_prior, _def_prior = priors.prior_epa(pbp, config.PRIOR_SEASON)
+    _win_totals = priors.load_win_totals(config.CURRENT_SEASON)
+    _prior_net = priors.prior_net_rating(_off_prior, _def_prior, _win_totals)
+    off, deff = priors.shrink_ratings(off, deff, _off_prior, _def_prior, _alpha, _win_totals)
     blitz = tendencies.compute_blitz(pbp_w, ftn)
     live = loaders.has_current_season_data(pbp_w)
 
@@ -201,8 +213,15 @@ def build_frames():
         _rz = _rz.join(_exp[["exp_td"]], how="left")   # expected TDs as a regression anchor
     _rz = roster_mod.mark_active(_rz, _roster, inj_map)    # drop departed / ruled-out scorers
     extras["rz_usage"] = _rz
-    # accuracy layer: stable points-differential signal + Elo ensemble/prior
-    extras["points_rtg"] = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
+    # accuracy layer: stable points-differential signal + Elo ensemble/prior.
+    # The point-differential rating is anchored to the same preseason prior so the
+    # margin's scoreboard signal doesn't reintroduce one-game noise early.
+    _pts = betmodel.points_ratings(schedule, config.CURRENT_SEASON)
+    extras["points_rtg"] = priors.shrink_points(_pts, _prior_net, _alpha)
+    # early-season blend, surfaced so the UI can show how anchored the ratings are
+    extras["early_alpha"] = _alpha
+    extras["early_games"] = _games_played
+    extras["win_totals_loaded"] = _win_totals is not None
     extras["elo"] = elo.elo_ratings(schedule)
     # Sharp Football lifeblood: charted team tables (pace, personnel, trenches,
     # tendencies, coverage, metrics). Empty dict until the Action commits them;

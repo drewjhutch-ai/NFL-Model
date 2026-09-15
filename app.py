@@ -119,6 +119,19 @@ def main() -> None:
     week_txt = _week_label(schedule, live)
     st.markdown(kit.brand_header(week_txt, live), unsafe_allow_html=True)
 
+    # Early-season talent anchor: show how much the ratings still lean on the
+    # preseason prior (last year + win totals) vs this season's games, so a thin
+    # early sample reads as "anchored to talent", not a bad team getting overrated.
+    _a = extras.get("early_alpha")
+    if _a is not None and _a < 0.9:
+        _wt = " + Vegas win totals" if extras.get("win_totals_loaded") else " (add win totals for a sharper prior)"
+        st.caption(
+            f"⚓ Early-season anchor — ratings are **{_a*100:.0f}% this season** / "
+            f"**{(1-_a)*100:.0f}% preseason prior** (last year's EPA{_wt}) after "
+            f"{extras.get('early_games', 0)} game(s). One noisy game can't crown a weak "
+            f"team; the season takes over by ~Week 6."
+        )
+
     (tab_home, tab_data, tab_league, tab_matchups, tab_players, tab_td, tab_gamebets,
      tab_betting, tab_picks, tab_report, tab_long, tab_clv, tab_inj) = st.tabs(
         ["This Week", "Team Data", "League", "Matchups", "Players", "Touchdowns",
