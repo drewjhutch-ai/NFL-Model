@@ -1,17 +1,22 @@
-# Community Cloud provisions Python 3.14 and installs prebuilt wheels for it, so
-# we use floors (not ceilings) on the heavy compiled libs — capping them below the
-# 3.14 wheels forces a from-source build that fails. Two guards are kept:
-#   * pyarrow < 25  — 25.x has a known segfault (apache/arrow#50471); 24.x is safe.
-#   * plotly  < 6   — hold the charting API on the 5.x the tabs were written for.
-streamlit>=1.37
-pandas>=2.0
-numpy>=1.24
+# PROVEN stack. The app runs on Python 3.12 with pandas 2.x / numpy 1.x — the same
+# stack the GitHub Action uses successfully. On Python 3.14 the resolver is forced
+# to pandas 3.0 + numpy 2.5, which install fine but then hang/crash the app on the
+# first data load (a blank spinner, no traceback). These ceilings pin the proven
+# versions; they have prebuilt wheels ONLY for Python <= 3.12.
+#
+# REQUIRED: set the app's Python version to 3.12 in Streamlit Community Cloud
+# (app Settings -> Python version, or Advanced settings when redeploying). If the
+# app is still on 3.14 the install will fail with a clear "no wheels" error — that
+# error means the Python version, not the code, still needs to change.
+streamlit>=1.37,<2
+pandas>=2.1,<2.3
+numpy>=1.24,<2
 nfl_data_py==0.3.2
 plotly>=5.20,<6
-matplotlib>=3.7
-requests>=2.31
-lxml>=5.0
+matplotlib>=3.7,<4
+requests>=2.31,<3
+lxml>=5.0,<6
 # Optional: only needed if a free stats site renders its tables with JavaScript.
 # After installing, run once:  playwright install chromium
-playwright>=1.44
-pyarrow>=12,<25
+playwright>=1.44,<2
+pyarrow>=14,<18
