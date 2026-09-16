@@ -89,6 +89,13 @@ def build_frames():
     _off_prior, _def_prior = priors.prior_epa(pbp, config.PRIOR_SEASON)
     _win_totals = priors.load_win_totals(config.CURRENT_SEASON)
     _prior_net = priors.prior_net_rating(_off_prior, _def_prior, _win_totals)
+    # Capture the CURRENT-SEASON-ONLY ranks (pre-anchor) for transparency: Team Data
+    # shows these next to the anchored rank so it's obvious the model sees this
+    # season's results even while the prior still dominates a thin early sample.
+    _rc = [c for c in ("epa_play_rank", "pass_epa_rank", "rush_epa_rank") if c in off.columns]
+    _off_cur_ranks = off[_rc].copy() if _rc else None
+    _rcd = [c for c in ("epa_play_rank", "pass_epa_rank", "rush_epa_rank") if c in deff.columns]
+    _deff_cur_ranks = deff[_rcd].copy() if _rcd else None
     off, deff = priors.shrink_ratings(off, deff, _off_prior, _def_prior, _alpha, _win_totals)
     blitz = tendencies.compute_blitz(pbp_w, ftn)
     live = loaders.has_current_season_data(pbp_w)
@@ -222,6 +229,8 @@ def build_frames():
     extras["early_alpha"] = _alpha
     extras["early_games"] = _games_played
     extras["win_totals_loaded"] = _win_totals is not None
+    extras["off_current_ranks"] = _off_cur_ranks       # this-season-only ranks (pre-anchor)
+    extras["deff_current_ranks"] = _deff_cur_ranks
     extras["elo"] = elo.elo_ratings(schedule)
     # Sharp Football lifeblood: charted team tables (pace, personnel, trenches,
     # tendencies, coverage, metrics). Empty dict until the Action commits them;

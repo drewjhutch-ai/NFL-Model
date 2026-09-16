@@ -108,13 +108,15 @@ def _strengths_struggles(facets: list[dict]) -> None:
 
 
 # --- grade + thesis header ---------------------------------------------------
-def _rank_tile(label: str, rank, delta=None, help_accent="accent") -> str:
+def _rank_tile(label: str, rank, delta=None, help_accent="accent", sub=None) -> str:
     val = ordinal(int(rank)) if rank is not None and pd.notna(rank) else "—"
     direction = None
     dtxt = None
     if delta is not None and pd.notna(delta) and delta != 0:
         direction = "up" if delta > 0 else "down"
         dtxt = f"{abs(int(delta))} wk"
+    elif sub:
+        dtxt = sub          # e.g. this-season-only rank while the prior anchor is active
     # rank accent: top-10 green, bottom-10 red, else neutral
     acc = help_accent
     if rank is not None and pd.notna(rank):
@@ -163,11 +165,27 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
 
     o = off.loc[team] if team in off.index else None
     d = deff.loc[team] if team in deff.index else None
+    # this-season-only ranks (pre-anchor) — shown alongside so an early, prior-heavy
+    # rank is transparent rather than looking like stale data.
+    _alpha = extras.get("early_alpha")
+    _anchored = _alpha is not None and _alpha < 0.85
+
+    def _cur_rank(frame, col):
+        if frame is None or team not in getattr(frame, "index", []) or col not in frame.columns:
+            return None
+        v = frame.loc[team, col]
+        return int(v) if pd.notna(v) else None
+
+    o_cur = _cur_rank(extras.get("off_current_ranks"), "epa_play_rank")
+    d_cur = _cur_rank(extras.get("deff_current_ranks"), "epa_play_rank")
+    o_sub = f"'{str(config.CURRENT_SEASON)[-2:]} only: {ordinal(o_cur)}" if (_anchored and o_cur) else None
+    d_sub = f"'{str(config.CURRENT_SEASON)[-2:]} only: {ordinal(d_cur)}" if (_anchored and d_cur) else None
+
     cols = st.columns(6)
     cols[0].markdown(_rank_tile("Offense", o["epa_play_rank"] if o is not None else None,
-                                mv["off"].get(team)), unsafe_allow_html=True)
+                                mv["off"].get(team), sub=o_sub), unsafe_allow_html=True)
     cols[1].markdown(_rank_tile("Defense", d["epa_play_rank"] if d is not None else None,
-                                mv["def"].get(team)), unsafe_allow_html=True)
+                                mv["def"].get(team), sub=d_sub), unsafe_allow_html=True)
     net_acc = "edge" if (net or 0) > 0.02 else ("fade" if (net or 0) < -0.02 else "accent")
     cols[2].markdown(kit.kpi("Net EPA/100", f"{net*100:+.1f}" if net is not None else "—",
                              None, None, net_acc), unsafe_allow_html=True)
@@ -177,6 +195,13 @@ def _header(team: str, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) -> N
                                 help_accent="sharp"), unsafe_allow_html=True)
     sos_val = f"{float(sos.get(team)):+.3f}" if sos is not None and team in sos.index else "—"
     cols[5].markdown(kit.kpi("Sched (SOS)", sos_val, None, None, "accent"), unsafe_allow_html=True)
+    if _anchored:
+        st.caption(
+            f"⚓ Ranks are **talent-anchored** — {(1-_alpha)*100:.0f}% last year's proven level / "
+            f"{_alpha*100:.0f}% this season after {extras.get('early_games', 0)} game(s) — so one game "
+            f"can't crater a proven unit (and it's opponent-adjusted: giving up yards to an elite "
+            f"offense is discounted). **'{str(config.CURRENT_SEASON)[-2:]} only** is this season's raw "
+            f"rank — real, but noisy this early. The anchor fades to the live rank by ~Week 6.")
 
     # EPA-trajectory sparkline + recent form
     weekly = history.weekly_epa(extras.get("pbp"))
