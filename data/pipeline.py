@@ -211,6 +211,9 @@ def build_frames():
     extras["st_ppg"] = betmodel.team_st_points(st_w)
     out_gsis = {t: {p["gsis"] for p in items if p["status"] == "Out"}
                 for t, items in inj_map.items()}
+    name_map = (dict(zip(rosters["player_id"].astype(str), rosters["player_name"]))
+                if not rosters.empty and "player_name" in rosters.columns else {})
+    extras["player_names"] = name_map   # player_id -> name, for WR–CB matchup naming
     name_map = (dict(zip(rosters["player_id"], rosters["player_name"]))
                 if not rosters.empty and "player_name" in rosters.columns else {})
     extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)

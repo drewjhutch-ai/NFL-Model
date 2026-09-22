@@ -1062,6 +1062,29 @@ def _scouting(away, home, off, deff, extras) -> None:
 
 
 # --- assembly ----------------------------------------------------------------
+def _wr_cb(away, home, extras) -> None:
+    """Name the WR1/WR2/slot for each offense and the corner projected across."""
+    from data import coverage_matchup as cm
+    st.markdown("### WR–CB matchups")
+    st.caption("Who lines up where, by name — each offense's outside WRs and slot man vs the corner "
+               "projected across from him. This is depth-chart **alignment** (most defenses play "
+               "sides, so it's not a traveling shadow). **D rank** is the defense's coverage vs that "
+               "alignment: 1 = stingiest, 32 = softest — higher is better for the receiver.")
+    c1, c2 = st.columns(2)
+    for col, o, d in ((c1, away, home), (c2, home, away)):
+        rows = cm.matchups(o, d, extras)
+        with col:
+            st.markdown(f"**{o} receivers vs {d} coverage**")
+            if not rows:
+                st.caption("Depth-chart alignment not available for this matchup yet.")
+                continue
+            df = pd.DataFrame([{
+                "Role": r["wr_role"], "Receiver": r["wr"], "vs (proj.)": r["cb"],
+                "D rank": (f"{r['cov_rank']} vs {r['align']}" if r.get("cov_rank") else "—"),
+            } for r in rows])
+            st.dataframe(df, width="stretch", hide_index=True)
+
+
 def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
     if away == home:
         st.info("Pick two different teams.")
@@ -1103,6 +1126,9 @@ def _breakdown(away, home, off, deff, blitz, extras, game_row=None) -> None:
             _direction(home, away, off, deff, blitz, extras)
         st.caption("offense edge · defense edge. Bar length = raw edge; thickness = "
                    "how much the facet decides games; ordered by weighted impact.")
+
+        st.divider()
+        _wr_cb(away, home, extras)
 
         st.divider()
         _angle_finder(away, home, off, deff, extras, assessment, sim)
