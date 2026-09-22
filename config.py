@@ -113,6 +113,11 @@ TEAM_HFA = {"DEN": 2.8, "SEA": 2.4, "GB": 2.3, "BUF": 2.3, "KC": 2.3,
 PLAYS_PER_TEAM = 63             # to scale EPA/play into a game-level margin
 WINPROB_SLOPE = 0.146          # logistic slope: margin (pts) -> win probability
 VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
+# Don't surface a straight pick priced worse (bigger favorite) than this American
+# number — heavy chalk (e.g. -600) is bad risk/reward even when it's "safe". Only
+# moneylines can breach it (spreads/totals/props are ~-110); the game's other
+# markets still show. Raise toward 0 to be stricter, lower to allow more chalk.
+MIN_PICK_ODDS = -350
 VALUE_PROB = 0.05              # flag moneyline value when our edge >= this
 VALUE_TOTAL_PTS = 2.5          # flag total value when |our total - market| >= this
 LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the total

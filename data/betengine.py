@@ -163,18 +163,24 @@ def game_bets(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dic
             bets.append(_bet(gid, game, "Total", f"Under {line:.1f}", 1 - ov, _STD_ODDS, _STD_ODDS,
                              gid, games_played, "Total-points distribution from the sim.", ou=-1))
 
-    # moneyline — model win prob vs the actual market prices (de-vigged)
+    # moneyline — model win prob vs the actual market prices (de-vigged). Skip it
+    # when the side we'd pick is chalkier than config.MIN_PICK_ODDS: a heavy
+    # favorite ML (e.g. -600) is bad risk/reward, and the game's spread/total still
+    # surface. Underdog MLs (positive odds) always pass.
     ph = sim["home_win"]
     mlh, mla = row.get("home_moneyline"), row.get("away_moneyline")
     if pd.notna(mlh) and pd.notna(mla):
-        if ph >= 0.5:
-            bets.append(_bet(gid, game, "Moneyline", f"{home} ML", ph, mlh, mla, gid,
-                             games_played, "Straight-up win probability from the sim.",
-                             team=home, ou=1))
-        else:
-            bets.append(_bet(gid, game, "Moneyline", f"{away} ML", 1 - ph, mla, mlh, gid,
-                             games_played, "Straight-up win probability from the sim.",
-                             team=away, ou=1))
+        side_odds = mlh if ph >= 0.5 else mla
+        floor = getattr(config, "MIN_PICK_ODDS", -350)
+        if pd.notna(side_odds) and float(side_odds) >= floor:
+            if ph >= 0.5:
+                bets.append(_bet(gid, game, "Moneyline", f"{home} ML", ph, mlh, mla, gid,
+                                 games_played, "Straight-up win probability from the sim.",
+                                 team=home, ou=1))
+            else:
+                bets.append(_bet(gid, game, "Moneyline", f"{away} ML", 1 - ph, mla, mlh, gid,
+                                 games_played, "Straight-up win probability from the sim.",
+                                 team=away, ou=1))
     return bets
 
 
