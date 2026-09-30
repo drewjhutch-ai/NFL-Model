@@ -27,7 +27,9 @@ def _name(names: dict, pid) -> str:
     return (names.get(str(pid)) if names else None) or "?"
 
 
-def _wr_align(pos: str, rank: int) -> str:
+def _wr_align(pos: str, rank: int, slot_pct: float | None = None) -> str:
+    if slot_pct is not None:                               # real charting wins
+        return "slot" if slot_pct >= 55 else "outside"
     p = str(pos).upper()
     if p in _WR_SLOT:
         return "slot"
@@ -48,13 +50,18 @@ def _rank_of(r) -> int:
     return int(v) if pd.notna(v) else 9
 
 
-def _receivers(depth: pd.DataFrame, team: str, names: dict) -> list[dict]:
+def _receivers(depth: pd.DataFrame, team: str, names: dict, slot_map: dict | None = None) -> list[dict]:
     if depth is None or getattr(depth, "empty", True):
         return []
+    slot_map = slot_map or {}
     up = depth["pos"].astype(str).str.upper()
     d = depth[(depth["team"] == team) & up.str.contains("WR")]
-    rows = [{"name": _name(names, r.player_id), "rank": _rank_of(r),
-             "align": _wr_align(r.pos, _rank_of(r))} for r in d.itertuples()]
+    rows = []
+    for r in d.itertuples():
+        nm = _name(names, r.player_id)
+        sp = slot_map.get(nm.lower()) if nm else None
+        rows.append({"name": nm, "rank": _rank_of(r),
+                     "align": _wr_align(r.pos, _rank_of(r), sp), "slot_pct": sp})
     rows.sort(key=lambda x: x["rank"])
     return rows
 
@@ -90,7 +97,8 @@ def matchups(off_team: str, def_team: str, extras: dict) -> list[dict]:
     """
     depth = extras.get("depth")
     names = extras.get("player_names") or {}
-    wrs = _receivers(depth, off_team, names)
+    slot_map = extras.get("slot_rates") or {}
+    wrs = _receivers(depth, off_team, names, slot_map)
     cbs = _corners(depth, def_team, names)
     if not wrs or not cbs:
         return []
@@ -103,9 +111,11 @@ def matchups(off_team: str, def_team: str, extras: dict) -> list[dict]:
     for i, w in enumerate(out_wr[:2]):
         c = out_cb[i] if i < len(out_cb) else (out_cb[-1] if out_cb else None)
         rows.append({"wr": w["name"], "wr_role": f"WR{i + 1} (outside)", "align": "Outside",
-                     "cb": c["name"] if c else "—", "cov_rank": _cov_rank(extras, def_team, "Outside")})
+                     "cb": c["name"] if c else "—", "cov_rank": _cov_rank(extras, def_team, "Outside"),
+                     "slot_pct": w.get("slot_pct")})
     if slot_wr:
         c = slot_cb[0] if slot_cb else None
         rows.append({"wr": slot_wr[0]["name"], "wr_role": "Slot WR", "align": "Slot",
-                     "cb": c["name"] if c else "(nickel n/a)", "cov_rank": _cov_rank(extras, def_team, "Slot")})
+                     "cb": c["name"] if c else "(nickel n/a)", "cov_rank": _cov_rank(extras, def_team, "Slot"),
+                     "slot_pct": slot_wr[0].get("slot_pct")})
     return rows

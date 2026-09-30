@@ -214,6 +214,8 @@ def build_frames():
     name_map = (dict(zip(rosters["player_id"].astype(str), rosters["player_name"]))
                 if not rosters.empty and "player_name" in rosters.columns else {})
     extras["player_names"] = name_map   # player_id -> name, for WR–CB matchup naming
+    from data import slot_rates as _slot
+    extras["slot_rates"] = _slot.load(config.CURRENT_SEASON)   # {name: slot%} if committed
     name_map = (dict(zip(rosters["player_id"], rosters["player_name"]))
                 if not rosters.empty and "player_name" in rosters.columns else {})
     extras["qb_value"] = qbvalue.qb_values(pbp_w, out_gsis, name_map)

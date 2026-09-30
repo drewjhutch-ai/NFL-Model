@@ -1079,7 +1079,9 @@ def _wr_cb(away, home, extras) -> None:
                 st.caption("Depth-chart alignment not available for this matchup yet.")
                 continue
             df = pd.DataFrame([{
-                "Role": r["wr_role"], "Receiver": r["wr"], "vs (proj.)": r["cb"],
+                "Role": (f"{r['wr_role']} · {r['slot_pct']:.0f}% slot" if r.get("slot_pct") is not None
+                         else r["wr_role"]),
+                "Receiver": r["wr"], "vs (proj.)": r["cb"],
                 "D rank": (f"{r['cov_rank']} vs {r['align']}" if r.get("cov_rank") else "—"),
             } for r in rows])
             st.dataframe(df, width="stretch", hide_index=True)

@@ -285,19 +285,27 @@ def _report_card(extras) -> None:
     roi = clvmod.grade_roi(proj, schedule) if not proj.empty else {}
     clv = clvmod.grade_clv(proj, schedule) if not proj.empty else {}
     with st.expander("Live report card, self-tuning & backtest (the learning loop)", expanded=True):
-        _calibration_block(extras)
-        st.divider()
-        _self_tuning()
-        st.divider()
-        _facet_review()
-        st.divider()
+        # LIVE SCOREBOARD FIRST — CLV/ROI is what actually predicts profit, so it
+        # leads; the analytical sections (calibration, tuning, facets, backtest)
+        # follow underneath.
+        st.markdown("#### 📊 Live scoreboard — this season")
+        if roi.get("overall") or clv:
+            c = st.columns(3)
+            if clv:
+                c[0].metric("Avg CLV", f"{clv['avg_clv']:+.1f} pts", f"beat close {clv['beat_pct']:.0f}%",
+                            help="Points we beat the closing line by — the single best sign of a real edge, "
+                                 "win or lose on the day.")
+            if roi.get("overall"):
+                o = roi["overall"]
+                c[1].metric("ROI", f"{o['roi']:+.1f}%", f"{o['units']:+.1f}u / {o['bets']} bets")
+            if grade.get("ats"):
+                a = grade["ats"]
+                c[2].metric("ATS record", f"{a['pct']*100:.0f}%", f"{a['hit']}/{a['n']}")
         if grade:
-            st.markdown("**This season — our graded picks:**")
             cols = st.columns(len(grade))
             _lbl = {"su": "Straight-up", "ats": "ATS (spread)", "total": "Over/Under"}
             for col, (k, v) in zip(cols, grade.items()):
                 col.metric(_lbl.get(k, k.upper()), f"{v['pct']*100:.0f}%", f"{v['hit']}/{v['n']}")
-            # itemized: every pick, so you can see which hit and which missed
             picks_tbl = history.graded_picks(proj, schedule)
             if not picks_tbl.empty:
                 wins = int((picks_tbl["result"] == "Win").sum())
@@ -310,26 +318,23 @@ def _report_card(extras) -> None:
                     st.dataframe(show, width="stretch", hide_index=True, column_config={
                         "Result": st.column_config.TextColumn("Result", help="Win / Loss / Push vs the line we logged."),
                     })
-                    st.caption("Each pick is graded against the line frozen when we made it. "
-                               "Spread: home-favored lines are positive. This is the honest per-pick record.")
+                    st.caption("Each pick graded against the line frozen when we made it. Spread: home-favored "
+                               "lines are positive.")
+            st.caption("**CLV is the metric that predicts long-term profit** — consistently beating the "
+                       "closing line matters more than any single week's W/L. ROI settles spread/total "
+                       "picks at -110.")
         else:
-            st.info("**Live current-season grades start Week 2.** Each week the Action freezes "
-                    "our pre-game picks; once that week's games settle they're graded here (ATS, "
-                    "O/U, straight-up, ROI, CLV). Week 1 wasn't frozen, so live grading begins with "
-                    "Week 2. The backtest below is the model's out-of-sample record on a completed "
-                    "season — the historical proof, separate from this season's live results.")
-        if roi.get("overall") or clv:
-            st.markdown("**Profit & closing-line value** — the scoreboard that matters:")
-            c = st.columns(3)
-            if roi.get("overall"):
-                o = roi["overall"]
-                c[0].metric("ROI", f"{o['roi']:+.1f}%", f"{o['units']:+.1f}u / {o['bets']} bets")
-            if clv:
-                c[1].metric("Avg CLV", f"{clv['avg_clv']:+.1f} pts",
-                            help="Points we beat the closing line by — the best sign of a real edge.")
-                c[2].metric("Beat the close", f"{clv['beat_pct']:.0f}%", f"{clv['n']} picks")
-            st.caption("ROI settles spread/total picks at -110. CLV compares the number we captured "
-                       "(logged at pick time) to the closing line. Both fill in as the season plays.")
+            st.info("**Live current-season grades start Week 2.** Each week the Action freezes our "
+                    "pre-game picks; once that week's games settle they're graded here (CLV, ROI, ATS, "
+                    "O/U, SU). Week 1 wasn't frozen. The backtest below is the historical proof, separate "
+                    "from this season's live results.")
+        st.divider()
+        _calibration_block(extras)
+        st.divider()
+        _self_tuning()
+        st.divider()
+        _facet_review()
+        st.divider()
         if _BACKTEST_FILE.exists():
             data = json.loads(_BACKTEST_FILE.read_text())
             s = data.get("summary", {})
