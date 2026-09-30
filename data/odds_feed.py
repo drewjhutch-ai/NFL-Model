@@ -47,8 +47,32 @@ def fetch(force: bool = False) -> tuple[pd.DataFrame, str]:
     return _pull()
 
 
+@st.cache_data(ttl=900, show_spinner="Pulling player-prop lines…")
+def _pull_props(max_events: int) -> tuple[pd.DataFrame, str]:
+    try:
+        df = op.player_props(max_events=max_events)
+    except Exception as exc:  # noqa: BLE001
+        return pd.DataFrame(), f"error:{exc}"
+    return (df, "ok") if not df.empty else (pd.DataFrame(), "empty")
+
+
+def fetch_props(force: bool = False, max_events: int = 16) -> tuple[pd.DataFrame, str]:
+    """Return (prop_lines, status). Props are a per-event endpoint — the priciest
+    pull we make — so this caches for 15 min and honours the same low-quota floor
+    (with a larger headroom) so it can't drain the month's credits on autopilot.
+    """
+    if not op.get_odds_provider().is_available():
+        return pd.DataFrame(), "no_key"
+    if not force:
+        rem = op.quota().get("remaining")
+        if rem is not None and rem < _QUOTA_FLOOR * 2:   # props cost ~1 credit/event
+            return pd.DataFrame(), "low_quota"
+    return _pull_props(max_events)
+
+
 def clear() -> None:
     _pull.clear()
+    _pull_props.clear()
 
 
 def quota() -> dict:

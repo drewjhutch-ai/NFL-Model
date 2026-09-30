@@ -16,7 +16,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from data import betengine, distributions as _dist, players
+from data import betengine, distributions as _dist, players, prop_market, reconcile
 
 # Coefficient of variation (sd / mean) for a single game, by stat. Rough but
 # grounded: yardage is high-variance, volume counts less so, passing yards tight.
@@ -188,13 +188,17 @@ _PROP_MEMO: dict = {}
 
 
 def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.DataFrame,
-                    per_team: int = 5, games_played: int = 0) -> pd.DataFrame:
-    """Auto-surface the strongest player-prop leans for a slate — no book line needed.
+                    per_team: int = 5, games_played: int = 0,
+                    prop_lines: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Auto-surface the strongest player-prop leans for a slate.
 
     For each game we project every featured skill player against the opponent and
-    game script, then compare to their own season baseline. The biggest swings vs
-    a line set at their norm are the mismatches worth betting. Returns a ranked
-    frame of leans (side, projection, baseline, hit probability, matchup, confidence).
+    game script, reconcile the set so the players add up to the game (data.reconcile),
+    then score each prop. When ``prop_lines`` (from The Odds API) are supplied the
+    prop is scored at the **book's actual line**, its price is **de-vigged** into a
+    market probability, our number is **blended** toward it, and edge is measured vs
+    that market — exactly as sides are. Without a feed it falls back to the player's
+    season baseline as the line (a projection-vs-norm lean). Returns a ranked frame.
 
     Memoized per build + slate: it's deterministic given the frames and games, and
     several tabs request the same slate's leans on every Streamlit rerun. Keying on
@@ -208,9 +212,11 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
             tuple(zip(games["away_team"], games["home_team"]))
     except Exception:  # noqa: BLE001
         _gids = None
-    _key = (id(stats), id(off), id(deff), id(extras), _gids, per_team, games_played)
+    _key = (id(stats), id(off), id(deff), id(extras), _gids, per_team, games_played,
+            id(prop_lines))
     if _gids is not None and _key in _PROP_MEMO:
         return _PROP_MEMO[_key]
+    prop_index = prop_market.index_lines(prop_lines)
     dvp = extras.get("dvp", {})
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
     from data import sharp_value
@@ -221,10 +227,18 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     for _, g in games.iterrows():
         home, away = g["home_team"], g["away_team"]
         margin = betting.project_margin(off, deff, home, away, st_ppg, qb)
+        total = betting.project_total(off, deff, home, away, extras.get("pace"))
         wx = weather_effects(g)   # wind suppresses passing, tilts to the run
         for team, opp, is_home in ((away, home, False), (home, away, True)):
             script = 0.0 if pd.isna(margin) else float(margin if is_home else -margin)
+            # team implied points from the game number -> the top-down anchor
+            implied_pts = None
+            if pd.notna(total) and pd.notna(margin):
+                implied_pts = (float(total) + script) / 2.0
             tp = P.team_players(stats, team).head(per_team)
+
+            # pass 1 — project every credible player on the team
+            team_projs: list[tuple] = []
             for _, pl in tp.iterrows():
                 if not pl.get("active", True):
                     continue   # departed (off the roster) or ruled out (Out/IR/PUP)
@@ -238,6 +252,16 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
                     for k in ("Rush yds", "Carries"):
                         if k in proj:
                             proj[k] *= wx["rush_factor"]
+                team_projs.append((pl, proj))
+
+            # reconcile the set: players must add up to the QB's passing and to the
+            # game total (in place; clamped so it only corrects gross divergence).
+            reconcile.reconcile_team(team_projs, qb_id=starter_qbs.get(team),
+                                     implied_points=implied_pts)
+
+            # pass 2 — score each prop, at the book line + de-vigged market when we
+            # have one, otherwise at the player's season baseline.
+            for pl, proj in team_projs:
                 for stat, mean in proj.items():
                     # TD/count props need a real half-point line (0.5/1.5) to read
                     # sensibly — leave those to the finder, not the auto board.
@@ -247,23 +271,45 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
                     base = pl.get(raw, 0) if raw else 0
                     if raw is None or base < _MIN_VOL.get(stat, 0):
                         continue
-                    p_over = over_prob(mean, float(base), stat)
+                    info = prop_market.lookup(prop_index, pl.get("name"), stat)
+                    has_line = bool(info and info.get("line") is not None)
+                    line = float(info["line"]) if has_line else float(base)
+                    market_p = info.get("market_p") if has_line else float("nan")
+                    p_over = over_prob(mean, line, stat)
                     if pd.isna(p_over):
                         continue
-                    side, p_side = ("Over", p_over) if p_over >= 0.5 else ("Under", 1 - p_over)
-                    delta = (mean - base) / base if base else 0.0
+                    # blend our number toward the market's, exactly as sides do
+                    p_used = prop_market.blend(p_over, market_p) \
+                        if (has_line and pd.notna(market_p)) else p_over
+                    side, p_side = ("Over", p_used) if p_used >= 0.5 else ("Under", 1 - p_used)
+                    # edge vs the de-vigged market price (the real edge, not vs a norm)
+                    edge = float("nan")
+                    mkt_side = float("nan")
+                    if has_line and pd.notna(market_p):
+                        mkt_side = market_p if side == "Over" else 1 - market_p
+                        edge = p_side - mkt_side
+                    delta = (mean - line) / line if line else 0.0
                     note, rank = _matchup_note(pl.get("pos", ""), stat, opp, deff, dvp)
                     vol_ref = {"Rec yds": 90, "Rush yds": 90, "Pass yds": 280, "Rec": 7,
                                "Targets": 9, "Carries": 18, "Pass TD": 2}.get(stat, 10)
-                    volume = base
-                    conf = _prop_confidence(p_side, delta, volume, vol_ref, games_played)
+                    if has_line and pd.notna(edge):
+                        # rank market plays by edge decisiveness, damped by sample
+                        conf = betengine.confidence(p_side, edge, games_played)
+                    else:
+                        conf = _prop_confidence(p_side, delta, base, vol_ref, games_played)
                     rows.append({
                         "Player": pl.get("name"), "Pos": pl.get("pos"), "Team": team,
                         "Game": f"{away} @ {home}", "Stat": stat, "Side": side,
-                        "Projection": round(mean, 1), "Baseline": round(float(base), 1),
+                        "Projection": round(mean, 1), "Line": round(line, 1),
+                        "Baseline": round(float(base), 1),
                         "Hit%": round(p_side * 100),
+                        "Mkt%": round(mkt_side * 100) if pd.notna(mkt_side) else None,
+                        "Edge%": round(edge * 100, 1) if pd.notna(edge) else None,
                         "Matchup": note, "conf": conf,
-                        "_delta": abs(delta),
+                        "_delta": abs(delta), "_has_line": has_line,
+                        "_over_odds": info.get("over_odds") if has_line else None,
+                        "_under_odds": info.get("under_odds") if has_line else None,
+                        "_market_p": market_p if has_line else None,
                     })
     if not rows:
         out = pd.DataFrame()
@@ -277,38 +323,53 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
 
 
 def prop_bets_for_games(off, deff, extras: dict, games: pd.DataFrame,
-                        games_played: int = 0) -> list[dict]:
+                        games_played: int = 0,
+                        prop_lines: pd.DataFrame | None = None) -> list[dict]:
     """One call → Bet-Engine rows for every prop lean across ``games``.
 
     The single entry point every betting surface uses so player props compete on
     the same board as spread/total/ML — edge boards, parlays, game breakdowns,
-    Game Bets, and Picks all draw from this.
+    Game Bets, and Picks all draw from this. Pass ``prop_lines`` (The Odds API) to
+    price props against real book numbers instead of season baselines.
     """
     stats = extras.get("players")
     if stats is None or stats.empty or games is None or games.empty:
         return []
-    leans = auto_prop_picks(stats, off, deff, extras, games, games_played=games_played)
+    leans = auto_prop_picks(stats, off, deff, extras, games,
+                            games_played=games_played, prop_lines=prop_lines)
     return leans_to_bets(leans, games_played)
 
 
 def leans_to_bets(leans: pd.DataFrame, games_played: int = 0) -> list[dict]:
     """Convert auto prop leans into Bet-Engine rows so props compete on the board.
 
-    Each lean is priced at a baseline line (the player's season norm) at -110 both
-    ways, with ``corr_group`` set to the game so same-game correlation is handled
-    in parlays. Edge is the hit probability minus the no-vig 50%.
+    When a lean carries a real book line it's priced at that line and the best
+    available price each way, with the de-vigged market probability as the no-vig
+    reference so edge is value versus the true line. Absent a feed it falls back to
+    the player's season norm at -110 both ways (edge vs an even-money proxy).
+    ``corr_group`` is the game, so same-game correlation is handled in parlays.
     """
     if leans is None or leans.empty:
         return []
     out = []
     for _, r in leans.iterrows():
         p = r["Hit%"] / 100.0
-        sel = f"{r['Player']} {r['Stat']} {r['Side']} {r['Baseline']:g}"
+        side = r.get("Side")
+        line = r.get("Line", r.get("Baseline"))
+        sel = f"{r['Player']} {r['Stat']} {side} {line:g}"
+        if r.get("_has_line"):
+            odds = r.get("_over_odds") if side == "Over" else r.get("_under_odds")
+            other = r.get("_under_odds") if side == "Over" else r.get("_over_odds")
+            odds = odds if odds is not None and pd.notna(odds) else -110
+            other = other if other is not None and pd.notna(other) else -110
+            rationale = f"Proj {r['Projection']:g} vs line {line:g} · {r['Matchup']}"
+        else:
+            odds = other = -110
+            rationale = f"Proj {r['Projection']:g} vs {r.get('Baseline', line):g} · {r['Matchup']}"
         out.append(betengine._bet(
-            r["Game"], r["Game"], "Player prop", sel, p, -110, -110,
-            corr_group=r["Game"], games_played=games_played,
-            rationale=f"Proj {r['Projection']:g} vs {r['Baseline']:g} · {r['Matchup']}",
-            team=r.get("Team"), ou=1 if r.get("Side") == "Over" else -1,
+            r["Game"], r["Game"], "Player prop", sel, p, odds, other,
+            corr_group=r["Game"], games_played=games_played, rationale=rationale,
+            team=r.get("Team"), ou=1 if side == "Over" else -1,
             pos=r.get("Pos"), stat=r.get("Stat"), player=r.get("Player")))
     return out
 

@@ -148,6 +148,16 @@ SHARP_WEIGHT = 0.12
 # toward average when few games have been played. 0 = off.
 MARKET_WEIGHT = 0.22
 MARKET_RATING_RIDGE = 1.0
+# Player props: how much to trust our own projection vs the de-vigged book prop
+# line, mirroring MODEL_TRUST for sides (0.40 = 40% model / 60% market). Prop
+# markets are efficient but a touch softer than sides, so a hair more model weight
+# is defensible. Edge is measured off the blended number vs the market price.
+PROP_MODEL_TRUST = 0.45
+# Top-down/bottom-up reconciliation of player props (data/reconcile.py). Tier 1
+# ties receivers' rec-yds to the QB's pass-yds; Tier 2 anchors team pass/rush yards
+# to the game total. Both clamp to a modest band; flip either off if it misbehaves.
+RECONCILE_PROPS = True
+RECONCILE_TO_TOTAL = True
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 # Monte Carlo iterations per game. 6k keeps the betting probabilities within ~0.6%

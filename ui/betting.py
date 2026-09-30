@@ -57,13 +57,33 @@ def _edge_board(games, off, deff, extras, live, gp) -> None:
     st.markdown("### The ticket board")
     st.caption("Every market we can price — spread, total, moneyline, props — against the no-vig "
                "line, ranked by edge with a Kelly stake. The desk's full order book.")
+    # Opt-in: price props against real book lines (de-vigged) instead of season
+    # baselines. Props are the priciest Odds API pull (per-event), so it's the
+    # user's call — off by default to protect the monthly quota.
+    prop_lines = pd.DataFrame()
+    from data import odds_feed
+    if op.get_odds_provider().is_available():
+        use_book = st.checkbox(
+            "Price props against live book lines (uses extra API credits)",
+            value=False, key="bet_prop_lines",
+            help="Pulls player-prop lines from The Odds API, de-vigs them, and blends our "
+                 "projection toward the market — edge is then value vs the real number, not a "
+                 "season norm. Cached 15 min. Off = props scored at each player's baseline.")
+        if use_book:
+            prop_lines, pstatus = odds_feed.fetch_props()
+            if pstatus == "low_quota":
+                st.caption("⚠️ Skipping the prop pull — monthly API credits are low. Props scored at baseline.")
+            elif pstatus not in ("ok",) and pstatus != "no_key":
+                st.caption("Prop lines unavailable right now — props scored at baseline.")
+
     rows = []
     for _, r in games.iterrows():
         lg = live[(live["away"] == r["away_team"]) & (live["home"] == r["home_team"])] \
             if not live.empty else pd.DataFrame()
         rows.extend(betengine.game_bets(_effective_row(r, lg), off, deff, extras, gp))
-    # player props compete on the same board
-    rows.extend(props.prop_bets_for_games(off, deff, extras, games, gp))
+    # player props compete on the same board (book-anchored when pulled above)
+    rows.extend(props.prop_bets_for_games(off, deff, extras, games, gp,
+                                          prop_lines=prop_lines if not prop_lines.empty else None))
     if not rows:
         st.info("No priced bets yet for this slate.")
         return
