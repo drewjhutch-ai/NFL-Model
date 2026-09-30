@@ -124,7 +124,12 @@ LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the tot
 # The market (closing line) is the single most accurate NFL predictor, so we
 # trust our *divergence* from it only partway — blend our number toward the line.
 # 1.0 = pure model, 0.0 = pure market. Calibrate against results.
-MODEL_TRUST = 0.5
+# Lowered from 0.5 → 0.40 (lean more on the market): the 2025 backtest shows our
+# raw margin error (10.4) is worse than the market's (9.9), and the research is
+# consistent — the closing line is the single best NFL predictor, and model-heavy
+# blends underperform trusting it. The self-tuner refines this within [0.2, 0.9]
+# from graded results once the learning loop has enough games.
+MODEL_TRUST = 0.40
 # Blend a stable points-differential signal into the (noisier) pure-EPA margin.
 # 0 = pure EPA efficiency, 1 = pure scoreboard. A modest points weight regresses
 # EPA noise toward what teams have actually done — validated to cut margin error.

@@ -204,19 +204,54 @@ def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
     return df[keep]
 
 
+_PLAYER_STATS_URL = ("https://github.com/nflverse/nflverse-data/releases/download/"
+                     "stats_player/stats_player_week_{s}.parquet")
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading player stats…")
 def load_weekly_player(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
-    """Per-player, per-week offensive stats (for player usage & prop projections)."""
-    import nfl_data_py as nfl
+    """Per-player, per-week offensive stats (for player usage & prop projections).
 
-    df = _safe_import(nfl.import_weekly_data, list(seasons))
-    if df.empty:
-        return df
+    nflverse moved weekly player stats to the ``stats_player`` release
+    (``stats_player_week_<season>.parquet``); nfl_data_py 0.3.2 still points at the
+    old, now-404 URL, so we read the release directly (same pattern as pbp/schedule)
+    and normalize column names. Empty on failure, in which case the pipeline derives
+    player stats from play-by-play instead.
+    """
+    frames = []
+    for s in seasons:
+        try:
+            d = pd.read_parquet(_PLAYER_STATS_URL.format(s=s))
+            if "season" not in d.columns:
+                d["season"] = s
+            frames.append(d)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[loaders] player stats unavailable for {s}: {exc}")
+    if not frames:                                   # legacy fallback, just in case
+        try:
+            import nfl_data_py as nfl
+            leg = _safe_import(nfl.import_weekly_data, list(seasons))
+            if not leg.empty:
+                frames.append(leg)
+        except Exception:  # noqa: BLE001
+            pass
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    if "season_type" in df.columns:                  # regular season only
+        df = df[df["season_type"].astype(str).str.upper().str.startswith("REG")]
+    if "recent_team" not in df.columns and "team" in df.columns:
+        df = df.rename(columns={"team": "recent_team"})
+    if "interceptions" not in df.columns and "passing_interceptions" in df.columns:
+        df = df.rename(columns={"passing_interceptions": "interceptions"})
     keep = [c for c in ["player_id", "player_display_name", "position", "recent_team",
                         "opponent_team", "season", "week", "attempts", "completions",
                         "passing_yards", "passing_tds", "interceptions", "carries",
                         "rushing_yards", "rushing_tds", "targets", "receptions",
                         "receiving_yards", "receiving_tds"] if c in df.columns]
+    # need the essentials or the pipeline should fall back to pbp-derived stats
+    if not {"player_id", "recent_team", "week"}.issubset(keep):
+        return pd.DataFrame()
     return df[keep].copy()
 
 
@@ -373,12 +408,15 @@ def load_depth_charts(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.Da
 
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading PFR advanced stats…")
 def load_pfr(s_type: str, seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
-    """Pro Football Reference advanced stats — s_type in {'pass','rush','rec','def'}.
+    """Pro Football Reference advanced stats — s_type in {'pass','rush','rec'}.
 
-    Charted detail beyond box score: pressures/blitzes (def), broken tackles &
-    yards before contact (rush), air yards / YAC / drops (rec). Returned raw
-    (columns vary by type); callers select defensively. Empty on any failure.
+    nfl_data_py's seasonal PFR feed only exposes OFFENSE (pass/rush/rec); there is
+    no defensive advanced table here, so any other s_type (e.g. 'def') returns
+    empty quietly — Sharp Football supplies the pass-rush & coverage signal instead.
+    Callers select columns defensively; empty on any failure.
     """
+    if s_type not in ("pass", "rush", "rec"):
+        return pd.DataFrame()   # no defensive PFR via nfl_data_py — avoid error spam
     import nfl_data_py as nfl
 
     frames = []

@@ -20,8 +20,6 @@ from .committed import CommittedCoverageProvider
 from .composite import CompositeSchemeProvider
 from .pff_csv import PFFCoverageProvider
 from .sharpfootball import SharpFootballProvider
-from .statrankings import StatRankingsProvider
-from .sumersports import SumerSportsProvider
 
 __all__ = [
     "SchemeDataProvider",
@@ -49,8 +47,10 @@ def get_provider(pff_buffer: bytes | None = None) -> SchemeDataProvider:
             # so it's the reliable path on Streamlit Cloud.
             CommittedCoverageProvider(),
             SharpFootballProvider(),
-            SumerSportsProvider(),
-            StatRankingsProvider(),
+            # SumerSports & StatRankings dropped 2026-09: both changed their page
+            # layouts ("No matching table") and were only spamming errors while
+            # contributing nothing. Sharp + the committed feed carry the blend;
+            # re-add here if/when a working scraper is restored.
         ]
     )
 

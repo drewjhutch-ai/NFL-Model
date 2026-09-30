@@ -107,7 +107,7 @@ def facet_hit_rates(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int,
 def weekly_review(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int) -> dict:
     """Grade the season to date: accuracy headline + per-facet hit rates."""
     coverage = _committed_coverage(season)
-    res = backtest.walk_forward(pbp_all, schedule, season, start_week=4)
+    res = backtest.walk_forward(pbp_all, schedule, season, start_week=3)
     acc = backtest.summary(res)
     facets = facet_hit_rates(pbp_all, schedule, season, coverage)
     headline = _headline(acc, facets)

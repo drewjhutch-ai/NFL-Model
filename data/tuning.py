@@ -36,7 +36,7 @@ _POINTS_GRID = [0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70]
 
 
 def _score(pbp, schedule, season) -> tuple[pd.DataFrame, dict]:
-    res = backtest.walk_forward(pbp, schedule, season, start_week=4)
+    res = backtest.walk_forward(pbp, schedule, season, start_week=3)
     return res, backtest.summary(res)
 
 
