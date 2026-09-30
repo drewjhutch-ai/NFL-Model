@@ -41,7 +41,8 @@ def simulate(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
         sharp_mgn = sharp_value.sharp_margin(extras["sharp"], home, away)
     margin_mean = betting.project_margin(off, deff, home, away, st_ppg, qb,
                                          extras.get("points_rtg"), extras.get("elo"),
-                                         extras.get("injury_pts"), sharp_mgn)  # + = home
+                                         extras.get("injury_pts"), sharp_mgn,
+                                         market_rtg=extras.get("market_rtg"))  # + = home
     total_mean = betting.project_total(off, deff, home, away, extras.get("pace"))
     if pd.isna(margin_mean) or pd.isna(total_mean):
         _SIM_MEMO[_key] = {}

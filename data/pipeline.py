@@ -237,6 +237,11 @@ def build_frames():
     extras["off_current_ranks"] = _off_cur_ranks       # this-season-only ranks (pre-anchor)
     extras["deff_current_ranks"] = _deff_cur_ranks
     extras["elo"] = elo.elo_ratings(schedule)
+    # Market-implied power ratings: team strength solved from the closing spreads
+    # across the whole schedule — the sharpest single signal, folded into the
+    # margin ensemble and surfaced as a power ranking. Empty if too few lines.
+    from data import market_ratings as _mkt
+    extras["market_rtg"] = _mkt.market_power_ratings(schedule, config.CURRENT_SEASON)
     # Sharp Football lifeblood: charted team tables (pace, personnel, trenches,
     # tendencies, coverage, metrics). Empty dict until the Action commits them;
     # every consumer degrades gracefully. Season falls back to the prior year's

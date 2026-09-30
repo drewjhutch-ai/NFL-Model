@@ -249,10 +249,19 @@ def _power_board(off, deff, extras, teams_filter, recs) -> None:
         _power_table(off, deff, extras, teams_filter, recs, _sharp_power(extras), move)
 
 
+def _market_power(extras) -> pd.Series | None:
+    """Market-implied power rank (1 = strongest) from the closing lines."""
+    mr = extras.get("market_rtg")
+    if mr is None or len(mr) == 0:
+        return None
+    return mr.rank(ascending=False, method="min")
+
+
 def _power_table(off, deff, extras, teams_filter, recs, sharp_rank, move) -> None:
     pr = betting.power_ratings(off, deff)
     meta = loaders.team_meta()
     st_ppg, sos = extras.get("st_ppg"), extras.get("sos")
+    mkt_rank = _market_power(extras)
     rows = []
     for team, r in pr.sort_values("power_rank").iterrows():
         if team not in teams_filter:
@@ -268,16 +277,19 @@ def _power_table(off, deff, extras, teams_filter, recs, sharp_rank, move) -> Non
             "Off": int(off.loc[team, "epa_play_rank"]) if team in off.index else None,
             "Def": int(deff.loc[team, "epa_play_rank"]) if team in deff.index else None,
             "Sharp": int(sharp_rank.get(team)) if sharp_rank is not None and team in sharp_rank.index else None,
+            "Mkt": int(mkt_rank.get(team)) if mkt_rank is not None and team in mkt_rank.index else None,
             "ST": round(float(st_ppg.get(team)), 1) if st_ppg is not None and team in st_ppg.index else None,
             "SOS": round(float(sos.get(team)), 3) if sos is not None and team in sos.index else None,
             "Strength": s, "Struggle": w,
         })
     df = pd.DataFrame(rows)
-    for col in ("Move", "Sharp", "PD/gm"):
+    for col in ("Move", "Sharp", "Mkt", "PD/gm"):
         if col in df.columns and not df[col].notna().any():
             df = df.drop(columns=col)
     st.dataframe(df, width="stretch", hide_index=True, column_config={
         "Move": st.column_config.NumberColumn("Δ Wk", format="%+d") if "Move" in df.columns else None,
+        "Mkt": st.column_config.NumberColumn("Mkt", help="Market-implied power rank (1 = strongest), "
+            "solved from the closing betting lines across the schedule.") if "Mkt" in df.columns else None,
         "Net/100": st.column_config.NumberColumn("Net/100", format="%+.1f", help=_EPA_HELP),
         "PD/gm": st.column_config.NumberColumn("PD/gm", format="%+.1f",
             help="Point differential per game (actual scoreboard)."),

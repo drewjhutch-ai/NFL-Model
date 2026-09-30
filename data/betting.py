@@ -107,7 +107,8 @@ def strength_of_schedule(schedule: pd.DataFrame, power: pd.DataFrame) -> pd.Seri
 def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
                    st: pd.Series | None = None, qb: pd.DataFrame | None = None,
                    points: pd.Series | None = None, elo: pd.Series | None = None,
-                   injuries: dict | None = None, sharp_mgn: float | None = None) -> float:
+                   injuries: dict | None = None, sharp_mgn: float | None = None,
+                   market_rtg: pd.Series | None = None) -> float:
     """Projected home margin (points, + = home favored), matchup-aware.
 
     An ensemble: EPA efficiency blended with a stable points-differential signal,
@@ -145,6 +146,12 @@ def project_margin(off: pd.DataFrame, deff: pd.DataFrame, home: str, away: str,
     # tuner can adjust once the season runs. Absent in the offseason → no effect.
     if sharp_mgn is not None and pd.notna(sharp_mgn) and config.SHARP_WEIGHT > 0:
         core = (1 - config.SHARP_WEIGHT) * core + config.SHARP_WEIGHT * float(sharp_mgn)
+    # blend in the market-implied power rating (team strength backed out of the
+    # closing lines across the whole schedule — the sharpest single signal).
+    if (market_rtg is not None and len(market_rtg) and config.MARKET_WEIGHT > 0
+            and home in market_rtg.index and away in market_rtg.index):
+        mm = float(market_rtg[home] - market_rtg[away])   # neutral-field margin
+        core = (1 - config.MARKET_WEIGHT) * core + config.MARKET_WEIGHT * mm
     margin = core + home_field(home)
     if st is not None and len(st):
         margin += st.get(home, 0.0) - st.get(away, 0.0)
@@ -335,7 +342,8 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
         from data import sharp_value
         sharp_mgn = sharp_value.sharp_margin(extras["sharp"], home, away)
     margin = project_margin(off, deff, home, away, st, qb, extras.get("points_rtg"),
-                            extras.get("elo"), extras.get("injury_pts"), sharp_mgn)  # + = home
+                            extras.get("elo"), extras.get("injury_pts"), sharp_mgn,
+                            market_rtg=extras.get("market_rtg"))  # + = home
     wx = weather_effects(row)
     if pd.notna(margin):
         margin *= (1 - wx["margin_compression"])   # bad weather => closer game

@@ -59,6 +59,16 @@ jobs:
           python scripts/fetch_sharp.py
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Fetch per-player slot rates (WR–CB matchup input)
+        id: slot
+        # Scrapes a free slot-rate board into slot_rates_<season>.csv so the
+        # WR–CB panel knows who actually lines up inside. Exit 2 if every source
+        # is blocked — the panel then falls back to depth-chart alignment.
+        run: |
+          set +e
+          python scripts/fetch_slot_rates.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
       - name: Snapshot current rosters (trades / signings / cuts)
         id: rosters
         # Commits the live Sleeper roster to rosters_data/ so the app has a
@@ -115,7 +125,7 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Commit refreshed data
-        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.rosters.outputs.exit_code == '0' || steps.injuries.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0' || steps.backtest.outputs.exit_code == '0'
+        if: steps.fetch.outputs.exit_code == '0' || steps.sharp.outputs.exit_code == '0' || steps.slot.outputs.exit_code == '0' || steps.rosters.outputs.exit_code == '0' || steps.injuries.outputs.exit_code == '0' || steps.snapshot.outputs.exit_code == '0' || steps.tune.outputs.exit_code == '0' || steps.review.outputs.exit_code == '0' || steps.backtest.outputs.exit_code == '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -123,6 +133,7 @@ jobs:
           # offseason) must not abort staging the files that DO exist.
           git add -f scheme_data/coverage_*.csv 2>/dev/null || true
           git add -f sharp_data/*.csv 2>/dev/null || true
+          git add -f slot_rates_*.csv 2>/dev/null || true
           git add -f injury_snapshots/*.csv 2>/dev/null || true
           git add -f rosters_data/*.csv 2>/dev/null || true
           git add -f history/*.csv 2>/dev/null || true

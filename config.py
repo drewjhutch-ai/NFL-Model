@@ -142,6 +142,12 @@ ELO_WEIGHT = 0.15
 # opinion) into the projection when that data is present. Conservative + gated;
 # 0 = off. The weekly review loop grades it and the tuner can adjust over time.
 SHARP_WEIGHT = 0.12
+# Market-implied power rating: team strength solved from the closing lines across
+# the whole schedule (data/market_ratings.py). The market is the sharpest single
+# signal, so this carries real weight in the ensemble; RIDGE shrinks the solve
+# toward average when few games have been played. 0 = off.
+MARKET_WEIGHT = 0.22
+MARKET_RATING_RIDGE = 1.0
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 # Monte Carlo iterations per game. 6k keeps the betting probabilities within ~0.6%
