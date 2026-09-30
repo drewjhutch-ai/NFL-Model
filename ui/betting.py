@@ -280,6 +280,13 @@ def _self_tuning() -> None:
         else:
             st.caption(f"Prop-side tuning: **{pt.get('status','—')}** "
                        f"({pt.get('weeks',0)} weeks banked) · `PROP_MODEL_TRUST` {config.PROP_MODEL_TRUST:.2f}.")
+    rc = t.get("reconcile")
+    if rc:
+        st.caption(f"Prop reconciliation anchors (calibrated from {rc.get('n','?')} team-games): "
+                   f"**{config.RECON_YARDS_PER_POINT:.1f}** yds/point · "
+                   f"**{config.RECON_RECEIVER_CAPTURE:.0%}** top-receiver capture · "
+                   f"**{config.RECON_PASS_SHARE:.0%}** pass share — learned from real results, "
+                   "so the players add up to the game with this season's true rates.")
     log = tuning.load_log()
     if not log.empty:
         st.caption("Tuning history:")

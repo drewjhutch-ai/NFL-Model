@@ -158,6 +158,11 @@ PROP_MODEL_TRUST = 0.45
 # to the game total. Both clamp to a modest band; flip either off if it misbehaves.
 RECONCILE_PROPS = True
 RECONCILE_TO_TOTAL = True
+# Reconciliation anchor constants — calibrated from real results by the learning
+# loop (data.backtest.reconcile_calibration). Defaults are league-ish priors.
+RECON_YARDS_PER_POINT = 14.2   # scrimmage yards per point of implied scoring
+RECON_RECEIVER_CAPTURE = 0.92  # share of team pass yards caught by the top receivers
+RECON_PASS_SHARE = 0.60        # team pass share of scrimmage yards (pre-script)
 MARGIN_STD = 13.2             # NFL final-margin std, for win prob & confidence
 TOTAL_STD = 10.0             # NFL combined-points std, for the simulation
 # Monte Carlo iterations per game. 6k keeps the betting probabilities within ~0.6%
@@ -240,6 +245,15 @@ def _apply_tuning() -> dict:
         RECONCILE_PROPS = t["reconcile_props"]
     if isinstance(t.get("reconcile_to_total"), bool):
         RECONCILE_TO_TOTAL = t["reconcile_to_total"]
+    global RECON_YARDS_PER_POINT, RECON_RECEIVER_CAPTURE, RECON_PASS_SHARE
+    rec = t.get("reconcile")
+    if isinstance(rec, dict):
+        if isinstance(rec.get("yards_per_point"), (int, float)):
+            RECON_YARDS_PER_POINT = float(min(max(rec["yards_per_point"], 10.0), 20.0))
+        if isinstance(rec.get("receiver_capture"), (int, float)):
+            RECON_RECEIVER_CAPTURE = float(min(max(rec["receiver_capture"], 0.70), 1.0))
+        if isinstance(rec.get("pass_share"), (int, float)):
+            RECON_PASS_SHARE = float(min(max(rec["pass_share"], 0.45), 0.72))
     if isinstance(t.get("edge_weights"), dict):
         for k, v in t["edge_weights"].items():
             if k in EDGE_WEIGHTS and isinstance(v, (int, float)):

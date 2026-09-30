@@ -24,12 +24,19 @@ import pandas as pd
 
 import config
 
-# Fraction of a team's pass yards captured by the handful of receivers we project.
-_RECEIVER_CAPTURE = 0.92
-# Scrimmage yards per point of implied scoring (league-ish; a coarse but stable anchor).
-_YARDS_PER_POINT = 14.2
-# League-average team pass share of scrimmage yards, before script.
-_BASE_PASS_SHARE = 0.60
+# These anchors live in config so the learning loop can calibrate them from real
+# results (data.backtest.reconcile_calibration); read them fresh each call so a
+# tuned model_tuning.json takes effect without reimporting this module.
+def _receiver_capture() -> float:
+    return float(getattr(config, "RECON_RECEIVER_CAPTURE", 0.92))
+
+
+def _yards_per_point() -> float:
+    return float(getattr(config, "RECON_YARDS_PER_POINT", 14.2))
+
+
+def _base_pass_share() -> float:
+    return float(getattr(config, "RECON_PASS_SHARE", 0.60))
 
 
 def _clamp(x: float, lo: float, hi: float) -> float:
@@ -72,9 +79,9 @@ def reconcile_team(team_projs: list[tuple], *, qb_id=None, implied_points: float
         elif (cur_pass + cur_rush0) > 0:
             share = cur_pass / (cur_pass + cur_rush0)
         else:
-            share = _BASE_PASS_SHARE
+            share = _base_pass_share()
         share = _clamp(share, 0.45, 0.72)
-        team_yds = implied_points * _YARDS_PER_POINT
+        team_yds = implied_points * _yards_per_point()
         target_pass = team_yds * share
         target_rush = team_yds * (1 - share)
 
@@ -94,7 +101,7 @@ def reconcile_team(team_projs: list[tuple], *, qb_id=None, implied_points: float
     if getattr(config, "RECONCILE_PROPS", True) and qb_proj and qb_proj.get("Pass yds"):
         cur_recv = sum(pr.get("Rec yds", 0) or 0 for _, pr in recv)
         if cur_recv > 0:
-            target_recv = _RECEIVER_CAPTURE * qb_proj["Pass yds"]
+            target_recv = _receiver_capture() * qb_proj["Pass yds"]
             f = _clamp(target_recv / cur_recv, 0.85, 1.15)
             for _, pr in recv:
                 _scale_stats(pr, ("Rec yds", "Rec", "Targets"), f)

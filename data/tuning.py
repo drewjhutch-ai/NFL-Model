@@ -125,7 +125,22 @@ def prop_tuning_status() -> dict:
     return {"status": "ready", "weeks": weeks, "prop_model_trust": config.PROP_MODEL_TRUST}
 
 
-def tune(pbp, schedule, season) -> dict:
+def recommend_reconcile(schedule, weekly, season) -> dict:
+    """Anchor constants (yards/point, pass share, receiver capture) blended toward
+    what actually happened. Empty when there aren't enough team-games to fit."""
+    cal = backtest.reconcile_calibration(schedule, weekly, season)
+    if not cal or cal.get("status") != "ok":
+        return {"status": (cal or {}).get("status", "none"), "n": (cal or {}).get("n", 0)}
+    return {
+        "status": "ok", "n": cal["n"],
+        "yards_per_point": _blend(config.RECON_YARDS_PER_POINT, cal["yards_per_point"]),
+        "pass_share": _blend(config.RECON_PASS_SHARE, cal["pass_share"]),
+        "receiver_capture": _blend(config.RECON_RECEIVER_CAPTURE, cal["receiver_capture"]),
+        "fit": {k: cal[k] for k in ("yards_per_point", "pass_share", "receiver_capture")},
+    }
+
+
+def tune(pbp, schedule, season, weekly=None) -> dict:
     """Run one learning step. Returns the result (or a 'held' status if too early)."""
     res, base = _score(pbp, schedule, season)
     n = len(res)
@@ -143,6 +158,8 @@ def tune(pbp, schedule, season) -> dict:
     for k, target in rec_weights.items():
         new_weights[k] = _blend(config.EDGE_WEIGHTS[k], target)
 
+    recon = recommend_reconcile(schedule, weekly, season)
+
     payload = {
         "points_weight": new_points,
         "market_weight": new_market,
@@ -155,6 +172,15 @@ def tune(pbp, schedule, season) -> dict:
         "recommended_market_weight": rec_mkt,
         "prop_tuning": prop_tuning_status(),
     }
+    if recon.get("status") == "ok":
+        payload["reconcile"] = {
+            "yards_per_point": recon["yards_per_point"],
+            "pass_share": recon["pass_share"],
+            "receiver_capture": recon["receiver_capture"],
+            "n": recon["n"], "fit": recon["fit"],
+        }
+    else:
+        payload["reconcile_status"] = recon
     return {"status": "tuned", "payload": payload,
             "prev_points": config.POINTS_WEIGHT, "prev_market": config.MARKET_WEIGHT}
 

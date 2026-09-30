@@ -31,7 +31,12 @@ def main() -> int:
 
     pbp = loaders.load_pbp()
     schedule = loaders.load_schedule()
-    result = tuning.tune(pbp, schedule, args.season)
+    try:
+        weekly = loaders.load_weekly_player()
+    except Exception as exc:  # noqa: BLE001 - calibration is optional
+        print(f"[tune] weekly player stats unavailable ({exc}); skipping reconcile calibration.")
+        weekly = None
+    result = tuning.tune(pbp, schedule, args.season, weekly=weekly)
 
     if result["status"] == "held":
         print(f"[tune] holding defaults — {result['reason']}.")
@@ -51,6 +56,16 @@ def main() -> int:
     ps = payload.get("prop_tuning", {})
     print(f"       prop-side: {ps.get('status')} ({ps.get('weeks', 0)} wk banked; "
           f"need {tuning.MIN_PROP_WEEKS}) — PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
+    rc = payload.get("reconcile")
+    if rc:
+        f = rc.get("fit", {})
+        print(f"       reconcile (n={rc.get('n')}): yds/pt {config.RECON_YARDS_PER_POINT}→"
+              f"{rc['yards_per_point']} (fit {f.get('yards_per_point')}) · "
+              f"capture {config.RECON_RECEIVER_CAPTURE}→{rc['receiver_capture']} · "
+              f"pass-share {config.RECON_PASS_SHARE}→{rc['pass_share']}")
+    else:
+        rs = payload.get("reconcile_status", {})
+        print(f"       reconcile: {rs.get('status','n/a')} (n={rs.get('n',0)}) — anchors held")
     print(f"       wrote {tuning._TUNING_FILE.name} + appended {tuning._LOG_FILE.name}")
     return 0
 

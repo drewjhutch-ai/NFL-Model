@@ -100,6 +100,64 @@ def summary(res: pd.DataFrame) -> dict:
     return out
 
 
+def reconcile_calibration(schedule: pd.DataFrame, weekly: pd.DataFrame, season: int,
+                          top_receivers: int = 5) -> dict:
+    """Calibrate the reconciliation anchors against what actually happened.
+
+    Reconciliation ties player props to two real quantities, so we can check them
+    against results directly from committed data (no book lines needed):
+
+      * ``yards_per_point``  — actual team scrimmage yards ÷ actual points scored;
+      * ``pass_share``       — actual team pass yards ÷ (pass + rush) yards;
+      * ``receiver_capture`` — the top receivers' actual rec-yds ÷ team pass yards.
+
+    Uses medians across every team-game (robust to blowouts/garbage time). Returns
+    ``{}`` when the weekly stats or scores aren't available yet.
+    """
+    if (weekly is None or getattr(weekly, "empty", True) or schedule is None
+            or getattr(schedule, "empty", True)):
+        return {}
+    need = {"recent_team", "week", "passing_yards", "rushing_yards", "receiving_yards"}
+    if not need.issubset(weekly.columns):
+        return {}
+    w = weekly[weekly["season"] == season] if "season" in weekly.columns else weekly
+    if w.empty:
+        return {}
+    games = schedule[(schedule["season"] == season) & schedule["result"].notna()
+                     & schedule["home_score"].notna() & schedule["away_score"].notna()]
+    ypp, shares, caps = [], [], []
+    for _, g in games.iterrows():
+        wk = g["week"]
+        for team, pts in ((g["home_team"], g["home_score"]), (g["away_team"], g["away_score"])):
+            tw = w[(w["week"] == wk) & (w["recent_team"] == team)]
+            if tw.empty:
+                continue
+            pass_y = float(pd.to_numeric(tw["passing_yards"], errors="coerce").sum())
+            rush_y = float(pd.to_numeric(tw["rushing_yards"], errors="coerce").sum())
+            scrim = pass_y + rush_y
+            if pts and float(pts) > 0 and scrim > 0:
+                ypp.append(scrim / float(pts))
+            if scrim > 0:
+                shares.append(pass_y / scrim)
+            if pass_y > 0:
+                rec = pd.to_numeric(tw["receiving_yards"], errors="coerce").fillna(0)
+                top = rec.sort_values(ascending=False).head(top_receivers).sum()
+                caps.append(min(float(top) / pass_y, 1.0))
+    n = len(ypp)
+    if n < 12:                       # too few team-games to trust a fit
+        return {"n": n, "status": "thin"}
+    med = lambda xs: float(pd.Series(xs).median())  # noqa: E731
+    return {
+        "n": n, "status": "ok",
+        "yards_per_point": round(med(ypp), 2),
+        "pass_share": round(med(shares), 3),
+        "receiver_capture": round(med(caps), 3),
+        "current": {"yards_per_point": config.RECON_YARDS_PER_POINT,
+                    "pass_share": config.RECON_PASS_SHARE,
+                    "receiver_capture": config.RECON_RECEIVER_CAPTURE},
+    }
+
+
 def facet_predictiveness(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int) -> pd.DataFrame:
     """Correlate each facet's net edge with actual game margin (single-fit).
 
