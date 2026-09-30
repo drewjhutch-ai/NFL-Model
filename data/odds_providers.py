@@ -30,12 +30,12 @@ _SNAP_DIR = Path(__file__).resolve().parents[1] / "odds_snapshots"
 # Books widely regarded as sharp (they move on sharp money, not public).
 SHARP_BOOKS = {"pinnacle", "circa", "circa sports", "betonline.ag", "bookmaker", "betcris"}
 
-# The Odds API bills regions × markets per request. US books are all a US bettor
-# can act on, so default to the two US regions (DK/FD/MGM/Caesars + Fanatics/ESPN
-# BET/etc.) — 2 regions × 3 markets = 6 credits/pull. Override with the
-# ODDS_API_REGIONS secret (e.g. "us" for the leanest 3-credit pull, or add
-# uk,au,eu only if you truly want offshore numbers).
-_DEFAULT_REGIONS = "us,us2"
+# The Odds API bills regions × markets per request. Default to the single "us"
+# region (DK/FD/MGM/Caesars) — the leanest 3-credit pull, which keeps the free
+# 500/mo quota alive alongside weekly prop-line banking. Override with the
+# ODDS_API_REGIONS secret ("us,us2" to add Fanatics/ESPN BET/etc. for 6 credits,
+# or add uk,au,eu only if you truly want offshore numbers).
+_DEFAULT_REGIONS = "us"
 
 # Last quota the API reported (from response headers), for the UI to surface.
 LAST_QUOTA: dict = {}
