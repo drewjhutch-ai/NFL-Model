@@ -226,11 +226,20 @@ def _apply_tuning() -> dict:
             t = json.load(fh)
     except Exception:  # noqa: BLE001 - a bad file must never break the app
         return {}
-    global POINTS_WEIGHT, MODEL_TRUST
+    global POINTS_WEIGHT, MODEL_TRUST, MARKET_WEIGHT, PROP_MODEL_TRUST
+    global RECONCILE_PROPS, RECONCILE_TO_TOTAL
     if isinstance(t.get("points_weight"), (int, float)):
         POINTS_WEIGHT = float(min(max(t["points_weight"], 0.0), 0.85))
     if isinstance(t.get("model_trust"), (int, float)):
         MODEL_TRUST = float(min(max(t["model_trust"], 0.2), 0.9))
+    if isinstance(t.get("market_weight"), (int, float)):
+        MARKET_WEIGHT = float(min(max(t["market_weight"], 0.0), 0.6))
+    if isinstance(t.get("prop_model_trust"), (int, float)):
+        PROP_MODEL_TRUST = float(min(max(t["prop_model_trust"], 0.2), 0.9))
+    if isinstance(t.get("reconcile_props"), bool):
+        RECONCILE_PROPS = t["reconcile_props"]
+    if isinstance(t.get("reconcile_to_total"), bool):
+        RECONCILE_TO_TOTAL = t["reconcile_to_total"]
     if isinstance(t.get("edge_weights"), dict):
         for k, v in t["edge_weights"].items():
             if k in EDGE_WEIGHTS and isinstance(v, (int, float)):

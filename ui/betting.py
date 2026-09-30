@@ -262,11 +262,24 @@ def _self_tuning() -> None:
         st.caption(f"Holding safe defaults · points-blend **{config.POINTS_WEIGHT:.2f}**. "
                    "The weekly Action starts re-fitting once the season has enough graded games.")
         return
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Points blend", f"{config.POINTS_WEIGHT:.2f}",
               help="EPA↔scoreboard weight, learned from the backtest.")
-    c2.metric("Learned from", f"{t.get('graded_games','?')} games")
-    c3.metric("As of", str(t.get("as_of", "—")))
+    c2.metric("Market blend", f"{config.MARKET_WEIGHT:.2f}",
+              help="How far the margin leans on the market power rating (team strength "
+                   "backed out of the closing lines), learned from the backtest.")
+    c3.metric("Learned from", f"{t.get('graded_games','?')} games")
+    c4.metric("As of", str(t.get("as_of", "—")))
+    pt = t.get("prop_tuning") or {}
+    if pt:
+        if pt.get("status") == "accruing":
+            st.caption(f"Prop-side tuning: **accruing** book-line history "
+                       f"({pt.get('weeks',0)}/{pt.get('need','?')} weeks banked). "
+                       f"`PROP_MODEL_TRUST` holds at {config.PROP_MODEL_TRUST:.2f} until there's enough "
+                       "to grade — the free odds feed keeps no history, so the weekly Action banks it.")
+        else:
+            st.caption(f"Prop-side tuning: **{pt.get('status','—')}** "
+                       f"({pt.get('weeks',0)} weeks banked) · `PROP_MODEL_TRUST` {config.PROP_MODEL_TRUST:.2f}.")
     log = tuning.load_log()
     if not log.empty:
         st.caption("Tuning history:")

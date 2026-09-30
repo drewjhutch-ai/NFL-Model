@@ -44,8 +44,13 @@ def main() -> int:
     print(f"[tune] learned from {payload['graded_games']} games (season {payload['season']}):")
     print(f"       POINTS_WEIGHT {result['prev_points']:.3f} -> {payload['points_weight']:.3f} "
           f"(best-fit {payload['recommended_points_weight']:.2f})")
+    print(f"       MARKET_WEIGHT {result['prev_market']:.3f} -> {payload['market_weight']:.3f} "
+          f"(best-fit {payload['recommended_market_weight']:.2f})")
     print(f"       out-of-sample: MAE {m.get('model_mae')} (mkt {m.get('market_mae')}) · "
           f"ATS {m.get('ats_pct')}% · SU {m.get('su_pct')}%")
+    ps = payload.get("prop_tuning", {})
+    print(f"       prop-side: {ps.get('status')} ({ps.get('weeks', 0)} wk banked; "
+          f"need {tuning.MIN_PROP_WEEKS}) — PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
     print(f"       wrote {tuning._TUNING_FILE.name} + appended {tuning._LOG_FILE.name}")
     return 0
 

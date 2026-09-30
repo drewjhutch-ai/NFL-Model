@@ -56,7 +56,12 @@ def walk_forward(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int,
         pts = betting.points_ratings(schedule, season, before_week=wk)
         from data import elo as _elo
         elo_r = _elo.elo_ratings(schedule, before_season=season, before_week=wk)
-        extras = {"pace": pace, "points_rtg": pts, "elo": elo_r}
+        # market power ratings from lines of games played *before* this week only —
+        # honest (no peeking at this week's line, which assess already blends toward).
+        from data import market_ratings as _mkt
+        prior = schedule[(schedule["season"] == season) & (schedule["week"] < wk)]
+        mkt_rtg = _mkt.market_power_ratings(prior, season)
+        extras = {"pace": pace, "points_rtg": pts, "elo": elo_r, "market_rtg": mkt_rtg}
         for _, r in games[games["week"] == wk].iterrows():
             a = betting.assess(r, off, deff, extras)
             if pd.isna(a["model_margin"]):
