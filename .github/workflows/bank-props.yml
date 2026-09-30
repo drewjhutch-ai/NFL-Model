@@ -1,0 +1,81 @@
+name: Bank player-prop lines
+
+# Player props post late in the week (books hang them Wed–Sat, not Monday), so the
+# main Tuesday "Update model data" run almost always finds nothing to bank. This
+# lightweight job runs Saturday — when the Sunday slate's props are up — and does
+# ONE thing: snapshot the posted prop lines into prop_line_history/ so the prop-side
+# tuner (PROP_MODEL_TRUST) has the historical book numbers it needs to learn from.
+#
+# It's isolated from the heavy Tuesday pipeline on purpose: no Sharp scrape, no
+# Chromium, no backtest — just a single Odds API pull (~16 credits) and a commit.
+# Needs the ODDS_API_KEY repository secret; a clean no-op without it.
+
+on:
+  schedule:
+    # 16:00 UTC Saturday (~11am ET) — Sunday props are posted by then.
+    - cron: "0 16 * * 6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bank-props-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bank:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the branch this ran on
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Bank this week's player-prop lines
+        id: proplines
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set +e
+          python scripts/snapshot_prop_lines.py
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Commit banked prop lines
+        if: steps.proplines.outputs.exit_code == '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f prop_line_history/*.csv 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No new prop lines since last run."
+          else
+            git commit -m "Bank player-prop lines [skip ci]"
+            # the branch can move while this runs — rebase + retry on rejection
+            pushed=0
+            for i in 1 2 3 4; do
+              if git push origin HEAD:${{ github.ref_name }}; then pushed=1; break; fi
+              echo "push rejected — rebasing onto latest remote (attempt $i)"
+              git fetch origin ${{ github.ref_name }}
+              git rebase origin/${{ github.ref_name }} || { git rebase --abort; break; }
+              sleep 3
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::Could not push banked prop lines after rebase retries."
+              exit 1
+            fi
+          fi
+
+      - name: Note when nothing was banked
+        if: steps.proplines.outputs.exit_code != '0'
+        run: |
+          echo "::notice::No prop lines banked (no key, no posted lines yet, or spent quota)."
