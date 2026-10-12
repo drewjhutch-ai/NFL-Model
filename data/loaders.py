@@ -89,6 +89,23 @@ def _safe_import(fn, years, **kwargs) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def _canon_team_cols(df: pd.DataFrame, *cols: str) -> pd.DataFrame:
+    """Normalize team-code columns to the canonical abbreviation, in place.
+
+    nflverse's schedule and play-by-play still code the Rams "LA", while every other
+    feed here (Sharp Football, Sleeper rosters, the odds API) uses the canonical
+    "LAR". Left unreconciled, the Rams silently drop out of any cross-source lookup —
+    the Scheme Lab, the WR–CB panel, coverage ranks — because the game's team code
+    ("LA") never matches the charted data ("LAR"). game_id is deliberately left alone
+    so historical grading joins (which key on it) stay stable.
+    """
+    from data.teams import normalize_team
+    for c in cols:
+        if c in df.columns:
+            df[c] = df[c].map(lambda v: (normalize_team(v) or v) if pd.notna(v) else v)
+    return df
+
+
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading play-by-play from nflverse…")
 def load_pbp(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
     """Regular-season play-by-play for the requested seasons."""
@@ -108,7 +125,7 @@ def load_pbp(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFrame:
         df = df[df["season_type"] == "REG"]
     # Real scrimmage plays only.
     df = df[df["play_type"].isin(["pass", "run"])].copy()
-    return df
+    return _canon_team_cols(df, "posteam", "defteam")
 
 
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading special teams…")
@@ -127,7 +144,8 @@ def load_special_teams(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.D
         df = df[df["season_type"] == "REG"]
     if "special" in df.columns:
         df = df[df["special"] == 1]
-    return df[df["posteam"].notna() & df["epa"].notna()].copy()
+    df = df[df["posteam"].notna() & df["epa"].notna()].copy()
+    return _canon_team_cols(df, "posteam")
 
 
 @st.cache_data(ttl=_CACHE_TTL, show_spinner="Loading FTN charting…")
@@ -201,7 +219,7 @@ def load_schedule(seasons: tuple[int, ...] = tuple(config.SEASONS)) -> pd.DataFr
                         "home_spread_odds", "over_odds", "under_odds",
                         "away_rest", "home_rest", "div_game", "roof",
                         "surface", "temp", "wind"] if c in df.columns]
-    return df[keep]
+    return _canon_team_cols(df[keep].copy(), "home_team", "away_team")
 
 
 _PLAYER_STATS_URL = ("https://github.com/nflverse/nflverse-data/releases/download/"
