@@ -1,0 +1,559 @@
+player,stat,line,over,under,book,season,week,ts
+Sam Darnold,Pass TD,1.5,123,-157.0,DraftKings,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,175,-226.0,DraftKings,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,220.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,202.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,49.5,-110,-114.0,DraftKings,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,31.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,21.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,20.5,-116,-108.0,DraftKings,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,17.5,-108,-116.0,DraftKings,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec yds,12.5,-108,-116.0,DraftKings,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,9.5,-118,-106.0,DraftKings,2026,6,2026-10-13T16:44
+George Holani,Rec yds,9.5,-105,-120.0,DraftKings,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-115,-111.0,DraftKings,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-117,-109.0,DraftKings,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,3.5,119,-152.0,DraftKings,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-154,120.0,DraftKings,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-139,109.0,DraftKings,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-138,108.0,DraftKings,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-130,102.0,DraftKings,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec,1.5,107,-137.0,DraftKings,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,66.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,45.5,-115,-109.0,DraftKings,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,15.5,-116,-108.0,DraftKings,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,13.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+George Holani,Rush yds,13.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,174,-240.0,FanDuel,2026,6,2026-10-13T16:44
+Sam Darnold,Pass TD,1.5,118,-158.0,FanDuel,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,220.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,202.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,16.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,31.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,20.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec yds,22.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec yds,12.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec yds,20.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec yds,91.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Tory Horton,Rec yds,5.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,49.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,22.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+George Holani,Rec yds,8.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+AJ Barner,Rec yds,20.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,9.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec,6.5,-122,-106.0,FanDuel,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-158,118.0,FanDuel,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-108,-122.0,FanDuel,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-125,-106.0,FanDuel,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,3.5,116,-154.0,FanDuel,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec,2.5,116,-154.0,FanDuel,2026,6,2026-10-13T16:44
+Tory Horton,Rec,0.5,-168,126.0,FanDuel,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-130,-102.0,FanDuel,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec,2.5,148,-200.0,FanDuel,2026,6,2026-10-13T16:44
+AJ Barner,Rec,2.5,-102,-130.0,FanDuel,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec,1.5,116,-154.0,FanDuel,2026,6,2026-10-13T16:44
+George Holani,Rush yds,12.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,14.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,47.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,66.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,13.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Sam Darnold,Pass TD,1.5,128,-167.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,182,-244.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,202.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,220.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,9.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,31.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec yds,20.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec yds,22.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,21.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Tory Horton,Rec yds,5.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,16.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec yds,12.5,-111,-116.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec yds,90.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+AJ Barner,Rec yds,20.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Holani,Rec yds,9.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,49.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,20.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-130,100.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec,2.5,113,-147.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec,6.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-109,-119.0,BetOnline.ag,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-111,-116.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-125,-103.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec,1.5,109,-141.0,BetOnline.ag,2026,6,2026-10-13T16:44
+AJ Barner,Rec,2.5,-103,-125.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec,2.5,149,-196.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-147,113.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,3.5,122,-159.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,46.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,13.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Holani,Rush yds,13.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,65.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,15.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,195,-275.0,BetRivers,2026,6,2026-10-13T16:44
+Sam Darnold,Pass TD,1.5,133,-177.0,BetRivers,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,205.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,215.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,9.5,-121,-110.0,BetRivers,2026,6,2026-10-13T16:44
+George Holani,Rec yds,9.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,17.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,50.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,21.5,-120,-112.0,BetRivers,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec yds,14.5,-110,-120.0,BetRivers,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,33.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,19.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec yds,92.5,-114,-115.0,BetRivers,2026,6,2026-10-13T16:44
+AJ Barner,Rec yds,21.5,-118,-112.0,BetRivers,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec yds,22.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec yds,23.5,-120,-112.0,BetRivers,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec,2.5,120,,BetRivers,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-124,,BetRivers,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec,1.5,-200,,BetRivers,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-110,,BetRivers,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-130,,BetRivers,2026,6,2026-10-13T16:44
+AJ Barner,Rec,2.5,108,,BetRivers,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-130,,BetRivers,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec,6.5,-121,,BetRivers,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-122,,BetRivers,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec,1.5,115,,BetRivers,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,3.5,118,,BetRivers,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-143,,BetRivers,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+George Holani,Rush yds,14.5,-109,-122.0,BetRivers,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,47.5,-117,-113.0,BetRivers,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,16.5,-110,-121.0,BetRivers,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,13.5,-118,-113.0,BetRivers,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,65.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,180,-250.0,BetMGM,2026,6,2026-10-13T16:44
+Sam Darnold,Pass TD,1.5,130,-175.0,BetMGM,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,206.5,-105,-125.0,BetMGM,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,219.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,20.5,-120,-110.0,BetMGM,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,21.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,32.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Tory Horton,Rec yds,3.5,-125,-105.0,BetMGM,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec yds,21.5,-120,-111.0,BetMGM,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec yds,22.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec yds,90.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,47.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+George Holani,Rec yds,9.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,8.5,-111,-118.0,BetMGM,2026,6,2026-10-13T16:44
+AJ Barner,Rec yds,21.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,15.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+AJ Barner,Rec,2.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-105,-125.0,BetMGM,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-120,-110.0,BetMGM,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-155,115.0,BetMGM,2026,6,2026-10-13T16:44
+Jaxon Smith-Njigba,Rec,6.5,-125,-105.0,BetMGM,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-140,105.0,BetMGM,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,2.5,-165,125.0,BetMGM,2026,6,2026-10-13T16:44
+Cooper Kupp,Rec,2.5,120,-160.0,BetMGM,2026,6,2026-10-13T16:44
+Rashid Shaheed,Rec,2.5,140,-190.0,BetMGM,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,15.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,65.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,12.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,45.5,-120,-111.0,BetMGM,2026,6,2026-10-13T16:44
+George Holani,Rush yds,14.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Bo Nix,Pass TD,1.5,170,-230.0,Bovada,2026,6,2026-10-13T16:44
+Sam Darnold,Pass TD,1.5,120,-160.0,Bovada,2026,6,2026-10-13T16:44
+Bo Nix,Pass yds,202.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Sam Darnold,Pass yds,220.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec yds,31.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec yds,9.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+Evan Engram,Rec yds,21.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+George Holani,Rec yds,9.5,-110,-120.0,Bovada,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec yds,49.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec yds,12.5,-110,-120.0,Bovada,2026,6,2026-10-13T16:44
+RJ Harvey,Rec yds,20.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+Troy Franklin,Rec yds,17.5,-110,-120.0,Bovada,2026,6,2026-10-13T16:44
+Courtland Sutton,Rec,3.5,120,-160.0,Bovada,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rec,1.5,-130,100.0,Bovada,2026,6,2026-10-13T16:44
+Evan Engram,Rec,2.5,-160,120.0,Bovada,2026,6,2026-10-13T16:44
+George Holani,Rec,1.5,-145,110.0,Bovada,2026,6,2026-10-13T16:44
+Jaylen Waddle,Rec,4.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+Marvin Mims Jr.,Rec,1.5,105,-135.0,Bovada,2026,6,2026-10-13T16:44
+RJ Harvey,Rec,3.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+Troy Franklin,Rec,1.5,-145,110.0,Bovada,2026,6,2026-10-13T16:44
+Bo Nix,Rush yds,13.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Emanuel Wilson,Rush yds,66.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+George Holani,Rush yds,13.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+J.K. Dobbins,Rush yds,45.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+RJ Harvey,Rush yds,15.5,-120,-110.0,Bovada,2026,6,2026-10-13T16:44
+Sam Darnold,Rush yds,4.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,120,-154.0,DraftKings,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,132,-170.0,DraftKings,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,255.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,225.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Nico Collins,Rec yds,72.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Parker Washington,Rec yds,61.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Brenton Strange,Rec yds,38.5,-110,-114.0,DraftKings,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec yds,33.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec yds,30.5,-115,-109.0,DraftKings,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec yds,29.5,-115,-109.0,DraftKings,2026,6,2026-10-13T16:44
+Josh Cameron,Rec yds,16.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec yds,15.5,-109,-115.0,DraftKings,2026,6,2026-10-13T16:44
+Woody Marks,Rec yds,14.5,-108,-116.0,DraftKings,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec yds,7.5,-120,-105.0,DraftKings,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec yds,5.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Nico Collins,Rec,5.5,-145,113.0,DraftKings,2026,6,2026-10-13T16:44
+Parker Washington,Rec,4.5,-118,-108.0,DraftKings,2026,6,2026-10-13T16:44
+Brenton Strange,Rec,3.5,-148,116.0,DraftKings,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec,3.5,-102,-125.0,DraftKings,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec,2.5,-167,130.0,DraftKings,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec,2.5,-141,110.0,DraftKings,2026,6,2026-10-13T16:44
+Woody Marks,Rec,2.5,-109,-117.0,DraftKings,2026,6,2026-10-13T16:44
+Josh Cameron,Rec,1.5,-146,115.0,DraftKings,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec,1.5,-116,-110.0,DraftKings,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec,1.5,-109,-117.0,DraftKings,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec,0.5,-198,154.0,DraftKings,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rush yds,64.5,-114,-110.0,DraftKings,2026,6,2026-10-13T16:44
+Woody Marks,Rush yds,48.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Chris Rodriguez Jr.,Rush yds,17.5,-108,-116.0,DraftKings,2026,6,2026-10-13T16:44
+Trevor Lawrence,Rush yds,11.5,-114,-110.0,DraftKings,2026,6,2026-10-13T16:44
+C.J. Stroud,Rush yds,10.5,-106,-118.0,DraftKings,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,138,-186.0,FanDuel,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,120,-160.0,FanDuel,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,223.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,256.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Josh Cameron,Rec yds,16.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec yds,5.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec yds,34.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec yds,30.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec yds,30.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Parker Washington,Rec yds,61.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Woody Marks,Rec yds,12.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Nico Collins,Rec yds,71.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec yds,7.5,-120,-108.0,FanDuel,2026,6,2026-10-13T16:44
+Brenton Strange,Rec yds,37.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec yds,15.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Nico Collins,Rec,5.5,-154,116.0,FanDuel,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec,3.5,100,-132.0,FanDuel,2026,6,2026-10-13T16:44
+Brenton Strange,Rec,3.5,-158,118.0,FanDuel,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec,2.5,-144,108.0,FanDuel,2026,6,2026-10-13T16:44
+Parker Washington,Rec,4.5,-120,-110.0,FanDuel,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec,1.5,-112,-118.0,FanDuel,2026,6,2026-10-13T16:44
+Woody Marks,Rec,2.5,-108,-122.0,FanDuel,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec,1.5,-106,-125.0,FanDuel,2026,6,2026-10-13T16:44
+Josh Cameron,Rec,1.5,-158,118.0,FanDuel,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec,3.5,124,-166.0,FanDuel,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec,0.5,-198,146.0,FanDuel,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rush yds,63.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Chris Rodriguez Jr.,Rush yds,18.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+C.J. Stroud,Rush yds,9.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Woody Marks,Rush yds,47.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Trevor Lawrence,Rush yds,12.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,115,-155.0,BetMGM,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,105,-140.0,BetMGM,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,229.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,254.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec yds,9.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Brenton Strange,Rec yds,37.5,-120,-111.0,BetMGM,2026,6,2026-10-13T16:44
+Parker Washington,Rec yds,63.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec yds,33.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec yds,16.5,-111,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Josh Cameron,Rec yds,18.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec yds,4.5,-120,-110.0,BetMGM,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec yds,31.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Nico Collins,Rec yds,74.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec,1.5,-130,-105.0,BetMGM,2026,6,2026-10-13T16:44
+Brenton Strange,Rec,3.5,-135,100.0,BetMGM,2026,6,2026-10-13T16:44
+Parker Washington,Rec,4.5,-135,100.0,BetMGM,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec,3.5,130,-175.0,BetMGM,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec,1.5,100,-135.0,BetMGM,2026,6,2026-10-13T16:44
+Josh Cameron,Rec,1.5,-155,115.0,BetMGM,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec,0.5,-165,125.0,BetMGM,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec,3.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+Nico Collins,Rec,5.5,-145,105.0,BetMGM,2026,6,2026-10-13T16:44
+Trevor Lawrence,Rush yds,11.5,-110,-120.0,BetMGM,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rush yds,63.5,-115,-115.0,BetMGM,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,120,-160.0,Bovada,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,130,-170.0,Bovada,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,255.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,225.5,-115,-115.0,Bovada,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,132,-172.0,BetOnline.ag,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,118,-154.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,225.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,255.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Parker Washington,Rec yds,61.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec yds,7.5,-122,-106.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Woody Marks,Rec yds,14.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec yds,34.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec yds,30.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec yds,15.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brenton Strange,Rec yds,37.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec yds,5.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec yds,30.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Nico Collins,Rec yds,73.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Josh Cameron,Rec yds,16.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Parker Washington,Rec,4.5,-120,-108.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Woody Marks,Rec,2.5,-106,-122.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Nico Collins,Rec,5.5,-147,114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec,1.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Josh Cameron,Rec,1.5,-152,116.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec,3.5,120,-156.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec,2.5,-137,106.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec,3.5,-105,-123.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec,1.5,-105,-123.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brenton Strange,Rec,3.5,-147,113.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec,0.5,-185,142.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rush yds,63.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Woody Marks,Rush yds,48.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Trevor Lawrence,Rush yds,12.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+C.J. Stroud,Rush yds,9.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Chris Rodriguez Jr.,Rush yds,17.5,-111,-116.0,BetOnline.ag,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass TD,1.5,125,-167.0,BetRivers,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass TD,1.5,140,-190.0,BetRivers,2026,6,2026-10-13T16:44
+Trevor Lawrence,Pass yds,220.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+C.J. Stroud,Pass yds,254.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec yds,14.5,-120,-112.0,BetRivers,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec yds,8.5,-110,-120.0,BetRivers,2026,6,2026-10-13T16:44
+Nico Collins,Rec yds,73.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Parker Washington,Rec yds,63.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Woody Marks,Rec yds,13.5,-114,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec yds,30.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec yds,30.5,-117,-113.0,BetRivers,2026,6,2026-10-13T16:44
+Josh Cameron,Rec yds,16.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec yds,34.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Brenton Strange,Rec yds,37.5,-115,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec yds,5.5,-120,-110.0,BetRivers,2026,6,2026-10-13T16:44
+Nico Collins,Rec,5.5,-162,,BetRivers,2026,6,2026-10-13T16:44
+Jakobi Meyers,Rec,3.5,117,,BetRivers,2026,6,2026-10-13T16:44
+Nate Boerkircher,Rec,0.5,-200,,BetRivers,2026,6,2026-10-13T16:44
+Parker Washington,Rec,4.5,-132,,BetRivers,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rec,1.5,-110,,BetRivers,2026,6,2026-10-13T16:44
+Woody Marks,Rec,2.5,-108,,BetRivers,2026,6,2026-10-13T16:44
+Kayshon Boutte,Rec,2.5,-150,,BetRivers,2026,6,2026-10-13T16:44
+Brian Thomas Jr,Rec,1.5,-108,,BetRivers,2026,6,2026-10-13T16:44
+Dalton Schultz,Rec,3.5,100,,BetRivers,2026,6,2026-10-13T16:44
+Brenton Strange,Rec,3.5,-141,,BetRivers,2026,6,2026-10-13T16:44
+Josh Cameron,Rec,1.5,-148,,BetRivers,2026,6,2026-10-13T16:44
+C.J. Stroud,Rush yds,9.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Chris Rodriguez Jr.,Rush yds,18.5,-112,-120.0,BetRivers,2026,6,2026-10-13T16:44
+Trevor Lawrence,Rush yds,12.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Bhayshul Tuten,Rush yds,63.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Woody Marks,Rush yds,47.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Michael Penix Jr.,Pass yds,236.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Caleb Williams,Pass yds,219.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Drake London,Rec yds,88.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Luther Burden III,Rec yds,46.5,-115,-109.0,DraftKings,2026,6,2026-10-13T16:44
+Rome Odunze,Rec yds,40.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Colston Loveland,Rec yds,34.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Kyle Pitts,Rec yds,26.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Bijan Robinson,Rec yds,25.5,-115,-109.0,DraftKings,2026,6,2026-10-13T16:44
+Jahan Dotson,Rec yds,23.5,-114,-110.0,DraftKings,2026,6,2026-10-13T16:44
+Kalif Raymond,Rec yds,22.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Zachariah Branch,Rec yds,10.5,-110,-114.0,DraftKings,2026,6,2026-10-13T16:44
+Cole Kmet,Rec yds,9.5,-108,-116.0,DraftKings,2026,6,2026-10-13T16:44
+Drake London,Rec,5.5,-147,116.0,DraftKings,2026,6,2026-10-13T16:44
+Luther Burden III,Rec,3.5,-155,122.0,DraftKings,2026,6,2026-10-13T16:44
+Bijan Robinson,Rec,3.5,-103,-123.0,DraftKings,2026,6,2026-10-13T16:44
+Colston Loveland,Rec,3.5,116,-148.0,DraftKings,2026,6,2026-10-13T16:44
+Rome Odunze,Rec,2.5,-165,129.0,DraftKings,2026,6,2026-10-13T16:44
+Kyle Pitts,Rec,2.5,-161,126.0,DraftKings,2026,6,2026-10-13T16:44
+Kalif Raymond,Rec,2.5,116,-149.0,DraftKings,2026,6,2026-10-13T16:44
+Jahan Dotson,Rec,1.5,-149,117.0,DraftKings,2026,6,2026-10-13T16:44
+Bijan Robinson,Rush yds,91.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Caleb Williams,Pass TD,1.5,-158,118.0,FanDuel,2026,6,2026-10-13T16:44
+Michael Penix Jr.,Pass TD,1.5,-102,-130.0,FanDuel,2026,6,2026-10-13T16:44
+Caleb Williams,Pass yds,219.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Michael Penix Jr.,Pass yds,236.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Cole Kmet,Rec yds,9.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Zachariah Branch,Rec yds,10.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Bijan Robinson,Rec yds,26.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Rome Odunze,Rec yds,41.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Luther Burden III,Rec yds,46.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Colston Loveland,Rec yds,34.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Kyle Pitts,Rec yds,26.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Drake London,Rec yds,88.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jahan Dotson,Rec yds,23.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Kalif Raymond,Rec yds,22.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Bijan Robinson,Rec,3.5,102,-136.0,FanDuel,2026,6,2026-10-13T16:44
+Kalif Raymond,Rec,2.5,106,-140.0,FanDuel,2026,6,2026-10-13T16:44
+Cole Kmet,Rec,1.5,162,-220.0,FanDuel,2026,6,2026-10-13T16:44
+Luther Burden III,Rec,3.5,-172,128.0,FanDuel,2026,6,2026-10-13T16:44
+Zachariah Branch,Rec,1.5,130,-174.0,FanDuel,2026,6,2026-10-13T16:44
+Kyle Pitts,Rec,2.5,-146,110.0,FanDuel,2026,6,2026-10-13T16:44
+Rome Odunze,Rec,2.5,-188,140.0,FanDuel,2026,6,2026-10-13T16:44
+Colston Loveland,Rec,3.5,108,-144.0,FanDuel,2026,6,2026-10-13T16:44
+Drake London,Rec,6.5,124,-166.0,FanDuel,2026,6,2026-10-13T16:44
+Jahan Dotson,Rec,1.5,-162,122.0,FanDuel,2026,6,2026-10-13T16:44
+Bijan Robinson,Rush yds,91.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jameis Winston,Pass TD,1.5,116,-154.0,FanDuel,2026,6,2026-10-13T16:44
+Tyler Shough,Pass TD,1.5,100,-132.0,FanDuel,2026,6,2026-10-13T16:44
+Tyler Shough,Pass yds,240.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jameis Winston,Pass yds,222.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Cam Skattebo,Rec yds,12.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Devaughn Vele,Rec yds,43.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Chris Olave,Rec yds,82.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Juwan Johnson,Rec yds,42.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Isaiah Likely,Rec yds,47.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Malik Nabers,Rec yds,68.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Juwan Johnson,Rec,4.5,102,-136.0,FanDuel,2026,6,2026-10-13T16:44
+Isaiah Likely,Rec,4.5,-172,128.0,FanDuel,2026,6,2026-10-13T16:44
+Cam Skattebo,Rec,1.5,-158,118.0,FanDuel,2026,6,2026-10-13T16:44
+Devaughn Vele,Rec,4.5,-102,-130.0,FanDuel,2026,6,2026-10-13T16:44
+Malik Nabers,Rec,5.5,-112,-118.0,FanDuel,2026,6,2026-10-13T16:44
+Chris Olave,Rec,6.5,-128,-104.0,FanDuel,2026,6,2026-10-13T16:44
+Cam Skattebo,Rush yds,57.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass TD,1.5,-120,-106.0,DraftKings,2026,6,2026-10-13T16:44
+Justin Herbert,Pass TD,0.5,-220,170.0,DraftKings,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass yds,225.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Justin Herbert,Pass yds,192.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Kenneth Walker III,Rush yds,86.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass TD,1.5,-120,-110.0,FanDuel,2026,6,2026-10-13T16:44
+Justin Herbert,Pass TD,0.5,-220,162.0,FanDuel,2026,6,2026-10-13T16:44
+Justin Herbert,Pass yds,192.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass yds,228.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Kenneth Walker III,Rush yds,86.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass TD,1.5,-118,-113.0,BetRivers,2026,6,2026-10-13T16:44
+Justin Herbert,Pass TD,0.5,-235,170.0,BetRivers,2026,6,2026-10-13T16:44
+Patrick Mahomes,Pass yds,226.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Justin Herbert,Pass yds,192.5,-113,-117.0,BetRivers,2026,6,2026-10-13T16:44
+Kenneth Walker III,Rush yds,84.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Dak Prescott,Pass TD,1.5,-165,129.0,DraftKings,2026,6,2026-10-13T16:44
+Jordan Love,Pass TD,1.5,-150,118.0,DraftKings,2026,6,2026-10-13T16:44
+Dak Prescott,Pass yds,277.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Jordan Love,Pass yds,264.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec yds,77.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Christian Watson,Rec yds,68.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+George Pickens,Rec yds,67.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Matthew Golden,Rec yds,62.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec yds,49.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec yds,29.5,-110,-114.0,DraftKings,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec,5.5,-155,121.0,DraftKings,2026,6,2026-10-13T16:44
+George Pickens,Rec,4.5,-134,105.0,DraftKings,2026,6,2026-10-13T16:44
+Matthew Golden,Rec,4.5,-132,103.0,DraftKings,2026,6,2026-10-13T16:44
+Christian Watson,Rec,4.5,-128,101.0,DraftKings,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec,4.5,110,-140.0,DraftKings,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec,3.5,-104,-123.0,DraftKings,2026,6,2026-10-13T16:44
+Jordan Love,Pass TD,1.5,-174,130.0,FanDuel,2026,6,2026-10-13T16:44
+Dak Prescott,Pass TD,1.5,-166,124.0,FanDuel,2026,6,2026-10-13T16:44
+Jordan Love,Pass yds,264.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Dak Prescott,Pass yds,277.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec yds,27.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Christian Watson,Rec yds,66.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec yds,46.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+George Pickens,Rec yds,67.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Matthew Golden,Rec yds,61.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec yds,78.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Christian Watson,Rec,4.5,-130,-102.0,FanDuel,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec,6.5,114,-148.0,FanDuel,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec,4.5,108,-144.0,FanDuel,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec,3.5,-120,-110.0,FanDuel,2026,6,2026-10-13T16:44
+Matthew Golden,Rec,4.5,-148,112.0,FanDuel,2026,6,2026-10-13T16:44
+George Pickens,Rec,4.5,-146,110.0,FanDuel,2026,6,2026-10-13T16:44
+Jordan Love,Pass TD,1.5,-159,122.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Dak Prescott,Pass TD,1.5,-167,127.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jordan Love,Pass yds,264.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Dak Prescott,Pass yds,277.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec yds,78.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec yds,46.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Pickens,Rec yds,67.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec yds,27.5,-115,-112.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Christian Watson,Rec yds,66.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Javonte Williams,Rec yds,16.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Matthew Golden,Rec yds,61.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+MarShawn Lloyd,Rec yds,10.5,-120,-108.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Christian Watson,Rec,4.5,-127,-102.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec,3.5,-108,-120.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Matthew Golden,Rec,4.5,-139,107.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec,4.5,110,-143.0,BetOnline.ag,2026,6,2026-10-13T16:44
+MarShawn Lloyd,Rec,1.5,-164,125.0,BetOnline.ag,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec,6.5,113,-147.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Pickens,Rec,4.5,-141,108.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Javonte Williams,Rec,2.5,-164,125.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Dak Prescott,Rush yds,10.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+MarShawn Lloyd,Rush yds,41.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jordan Love,Rush yds,5.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Javonte Williams,Rush yds,69.5,-118,-110.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jordan Love,Pass TD,1.5,-148,112.0,BetRivers,2026,6,2026-10-13T16:44
+Dak Prescott,Pass TD,1.5,-152,115.0,BetRivers,2026,6,2026-10-13T16:44
+Dak Prescott,Pass yds,271.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Jordan Love,Pass yds,260.5,-115,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Matthew Golden,Rec yds,62.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Christian Watson,Rec yds,68.5,-114,-117.0,BetRivers,2026,6,2026-10-13T16:44
+George Pickens,Rec yds,67.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec yds,48.5,-112,-118.0,BetRivers,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec yds,78.5,-117,-114.0,BetRivers,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec yds,29.5,-114,-117.0,BetRivers,2026,6,2026-10-13T16:44
+Christian Watson,Rec,4.5,-121,,BetRivers,2026,6,2026-10-13T16:44
+Jake Ferguson,Rec,3.5,102,,BetRivers,2026,6,2026-10-13T16:44
+CeeDee Lamb,Rec,6.5,108,,BetRivers,2026,6,2026-10-13T16:44
+Tucker Kraft,Rec,4.5,114,,BetRivers,2026,6,2026-10-13T16:44
+Matthew Golden,Rec,4.5,-127,,BetRivers,2026,6,2026-10-13T16:44
+George Pickens,Rec,4.5,-137,,BetRivers,2026,6,2026-10-13T16:44
+Brock Purdy,Pass TD,2.5,156,-201.0,DraftKings,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass TD,1.5,146,-187.0,DraftKings,2026,6,2026-10-13T16:44
+Brock Purdy,Pass yds,248.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass yds,207.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Mike Evans,Rec yds,78.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+George Kittle,Rec yds,64.5,-112,-112.0,DraftKings,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec yds,38.5,-114,-110.0,DraftKings,2026,6,2026-10-13T16:44
+Mike Evans,Rec,5.5,-153,120.0,DraftKings,2026,6,2026-10-13T16:44
+George Kittle,Rec,5.5,108,-137.0,DraftKings,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec,4.5,-135,106.0,DraftKings,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rush yds,61.5,-109,-115.0,DraftKings,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rush yds,44.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Jayden Daniels,Rush yds,35.5,-113,-111.0,DraftKings,2026,6,2026-10-13T16:44
+Kaelon Black,Rush yds,22.5,-117,-107.0,DraftKings,2026,6,2026-10-13T16:44
+Rachaad White,Rush yds,21.5,-108,-117.0,DraftKings,2026,6,2026-10-13T16:44
+Brock Purdy,Rush yds,16.5,-111,-113.0,DraftKings,2026,6,2026-10-13T16:44
+Brock Purdy,Pass TD,2.5,148,-200.0,FanDuel,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass TD,1.5,124,-166.0,FanDuel,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass yds,205.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Brock Purdy,Pass yds,246.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec yds,39.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Mike Evans,Rec yds,75.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+George Kittle,Rec yds,63.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec,4.5,-130,-102.0,FanDuel,2026,6,2026-10-13T16:44
+Mike Evans,Rec,5.5,-168,126.0,FanDuel,2026,6,2026-10-13T16:44
+George Kittle,Rec,5.5,102,-136.0,FanDuel,2026,6,2026-10-13T16:44
+Kaelon Black,Rush yds,23.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jayden Daniels,Rush yds,35.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rush yds,58.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rush yds,45.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Rachaad White,Rush yds,20.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Brock Purdy,Rush yds,16.5,-114,-114.0,FanDuel,2026,6,2026-10-13T16:44
+Brock Purdy,Pass TD,2.5,152,-200.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass TD,1.5,130,-169.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass yds,205.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brock Purdy,Pass yds,246.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rec yds,4.5,-110,-118.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Mike Evans,Rec yds,75.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Kittle,Rec yds,63.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec yds,39.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+George Kittle,Rec,5.5,106,-137.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec,4.5,-132,102.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rec,0.5,-227,172.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Mike Evans,Rec,5.5,-161,123.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Kaelon Black,Rush yds,23.5,-112,-115.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Brock Purdy,Rush yds,16.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Rachaad White,Rush yds,20.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rush yds,44.5,-116,-111.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rush yds,58.5,-114,-114.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jayden Daniels,Rush yds,34.5,-120,-108.0,BetOnline.ag,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass TD,1.5,133,-177.0,BetRivers,2026,6,2026-10-13T16:44
+Brock Purdy,Pass TD,2.5,150,-200.0,BetRivers,2026,6,2026-10-13T16:44
+Brock Purdy,Pass yds,245.5,-114,-117.0,BetRivers,2026,6,2026-10-13T16:44
+Jayden Daniels,Pass yds,207.5,-114,-117.0,BetRivers,2026,6,2026-10-13T16:44
+George Kittle,Rec yds,61.5,-114,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Mike Evans,Rec yds,77.5,-114,-115.0,BetRivers,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec yds,41.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Mike Evans,Rec,5.5,-159,,BetRivers,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rec,4.5,-159,,BetRivers,2026,6,2026-10-13T16:44
+George Kittle,Rec,5.5,-105,,BetRivers,2026,6,2026-10-13T16:44
+Jayden Daniels,Rush yds,34.5,-114,-117.0,BetRivers,2026,6,2026-10-13T16:44
+Brock Purdy,Rush yds,16.5,-121,-110.0,BetRivers,2026,6,2026-10-13T16:44
+Christian McCaffrey,Rush yds,59.5,-113,-118.0,BetRivers,2026,6,2026-10-13T16:44
+Kaelon Black,Rush yds,23.5,-120,-112.0,BetRivers,2026,6,2026-10-13T16:44
+Jacory Croskey-Merritt,Rush yds,44.5,-118,-113.0,BetRivers,2026,6,2026-10-13T16:44
+Rachaad White,Rush yds,20.5,-110,-121.0,BetRivers,2026,6,2026-10-13T16:44
