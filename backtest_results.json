@@ -2,14 +2,14 @@
   "season": 2025,
   "summary": {
     "games": 221,
-    "model_mae": 10.349096571161585,
+    "model_mae": 10.355614107986007,
     "market_mae": 9.90950226244344,
     "ats_pct": 49.321266968325794,
-    "su_pct": 63.348416289592755,
+    "su_pct": 62.44343891402715,
     "calibration": [
       {
         "p_home": "(0.0, 0.35]",
-        "pred": "0.291",
+        "pred": "0.292",
         "actual": "0.25",
         "n": "32"
       },
@@ -33,7 +33,7 @@
       },
       {
         "p_home": "(0.8, 1.0]",
-        "pred": "0.829",
+        "pred": "0.828",
         "actual": "0.933",
         "n": "15"
       }
@@ -44,49 +44,49 @@
       "facet": "QB / Passing",
       "correlation": 0.55,
       "suggested_weight": 1.95,
-      "current_weight": 2.404
+      "current_weight": 2.365
     },
     {
       "facet": "Explosive",
       "correlation": 0.479,
       "suggested_weight": 1.7,
-      "current_weight": 1.369
+      "current_weight": 1.444
     },
     {
       "facet": "3rd down",
       "correlation": 0.423,
       "suggested_weight": 1.5,
-      "current_weight": 1.521
+      "current_weight": 1.578
     },
     {
       "facet": "Rushing",
       "correlation": 0.391,
       "suggested_weight": 1.39,
-      "current_weight": 0.976
+      "current_weight": 1.017
     },
     {
       "facet": "WR receiving",
       "correlation": 0.365,
       "suggested_weight": 1.29,
-      "current_weight": 0.69
+      "current_weight": 0.542
     },
     {
       "facet": "Red zone",
       "correlation": 0.321,
       "suggested_weight": 1.14,
-      "current_weight": 1.165
+      "current_weight": 1.206
     },
     {
       "facet": "TE receiving",
       "correlation": 0.113,
       "suggested_weight": 0.4,
-      "current_weight": 0.815
+      "current_weight": 0.856
     },
     {
       "facet": "RB receiving",
       "correlation": 0.065,
       "suggested_weight": 0.23,
-      "current_weight": 0.318
+      "current_weight": 0.336
     }
   ]
 }
