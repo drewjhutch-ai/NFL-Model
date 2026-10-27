@@ -2,20 +2,20 @@
   "season": 2025,
   "summary": {
     "games": 221,
-    "model_mae": 10.355614107986007,
+    "model_mae": 10.364467173611102,
     "market_mae": 9.90950226244344,
     "ats_pct": 49.321266968325794,
-    "su_pct": 62.44343891402715,
+    "su_pct": 61.990950226244344,
     "calibration": [
       {
         "p_home": "(0.0, 0.35]",
-        "pred": "0.292",
+        "pred": "0.29",
         "actual": "0.25",
         "n": "32"
       },
       {
         "p_home": "(0.35, 0.5]",
-        "pred": "0.432",
+        "pred": "0.431",
         "actual": "0.383",
         "n": "60"
       },
@@ -27,15 +27,15 @@
       },
       {
         "p_home": "(0.65, 0.8]",
-        "pred": "0.712",
-        "actual": "0.698",
-        "n": "43"
+        "pred": "0.709",
+        "actual": "0.683",
+        "n": "41"
       },
       {
         "p_home": "(0.8, 1.0]",
-        "pred": "0.828",
-        "actual": "0.933",
-        "n": "15"
+        "pred": "0.827",
+        "actual": "0.941",
+        "n": "17"
       }
     ]
   },
@@ -44,49 +44,49 @@
       "facet": "QB / Passing",
       "correlation": 0.55,
       "suggested_weight": 1.95,
-      "current_weight": 2.365
+      "current_weight": 2.369
     },
     {
       "facet": "Explosive",
       "correlation": 0.479,
       "suggested_weight": 1.7,
-      "current_weight": 1.444
+      "current_weight": 1.47
     },
     {
       "facet": "3rd down",
       "correlation": 0.423,
       "suggested_weight": 1.5,
-      "current_weight": 1.578
+      "current_weight": 1.579
     },
     {
       "facet": "Rushing",
       "correlation": 0.391,
       "suggested_weight": 1.39,
-      "current_weight": 1.017
+      "current_weight": 1.12
     },
     {
       "facet": "WR receiving",
       "correlation": 0.365,
       "suggested_weight": 1.29,
-      "current_weight": 0.542
+      "current_weight": 0.534
     },
     {
       "facet": "Red zone",
       "correlation": 0.321,
       "suggested_weight": 1.14,
-      "current_weight": 1.206
+      "current_weight": 1.172
     },
     {
       "facet": "TE receiving",
       "correlation": 0.113,
       "suggested_weight": 0.4,
-      "current_weight": 0.856
+      "current_weight": 0.812
     },
     {
       "facet": "RB receiving",
       "correlation": 0.065,
       "suggested_weight": 0.23,
-      "current_weight": 0.336
+      "current_weight": 0.349
     }
   ]
 }

@@ -1,42 +1,42 @@
 {
-  "points_weight": 0.4383,
-  "market_weight": 0.2636,
+  "points_weight": 0.4287,
+  "market_weight": 0.1977,
   "edge_weights": {
-    "QB / Passing": 2.365,
+    "QB / Passing": 2.369,
     "Pass rush": 1.4,
-    "3rd down": 1.578,
+    "3rd down": 1.579,
     "Coverage scheme": 1.4,
-    "Explosive": 1.444,
-    "Rushing": 1.017,
-    "Red zone": 1.206,
-    "WR receiving": 0.542,
-    "TE receiving": 0.856,
-    "RB receiving": 0.336
+    "Explosive": 1.47,
+    "Rushing": 1.12,
+    "Red zone": 1.172,
+    "WR receiving": 0.534,
+    "TE receiving": 0.812,
+    "RB receiving": 0.349
   },
-  "as_of": "2026-10-20",
+  "as_of": "2026-10-27",
   "season": 2026,
-  "graded_games": 61,
+  "graded_games": 75,
   "metrics": {
-    "model_mae": 8.573,
-    "market_mae": 8.123,
-    "ats_pct": 54.098,
-    "su_pct": 63.934
+    "model_mae": 9.26,
+    "market_mae": 8.487,
+    "ats_pct": 48.0,
+    "su_pct": 64.0
   },
-  "recommended_points_weight": 0.3,
-  "recommended_market_weight": 0.22,
+  "recommended_points_weight": 0.4,
+  "recommended_market_weight": 0.0,
   "prop_tuning": {
     "status": "ready",
     "weeks": 4,
     "prop_model_trust": 0.45
   },
   "reconcile": {
-    "yards_per_point": 14.4715,
-    "pass_share": 0.6473,
-    "receiver_capture": 0.9305,
-    "n": 180,
+    "yards_per_point": 14.5836,
+    "pass_share": 0.6567,
+    "receiver_capture": 0.9324,
+    "n": 207,
     "fit": {
-      "yards_per_point": 14.72,
-      "pass_share": 0.684,
+      "yards_per_point": 14.92,
+      "pass_share": 0.685,
       "receiver_capture": 0.938
     }
   }
