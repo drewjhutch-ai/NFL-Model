@@ -317,6 +317,10 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
                         "_over_odds": info.get("over_odds") if has_line else None,
                         "_under_odds": info.get("under_odds") if has_line else None,
                         "_market_p": market_p if has_line else None,
+                        # raw model vs de-vigged market prob for the CHOSEN side —
+                        # stored so the loop can grade/tune the prop blend later.
+                        "_model_side_p": (p_over if side == "Over" else 1 - p_over),
+                        "_market_side_p": mkt_side if pd.notna(mkt_side) else None,
                     })
     if not rows:
         out = pd.DataFrame()

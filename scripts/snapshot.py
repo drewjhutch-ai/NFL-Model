@@ -68,6 +68,24 @@ def main() -> int:
     else:
         print(f"[snapshot] {args.season} not live yet — skipped team-rank snapshot.")
 
+    # Freeze this week's line-anchored prop projections (model prob + market prob)
+    # so the loop can grade and tune PROP_MODEL_TRUST once results are in — the same
+    # way sides are tuned. Needs the week's games with lines; degrades to a no-op.
+    try:
+        from data import props, prop_grade
+        wk_games = schedule[(schedule["season"] == args.season) & (schedule["week"] == week)]
+        if not wk_games.empty:
+            gp = int(schedule[(schedule["season"] == args.season)
+                              & schedule["result"].notna()]["week"].nunique())
+            leans = props.auto_prop_picks(extras.get("players"), off, deff, extras,
+                                          wk_games, games_played=gp)
+            pgpath = prop_grade.capture(leans, args.season, week)
+            if pgpath is not None:
+                wrote_any = True
+                print(f"[snapshot] froze prop projections (week {week}) -> {pgpath.name}")
+    except Exception as exc:  # noqa: BLE001 - prop capture must never break the snapshot
+        print(f"[snapshot] prop projection capture skipped: {exc}")
+
     if not wrote_any:
         return 2
 

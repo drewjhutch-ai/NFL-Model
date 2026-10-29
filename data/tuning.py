@@ -193,6 +193,13 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
 
     recon = recommend_reconcile(schedule, weekly, season)
 
+    # prop blend — tune PROP_MODEL_TRUST from graded prop projections (log-loss)
+    from data import prop_grade
+    pg = prop_grade.grade(season, weekly)
+    new_prop_trust = None
+    if pg.get("status") == "ok":
+        new_prop_trust = _blend(config.PROP_MODEL_TRUST, float(pg["recommended"]))
+
     payload = {
         "points_weight": new_points,
         "market_weight": new_market,
@@ -206,8 +213,10 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
         "recommended_points_weight": rec_w,
         "recommended_market_weight": rec_mkt,
         "recommended_model_trust": rec_trust,
-        "prop_tuning": prop_tuning_status(),
+        "prop_tuning": pg,
     }
+    if new_prop_trust is not None:
+        payload["prop_model_trust"] = new_prop_trust
     if recon.get("status") == "ok":
         payload["reconcile"] = {
             "yards_per_point": recon["yards_per_point"],

@@ -56,8 +56,13 @@ def main() -> int:
     print(f"       out-of-sample: model MAE {m.get('model_mae')} · blended {m.get('blended_mae')} "
           f"(mkt {m.get('market_mae')}) · ATS {m.get('ats_pct')}% · SU {m.get('su_pct')}%")
     ps = payload.get("prop_tuning", {})
-    print(f"       prop-side: {ps.get('status')} ({ps.get('weeks', 0)} wk banked; "
-          f"need {tuning.MIN_PROP_WEEKS}) — PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
+    if ps.get("status") == "ok":
+        print(f"       prop blend: graded {ps.get('n')} props · model-side hit "
+              f"{ps.get('model_side_hit')} · PROP_MODEL_TRUST -> "
+              f"{payload.get('prop_model_trust')} (best-fit {ps.get('recommended')})")
+    else:
+        print(f"       prop blend: accruing ({ps.get('n', 0)}/{ps.get('need', '?')} graded) — "
+              f"PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
     rc = payload.get("reconcile")
     if rc:
         f = rc.get("fit", {})
