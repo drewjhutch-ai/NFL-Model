@@ -125,12 +125,15 @@ def _factor(rank, spread: float = 0.14) -> float:
 
 
 def project(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
-            cov: pd.DataFrame | None = None) -> dict:
+            cov: pd.DataFrame | None = None, align: str | None = None) -> dict:
     """Matchup-adjusted projection for a player vs opponent ``opp``.
 
     ``cov`` (optional) is Sharp Football's coverage-by-position frame (YPT
     allowed, ranked). When present it's blended into the receiving matchup factor
     so props also see the charted coverage strength, not just nflverse dvp.
+    ``align`` ("outside"/"slot", optional) sharpens that further: a slot receiver is
+    matched to the defense's vs-slot coverage rank and an outside receiver to its
+    vs-outside rank, instead of a single blurry vs-WR number.
     """
     pos = player.get("pos", "")
     out = {}
@@ -151,9 +154,14 @@ def project(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
     if pos in ("RB", "WR", "TE"):
         dfp = dvp.get(pos)
         cf = _factor(dfp.loc[opp, "def_rank"]) if dfp is not None and opp in dfp.index else 1.0
-        # blend in Sharp's charted YPT-allowed-by-position vs this defense
+        # blend in Sharp's charted YPT-allowed vs this defense — alignment-specific
+        # (outside vs slot) when we know where the receiver lines up, else vs-position.
         if cov is not None and not cov.empty and opp in cov.index:
-            rc = cov.loc[opp].get(f"ypt_{pos}_rank")
+            rc = None
+            if pos == "WR" and align in ("outside", "slot"):
+                rc = cov.loc[opp].get(f"ypt_{'Slot' if align == 'slot' else 'Outside'}_rank")
+            if rc is None or pd.isna(rc):
+                rc = cov.loc[opp].get(f"ypt_{pos}_rank")
             if pd.notna(rc):
                 cf = (cf + _factor(rc)) / 2.0
         if player.get("targets", 0) >= 1.5:

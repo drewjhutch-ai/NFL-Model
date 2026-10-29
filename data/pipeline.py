@@ -9,8 +9,8 @@ from __future__ import annotations
 import config
 from data import (adjust, coaching, drives, elo, form, injuries, injury_value,
                   loaders, ngs, off_coverage, players, positional, pressure,
-                  qbvalue, rushing, sharp, situational, tendencies, touchdowns,
-                  turnovers)
+                  qbvalue, receiving, rushing, sharp, situational, tendencies,
+                  touchdowns, turnovers)
 from data import betting as betmodel
 
 
@@ -117,6 +117,9 @@ def build_frames():
     extras = {
         "dvp": positional.defense_vs_position(pbp_w, posmap),
         "usage": positional.offense_usage(pbp_w, posmap),
+        # receiver usage profiles from air yards (aDOT, air-yards share, role) — the
+        # real matchup substance behind the WR–CB panel and receiving props.
+        "receiving": receiving.receiver_profiles(pbp, config.CURRENT_SEASON),
         "wr_off": wr_off,
         "wr_def": wr_def,
         "qb": pressure.qb_profiles(pbp_w, posmap),

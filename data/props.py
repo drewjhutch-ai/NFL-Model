@@ -59,14 +59,16 @@ def over_prob(mean: float, line: float, stat: str) -> float:
 
 
 def project_player(player: pd.Series, opp: str, deff: pd.DataFrame, dvp: dict,
-                   script: float = 0.0, cov: pd.DataFrame | None = None) -> dict:
+                   script: float = 0.0, cov: pd.DataFrame | None = None,
+                   align: str | None = None) -> dict:
     """Matchup-adjusted projected means, optionally nudged by game script.
 
     ``script`` is the team's projected margin (+ = favored). A favored team runs
     more late (bump carries, trim pass volume); an underdog throws more.
-    ``cov`` is Sharp's coverage-by-position frame, blended into the receiving matchup.
+    ``cov`` is Sharp's coverage-by-position frame, blended into the receiving matchup;
+    ``align`` ("outside"/"slot") picks the alignment-specific coverage rank.
     """
-    proj = players.project(player, opp, deff, dvp, cov)
+    proj = players.project(player, opp, deff, dvp, cov, align)
     if script and proj:
         pass_bump = 1 - min(max(script, -14), 14) / 100.0   # dog throws more
         rush_bump = 1 + min(max(script, -14), 14) / 120.0   # favorite runs more
@@ -226,8 +228,18 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
     prop_index = prop_market.index_lines(prop_lines)
     dvp = extras.get("dvp", {})
     st_ppg, qb = extras.get("st_ppg"), extras.get("qb_value")
+    slot_map = extras.get("slot_rates") or {}
     from data import sharp_value
     cov = sharp_value.coverage_by_position(extras.get("sharp") or {})
+
+    def _align(pl) -> str | None:
+        """Receiver alignment for the coverage matchup: slot ≥55% slot snaps, else outside."""
+        if str(pl.get("pos", "")) != "WR":
+            return None
+        sp = slot_map.get(str(pl.get("name", "")).lower())
+        if sp is None:
+            return None
+        return "slot" if float(sp) >= 55 else "outside"
     rows = []
     starter_qbs = _starter_qb_ids(stats)
     from data.weather import weather_effects
@@ -251,7 +263,8 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
                     continue   # departed (off the roster) or ruled out (Out/IR/PUP)
                 if not _is_startable(pl, starter_qbs.get(team)):
                     continue   # no backup-QB / deep-bench props at made-up lines
-                proj = project_player(pl, opp, deff, dvp, script=script, cov=cov)
+                proj = project_player(pl, opp, deff, dvp, script=script, cov=cov,
+                                      align=_align(pl))
                 if wx.get("pass_factor", 1.0) != 1.0:
                     for k in ("Pass yds", "Rec yds", "Rec", "Targets"):
                         if k in proj:

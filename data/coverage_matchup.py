@@ -60,10 +60,20 @@ def _receivers(depth: pd.DataFrame, team: str, names: dict, slot_map: dict | Non
     for r in d.itertuples():
         nm = _name(names, r.player_id)
         sp = slot_map.get(nm.lower()) if nm else None
-        rows.append({"name": nm, "rank": _rank_of(r),
+        rows.append({"name": nm, "pid": str(r.player_id), "rank": _rank_of(r),
                      "align": _wr_align(r.pos, _rank_of(r), sp), "slot_pct": sp})
     rows.sort(key=lambda x: x["rank"])
     return rows
+
+
+def _profile(extras: dict, pid: str) -> dict:
+    """Air-yards usage profile (aDOT, air-yards share, role) for a receiver, or {}."""
+    rec = extras.get("receiving")
+    if rec is None or getattr(rec, "empty", True) or pid not in rec.index:
+        return {}
+    r = rec.loc[pid]
+    return {"aDOT": r.get("aDOT"), "ay_share": r.get("ay_share"),
+            "tgt_share": r.get("tgt_share"), "role": r.get("role")}
 
 
 def _corners(depth: pd.DataFrame, team: str, names: dict) -> list[dict]:
@@ -112,10 +122,10 @@ def matchups(off_team: str, def_team: str, extras: dict) -> list[dict]:
         c = out_cb[i] if i < len(out_cb) else (out_cb[-1] if out_cb else None)
         rows.append({"wr": w["name"], "wr_role": f"WR{i + 1} (outside)", "align": "Outside",
                      "cb": c["name"] if c else "—", "cov_rank": _cov_rank(extras, def_team, "Outside"),
-                     "slot_pct": w.get("slot_pct")})
+                     "slot_pct": w.get("slot_pct"), **_profile(extras, w.get("pid"))})
     if slot_wr:
         c = slot_cb[0] if slot_cb else None
         rows.append({"wr": slot_wr[0]["name"], "wr_role": "Slot WR", "align": "Slot",
                      "cb": c["name"] if c else "(nickel n/a)", "cov_rank": _cov_rank(extras, def_team, "Slot"),
-                     "slot_pct": slot_wr[0].get("slot_pct")})
+                     "slot_pct": slot_wr[0].get("slot_pct"), **_profile(extras, slot_wr[0].get("pid"))})
     return rows

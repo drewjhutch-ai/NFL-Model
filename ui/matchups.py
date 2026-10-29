@@ -1066,10 +1066,11 @@ def _wr_cb(away, home, extras) -> None:
     """Name the WR1/WR2/slot for each offense and the corner projected across."""
     from data import coverage_matchup as cm
     st.markdown("### WR–CB matchups")
-    st.caption("Who lines up where, by name — each offense's outside WRs and slot man vs the corner "
-               "projected across from him. This is depth-chart **alignment** (most defenses play "
-               "sides, so it's not a traveling shadow). **D rank** is the defense's coverage vs that "
-               "alignment: 1 = stingiest, 32 = softest — higher is better for the receiver.")
+    st.caption("Each offense's outside WRs and slot man vs the corner projected across from him "
+               "(depth-chart **alignment** — most defenses play sides, so it's not a traveling "
+               "shadow). **aDOT** = avg depth of target, **Air%** = share of the team's air yards "
+               "(who the downfield alpha is). **D rank** is the defense's coverage vs that alignment "
+               "(1 = stingiest, 32 = softest — higher is better for the receiver).")
     c1, c2 = st.columns(2)
     for col, o, d in ((c1, away, home), (c2, home, away)):
         rows = cm.matchups(o, d, extras)
@@ -1081,7 +1082,11 @@ def _wr_cb(away, home, extras) -> None:
             df = pd.DataFrame([{
                 "Role": (f"{r['wr_role']} · {r['slot_pct']:.0f}% slot" if r.get("slot_pct") is not None
                          else r["wr_role"]),
-                "Receiver": r["wr"], "vs (proj.)": r["cb"],
+                "Receiver": r["wr"],
+                "Use": (f"{r['role']}" if r.get("role") else "—"),
+                "aDOT": (round(float(r["aDOT"]), 1) if r.get("aDOT") is not None and pd.notna(r.get("aDOT")) else None),
+                "Air%": (f"{float(r['ay_share']) * 100:.0f}%" if r.get("ay_share") is not None and pd.notna(r.get("ay_share")) else None),
+                "vs (proj.)": r["cb"],
                 "D rank": (f"{r['cov_rank']} vs {r['align']}" if r.get("cov_rank") else "—"),
             } for r in rows])
             st.dataframe(df, width="stretch", hide_index=True)
