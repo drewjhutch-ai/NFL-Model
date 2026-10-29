@@ -209,7 +209,9 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
         "season": season, "graded_games": n,
         "metrics": {k: (round(v, 3) if isinstance(v, (int, float)) else None)
                     for k, v in metrics.items()
-                    if k in ("model_mae", "blended_mae", "market_mae", "ats_pct", "su_pct")},
+                    if k in ("model_mae", "blended_mae", "market_mae", "ats_pct", "su_pct",
+                             "total_mae", "total_market_mae", "ou_pct")},
+        "calibration": base.get("calibration_fit", {"a": 0.0, "b": 1.0}),
         "recommended_points_weight": rec_w,
         "recommended_market_weight": rec_mkt,
         "recommended_model_trust": rec_trust,

@@ -280,6 +280,18 @@ def _self_tuning() -> None:
         else:
             st.caption(f"Prop-side tuning: **{pt.get('status','—')}** "
                        f"({pt.get('weeks',0)} weeks banked) · `PROP_MODEL_TRUST` {config.PROP_MODEL_TRUST:.2f}.")
+    m = t.get("metrics") or {}
+    cal = t.get("calibration") or {}
+    if cal:
+        b = cal.get("b", 1.0)
+        tone = ("already well-calibrated" if abs(b - 1) < 0.08
+                else "was overconfident — pulled toward the mean" if b < 1
+                else "was underconfident — sharpened")
+        st.caption(f"Win-probability calibration (a={cal.get('a')}, b={b}): {tone}. "
+                   "Stated win % is corrected to match how often those calls actually hit.")
+    if m.get("total_mae") is not None:
+        st.caption(f"Totals accuracy (out-of-sample): model MAE **{m.get('total_mae')}** vs "
+                   f"market **{m.get('total_market_mae')}** · O/U hit **{m.get('ou_pct')}%**.")
     rc = t.get("reconcile")
     if rc:
         st.caption(f"Prop reconciliation anchors (calibrated from {rc.get('n','?')} team-games): "

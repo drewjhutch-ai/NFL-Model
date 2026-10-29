@@ -73,12 +73,24 @@ def walk_forward(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int,
             blended = a.get("blended_margin")
             if blended is None or pd.isna(blended):
                 blended = a["model_margin"]
+            # totals: model vs market, and the O/U the blended total would pick
+            hs, as_ = r.get("home_score"), r.get("away_score")
+            actual_total = (float(hs) + float(as_)) if pd.notna(hs) and pd.notna(as_) else np.nan
+            mtot, ltot = a.get("model_total"), a.get("total_line")
+            btot = (config.MODEL_TRUST * mtot + (1 - config.MODEL_TRUST) * ltot) \
+                if pd.notna(mtot) and pd.notna(ltot) else np.nan
+            ou_hit = (int((btot > ltot) == (actual_total > ltot))
+                      if pd.notna(btot) and pd.notna(ltot) and pd.notna(actual_total)
+                      and actual_total != ltot else np.nan)
             rows.append({
                 "week": wk, "game": f"{a['away']}@{a['home']}",
                 "model": a["model_margin"], "blended": blended, "market": mkt, "actual": actual,
-                "p_home": a["model_p_home"], "home_win": int(actual > 0),
+                # raw (pre-calibration) win prob — the calibration fit trains on this
+                "p_home": a.get("model_p_home_raw", a["model_p_home"]), "home_win": int(actual > 0),
                 "ats_hit": int((blended > mkt) == (actual > mkt)) if pd.notna(mkt) else np.nan,
                 "su_hit": int((blended > 0) == (actual > 0)),
+                "model_total": mtot, "blended_total": btot, "total_line": ltot,
+                "actual_total": actual_total, "ou_hit": ou_hit,
             })
     return pd.DataFrame(rows)
 
@@ -98,6 +110,22 @@ def summary(res: pd.DataFrame) -> dict:
         "ats_pct": float(res["ats_hit"].mean() * 100) if res["ats_hit"].notna().any() else None,
         "su_pct": float(res["su_hit"].mean() * 100),
     }
+    # totals accuracy (model vs market), and the blended O/U hit rate
+    if "actual_total" in res.columns and res["actual_total"].notna().any():
+        tr = res.dropna(subset=["actual_total"])
+        if "blended_total" in tr.columns and tr["blended_total"].notna().any():
+            bt = tr.dropna(subset=["blended_total"])
+            out["total_mae"] = float((bt["blended_total"] - bt["actual_total"]).abs().mean())
+        if "total_line" in tr.columns and tr["total_line"].notna().any():
+            lt = tr.dropna(subset=["total_line"])
+            out["total_market_mae"] = float((lt["total_line"] - lt["actual_total"]).abs().mean())
+        if "ou_hit" in res.columns and res["ou_hit"].notna().any():
+            out["ou_pct"] = float(res["ou_hit"].mean() * 100)
+    # fit the win-probability calibration from raw predictions vs outcomes
+    if res["p_home"].notna().any():
+        from data import calibration
+        r = res.dropna(subset=["p_home"])
+        out["calibration_fit"] = calibration.fit(r["p_home"].tolist(), r["home_win"].tolist())
     # win-prob calibration (predicted vs actual by bucket)
     r = res.dropna(subset=["p_home"])
     if not r.empty:

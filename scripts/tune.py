@@ -63,6 +63,12 @@ def main() -> int:
     else:
         print(f"       prop blend: accruing ({ps.get('n', 0)}/{ps.get('need', '?')} graded) — "
               f"PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
+    cal = payload.get("calibration") or {}
+    print(f"       win-prob calibration: a={cal.get('a')} b={cal.get('b')} "
+          f"(1.0 = already calibrated; <1 = was overconfident)")
+    if m.get("total_mae") is not None:
+        print(f"       totals: model MAE {m.get('total_mae')} vs market {m.get('total_market_mae')} "
+              f"· O/U {m.get('ou_pct')}%")
     rc = payload.get("reconcile")
     if rc:
         f = rc.get("fit", {})

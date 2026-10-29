@@ -1,97 +1,71 @@
-"""Calibration & attribution — is the model actually honest, and does the blend earn its keep?
+"""Win-probability calibration — make the stated probability match reality.
 
-Two questions the hit-rate report card can't answer:
+A prediction tool is "accurate" in the formal sense when its probabilities are
+calibrated: of the games it calls 60%, ~60% should hit. The walk-forward showed we
+drift — a touch overconfident in the middle, underconfident on heavy favorites. This
+fits a one-parameter-plus-intercept logistic recalibration from graded history,
 
-1. **Calibration.** When the model says 70%, does it happen ~70% of the time? A
-   miscalibrated model bleeds money — worst of all on parlays, which compound the
-   error. We grade the stored pre-game win probabilities against outcomes with a
-   Brier score and a reliability table (predicted bucket → actual rate).
+    p_calibrated = sigmoid(a + b * logit(p_raw))
 
-2. **Attribution.** Does our number actually beat the market, and does the
-   ensemble blend beat the raw model? We compare mean-absolute margin error for
-   the model, the blended model, and the market spread over the same games. If we
-   don't beat the closing number, no amount of features matters.
-
-Everything reads the committed projection log (history/proj_history_<season>.csv),
-so it fills in as the season is graded — empty and honest until then.
+(identity at a=0, b=1), and applies it to the win probability the app reports and
+bets moneylines off of. The learning loop refits (a, b) weekly from results and
+stores them; config overlays them. Fit on the RAW probability so applying the
+correction never feeds back into the next fit.
 """
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
+import math
 
 
-def _graded(proj: pd.DataFrame, schedule: pd.DataFrame) -> pd.DataFrame:
-    """Join stored projections to final results (home margin + total)."""
-    if proj is None or proj.empty or schedule is None or schedule.empty:
-        return pd.DataFrame()
-    if "result" not in schedule.columns or "game_id" not in schedule.columns:
-        return pd.DataFrame()
-    res = schedule.dropna(subset=["result"])[["game_id", "result"]].rename(
-        columns={"result": "home_margin"})
-    m = proj.merge(res, on="game_id", how="inner")
-    return m.dropna(subset=["home_margin"])
+def _logit(p: float) -> float:
+    p = min(max(float(p), 1e-6), 1 - 1e-6)
+    return math.log(p / (1 - p))
 
 
-def grade(proj: pd.DataFrame, schedule: pd.DataFrame, bins: int = 5) -> dict:
-    """Calibration + attribution metrics, or {} until there are graded games."""
-    g = _graded(proj, schedule)
-    if g.empty:
-        return {}
-    out: dict = {"n": int(len(g))}
-
-    # --- win-probability calibration ---
-    if "model_p_home" in g.columns:
-        gp = g.dropna(subset=["model_p_home"]).copy()
-        if not gp.empty:
-            gp["win"] = (gp["home_margin"] > 0).astype(float)
-            gp["p"] = gp["model_p_home"].clip(0, 1)
-            out["brier"] = float(((gp["p"] - gp["win"]) ** 2).mean())
-            out["base_brier"] = float(((gp["win"].mean() - gp["win"]) ** 2).mean())
-            edges = np.linspace(0, 1, bins + 1)
-            rel = []
-            for lo, hi in zip(edges[:-1], edges[1:]):
-                m = gp[(gp["p"] >= lo) & (gp["p"] < hi if hi < 1 else gp["p"] <= hi)]
-                if len(m):
-                    rel.append({"bucket": f"{lo*100:.0f}–{hi*100:.0f}%",
-                                "predicted": float(m["p"].mean()),
-                                "actual": float(m["win"].mean()), "n": int(len(m))})
-            out["reliability"] = rel
-
-    # --- margin attribution: model vs blended vs market ---
-    def _mae(col, is_market=False):
-        if col not in g.columns:
-            return None
-        d = g.dropna(subset=[col])
-        if d.empty:
-            return None
-        pred = d[col]
-        return float((pred - d["home_margin"]).abs().mean())
-
-    out["model_mae"] = _mae("model_margin")
-    out["blended_mae"] = _mae("blended_margin")
-    out["market_mae"] = _mae("mkt_spread")   # mkt_spread = home margin the market expects
-    if "model_margin" in g.columns:
-        gm = g.dropna(subset=["model_margin"])
-        if not gm.empty:
-            out["margin_bias"] = float((gm["model_margin"] - gm["home_margin"]).mean())
-    return out
+def _sigmoid(x: float) -> float:
+    if x >= 0:
+        z = math.exp(-x)
+        return 1.0 / (1.0 + z)
+    z = math.exp(x)
+    return z / (1.0 + z)
 
 
-def verdict(cal: dict) -> str:
-    """One-line plain-English read of where the model stands."""
-    if not cal:
-        return "No graded games yet — calibration fills in as the season is played."
-    bits = []
-    if cal.get("brier") is not None and cal.get("base_brier"):
-        skill = 1 - cal["brier"] / cal["base_brier"] if cal["base_brier"] else 0
-        bits.append(f"Brier {cal['brier']:.3f} ({'beats' if skill > 0 else 'trails'} "
-                    f"the naive baseline)")
-    mm, km = cal.get("model_mae"), cal.get("market_mae")
-    if mm is not None and km is not None:
-        bits.append(f"our margin error {mm:.1f} vs market {km:.1f} — "
-                    f"{'beating' if mm < km else 'behind'} the number")
-    if cal.get("margin_bias") is not None and abs(cal["margin_bias"]) >= 0.8:
-        side = "home" if cal["margin_bias"] > 0 else "away"
-        bits.append(f"a {abs(cal['margin_bias']):.1f}-pt lean toward {side} teams (bias to watch)")
-    return " · ".join(bits) if bits else "Grading in progress."
+def apply(p: float, a: float = 0.0, b: float = 1.0) -> float:
+    """Recalibrate a probability. Identity when a=0, b=1."""
+    try:
+        return _sigmoid(a + b * _logit(p))
+    except (ValueError, OverflowError):
+        return p
+
+
+def fit(preds, outcomes, iters: int = 300, lr: float = 0.3) -> dict:
+    """Fit (a, b) for outcome ~ sigmoid(a + b*logit(pred)) by gradient descent.
+
+    Returns {"a", "b"} clamped to a sane range, or identity on too little data or a
+    degenerate fit (so a bad week can never invert or blow up the probabilities).
+    """
+    xs, ys = [], []
+    for p, y in zip(preds, outcomes):
+        try:
+            if p is None or y is None or (isinstance(p, float) and math.isnan(p)):
+                continue
+            xs.append(_logit(float(p)))
+            ys.append(float(y))
+        except (TypeError, ValueError):
+            continue
+    n = len(xs)
+    if n < 40:
+        return {"a": 0.0, "b": 1.0}
+    a, b = 0.0, 1.0
+    for _ in range(iters):
+        ga = gb = 0.0
+        for x, y in zip(xs, ys):
+            pr = _sigmoid(a + b * x)
+            err = pr - y
+            ga += err
+            gb += err * x
+        a -= lr * ga / n
+        b -= lr * gb / n
+    if not (0.3 <= b <= 2.5) or abs(a) > 1.5 or math.isnan(a) or math.isnan(b):
+        return {"a": 0.0, "b": 1.0}           # degenerate → identity, stay safe
+    return {"a": round(a, 4), "b": round(b, 4)}

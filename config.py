@@ -135,6 +135,11 @@ LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the tot
 # self-tuner refines this within [0.2, 0.9] from graded results — and making the
 # pick logic itself the tuner's objective is the real long-term fix (audit note).
 MODEL_TRUST = 0.33
+# Win-probability calibration (data/calibration.py): p_cal = sigmoid(a + b*logit(p)).
+# Identity until the learning loop fits it from graded results. Makes the stated
+# win probability match reality (the formal sense of an "accurate" prediction).
+CALIB_A = 0.0
+CALIB_B = 1.0
 # Blend a stable points-differential signal into the (noisier) pure-EPA margin.
 # 0 = pure EPA efficiency, 1 = pure scoreboard. A modest points weight regresses
 # EPA noise toward what teams have actually done — validated to cut margin error.
@@ -251,6 +256,13 @@ def _apply_tuning() -> dict:
         RECONCILE_PROPS = t["reconcile_props"]
     if isinstance(t.get("reconcile_to_total"), bool):
         RECONCILE_TO_TOTAL = t["reconcile_to_total"]
+    global CALIB_A, CALIB_B
+    cal = t.get("calibration")
+    if isinstance(cal, dict):
+        if isinstance(cal.get("a"), (int, float)):
+            CALIB_A = float(min(max(cal["a"], -1.5), 1.5))
+        if isinstance(cal.get("b"), (int, float)):
+            CALIB_B = float(min(max(cal["b"], 0.3), 2.5))
     global RECON_YARDS_PER_POINT, RECON_RECEIVER_CAPTURE, RECON_PASS_SHARE
     rec = t.get("reconcile")
     if isinstance(rec, dict):

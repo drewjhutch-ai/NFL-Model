@@ -347,7 +347,7 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     wx = weather_effects(row)
     if pd.notna(margin):
         margin *= (1 - wx["margin_compression"])   # bad weather => closer game
-    p_home = win_prob(margin)
+    p_home_raw = win_prob(margin)
 
     mkt_spread = row.get("spread_line")                # + = home favored
     mkt_p_home = devig_home_prob(row.get("home_moneyline"), row.get("away_moneyline"))
@@ -356,9 +356,13 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     # partway. The actionable edge is measured off this blended number.
     if pd.notna(margin) and pd.notna(mkt_spread):
         blended = config.MODEL_TRUST * margin + (1 - config.MODEL_TRUST) * mkt_spread
-        p_home = win_prob(blended)
+        p_home_raw = win_prob(blended)
     else:
         blended = margin
+    # recalibrate so the stated win probability matches reality (identity until the
+    # loop fits it). Keep the raw value so the calibration fit never feeds back.
+    from data import calibration as _cal
+    p_home = _cal.apply(p_home_raw, config.CALIB_A, config.CALIB_B) if pd.notna(p_home_raw) else p_home_raw
     edge_pts = (blended - mkt_spread) if pd.notna(blended) and pd.notna(mkt_spread) else np.nan
     edge_prob = (p_home - mkt_p_home) if pd.notna(p_home) and pd.notna(mkt_p_home) else np.nan
 
@@ -403,7 +407,7 @@ def assess(row: pd.Series, off: pd.DataFrame, deff: pd.DataFrame, extras: dict) 
     return {
         "home": home, "away": away,
         "model_margin": margin, "blended_margin": blended,
-        "model_p_home": p_home, "model_total": model_total,
+        "model_p_home": p_home, "model_p_home_raw": p_home_raw, "model_total": model_total,
         "mkt_spread": mkt_spread, "mkt_p_home": mkt_p_home, "total_line": mkt_total,
         "edge_pts": edge_pts, "edge_prob": edge_prob, "total_edge": total_edge,
         "value_side": value_side, "total_side": total_side, "ml_side": ml_side,
