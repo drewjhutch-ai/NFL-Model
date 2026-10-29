@@ -16,6 +16,7 @@ import math
 import numpy as np
 import pandas as pd
 
+import config
 from data import betengine, distributions as _dist, players, prop_market, reconcile
 
 # Coefficient of variation (sd / mean) for a single game, by stat. Rough but
@@ -212,6 +213,12 @@ def auto_prop_picks(stats: pd.DataFrame, off, deff, extras: dict, games: pd.Data
             tuple(zip(games["away_team"], games["home_team"]))
     except Exception:  # noqa: BLE001
         _gids = None
+    # Default to the most recently banked REAL book lines when a live pull wasn't
+    # passed, so props are priced against numbers the books actually hung instead of
+    # each player's season average (which invents lines and fake edges).
+    if prop_lines is None or getattr(prop_lines, "empty", True):
+        from data import prop_history
+        prop_lines = prop_history.latest_lines(config.CURRENT_SEASON)
     _key = (id(stats), id(off), id(deff), id(extras), _gids, per_team, games_played,
             id(prop_lines))
     if _gids is not None and _key in _PROP_MEMO:
@@ -343,29 +350,29 @@ def prop_bets_for_games(off, deff, extras: dict, games: pd.DataFrame,
 def leans_to_bets(leans: pd.DataFrame, games_played: int = 0) -> list[dict]:
     """Convert auto prop leans into Bet-Engine rows so props compete on the board.
 
-    When a lean carries a real book line it's priced at that line and the best
-    available price each way, with the de-vigged market probability as the no-vig
-    reference so edge is value versus the true line. Absent a feed it falls back to
-    the player's season norm at -110 both ways (edge vs an even-money proxy).
-    ``corr_group`` is the game, so same-game correlation is handled in parlays.
+    Only props carrying a REAL book line reach the bet board: priced at that line
+    and the best available price each way, with the de-vigged market probability as
+    the no-vig reference so edge is value versus the true number. Props with no
+    posted line are skipped here — a projection beating a player's season average
+    isn't a bet at a line that exists, and emitting those produced "picks" at numbers
+    no book hung and fake edges. They still surface as projection leans in the
+    Players tab. ``corr_group`` is the game, so same-game correlation holds in parlays.
     """
     if leans is None or leans.empty:
         return []
     out = []
     for _, r in leans.iterrows():
+        if not r.get("_has_line"):
+            continue                     # no real line → not a bet, keep it off the board
         p = r["Hit%"] / 100.0
         side = r.get("Side")
         line = r.get("Line", r.get("Baseline"))
         sel = f"{r['Player']} {r['Stat']} {side} {line:g}"
-        if r.get("_has_line"):
-            odds = r.get("_over_odds") if side == "Over" else r.get("_under_odds")
-            other = r.get("_under_odds") if side == "Over" else r.get("_over_odds")
-            odds = odds if odds is not None and pd.notna(odds) else -110
-            other = other if other is not None and pd.notna(other) else -110
-            rationale = f"Proj {r['Projection']:g} vs line {line:g} · {r['Matchup']}"
-        else:
-            odds = other = -110
-            rationale = f"Proj {r['Projection']:g} vs {r.get('Baseline', line):g} · {r['Matchup']}"
+        odds = r.get("_over_odds") if side == "Over" else r.get("_under_odds")
+        other = r.get("_under_odds") if side == "Over" else r.get("_over_odds")
+        odds = odds if odds is not None and pd.notna(odds) else -110
+        other = other if other is not None and pd.notna(other) else -110
+        rationale = f"Proj {r['Projection']:g} vs line {line:g} · {r['Matchup']}"
         out.append(betengine._bet(
             r["Game"], r["Game"], "Player prop", sel, p, odds, other,
             corr_group=r["Game"], games_played=games_played, rationale=rationale,

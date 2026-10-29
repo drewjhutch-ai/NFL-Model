@@ -112,7 +112,11 @@ TEAM_HFA = {"DEN": 2.8, "SEA": 2.4, "GB": 2.3, "BUF": 2.3, "KC": 2.3,
             "BAL": 2.2, "NO": 2.2, "PIT": 2.2, "MIN": 2.1, "LAC": 1.4, "LA": 1.4}
 PLAYS_PER_TEAM = 63             # to scale EPA/play into a game-level margin
 WINPROB_SLOPE = 0.146          # logistic slope: margin (pts) -> win probability
-VALUE_SPREAD_PTS = 2.0         # flag value when |our line - market| >= this
+VALUE_SPREAD_PTS = 2.5         # flag value when |our line - market| >= this
+# Raised 2.0 → 2.5 after the 2026 season audit: cumulative ATS slid 56% → 48% and
+# the model's margin error (9.26) ran worse than the market's (8.49) over 75 graded
+# games, i.e. small disagreements with the line are noise, not edge. A wider gate
+# surfaces fewer, higher-conviction side picks instead of marginal coin-flips.
 # Don't surface a straight pick priced worse (bigger favorite) than this American
 # number — heavy chalk (e.g. -600) is bad risk/reward even when it's "safe". Only
 # moneylines can breach it (spreads/totals/props are ~-110); the game's other
@@ -124,12 +128,13 @@ LEAGUE_TEAM_PPG = 22.5         # baseline points/team; EPA shifts it for the tot
 # The market (closing line) is the single most accurate NFL predictor, so we
 # trust our *divergence* from it only partway — blend our number toward the line.
 # 1.0 = pure model, 0.0 = pure market. Calibrate against results.
-# Lowered from 0.5 → 0.40 (lean more on the market): the 2025 backtest shows our
-# raw margin error (10.4) is worse than the market's (9.9), and the research is
-# consistent — the closing line is the single best NFL predictor, and model-heavy
-# blends underperform trusting it. The self-tuner refines this within [0.2, 0.9]
-# from graded results once the learning loop has enough games.
-MODEL_TRUST = 0.40
+# Lowered 0.5 → 0.40 → 0.33 (lean harder on the market): both the 2025 backtest
+# (model MAE 10.4 vs market 9.9) and 75 graded 2026 games (9.26 vs 8.49, ATS 48%)
+# show our raw margin is worse than the close, so our divergence from it is mostly
+# noise. The closing line is the single best NFL predictor; trust it more. The
+# self-tuner refines this within [0.2, 0.9] from graded results — and making the
+# pick logic itself the tuner's objective is the real long-term fix (audit note).
+MODEL_TRUST = 0.33
 # Blend a stable points-differential signal into the (noisier) pure-EPA margin.
 # 0 = pure EPA efficiency, 1 = pure scoreboard. A modest points weight regresses
 # EPA noise toward what teams have actually done — validated to cut margin error.

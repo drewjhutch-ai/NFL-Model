@@ -245,16 +245,23 @@ def _confidence(board, gp) -> None:
 
 def _prop_leans(prop_df) -> None:
     st.markdown("### Player prop leans")
-    st.caption("Starters only — projection vs each player's **own season average**, not a sportsbook "
-               "line. Directional targets; price them against the book's real number in "
-               "Players → Prop edge finder for the true edge.")
+    st.caption("Starters only. **Line** is the most recent real book number (banked weekly); "
+               "**Mkt%** and **Edge%** fill in when we have it, so the lean is value vs the actual "
+               "line, not a season average. Rows without a banked line show the season average as a "
+               "fallback reference.")
     if prop_df is None or prop_df.empty:
         st.info("No prop leans surfaced for this slate.")
         return
-    show = prop_df.head(10)[["Player", "Pos", "Team", "Stat", "Side", "Projection",
-                             "Baseline", "Hit%", "Matchup", "conf"]].rename(columns={"conf": "Conf", "Baseline": "Season avg"})
+    cols = ["Player", "Pos", "Team", "Stat", "Side", "Projection", "Line", "Hit%"]
+    for opt in ("Mkt%", "Edge%"):
+        if opt in prop_df.columns and prop_df[opt].notna().any():
+            cols.append(opt)
+    cols += ["Matchup", "conf"]
+    show = prop_df.head(10)[[c for c in cols if c in prop_df.columns]].rename(columns={"conf": "Conf"})
     st.dataframe(show, width="stretch", hide_index=True, column_config={
         "Hit%": st.column_config.NumberColumn("Hit%", format="%d%%"),
+        "Mkt%": st.column_config.NumberColumn("Mkt%", format="%d%%"),
+        "Edge%": st.column_config.NumberColumn("Edge%", format="%+.1f"),
         "Conf": st.column_config.NumberColumn("Conf", format="%d"),
     })
 

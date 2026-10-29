@@ -52,3 +52,29 @@ def load(season: int, week: int | None = None) -> pd.DataFrame:
         except Exception:  # noqa: BLE001 - a bad file must never break a read
             continue
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def latest_lines(season: int) -> pd.DataFrame:
+    """The most recently banked real book lines for a season.
+
+    Used as the DEFAULT line source for the prop board so picks are priced against
+    numbers the books actually hung — not a player's season average, which produces
+    lines that don't exist and fake edges. A few days stale (banked Saturday), but a
+    real line is a far better reference than a season mean; a fresh opt-in live pull
+    still overrides it. Returns the highest-week file's rows, or empty if none banked.
+    """
+    if not _DIR.exists():
+        return pd.DataFrame()
+    weeks = []
+    for f in _DIR.glob(f"props_{season}_w*.csv"):
+        try:
+            weeks.append((int(f.stem.split("_w")[-1]), f))
+        except (ValueError, IndexError):
+            continue
+    if not weeks:
+        return pd.DataFrame()
+    _, newest = max(weeks, key=lambda t: t[0])
+    try:
+        return pd.read_csv(newest)
+    except Exception:  # noqa: BLE001 - a bad file must never break the board
+        return pd.DataFrame()
