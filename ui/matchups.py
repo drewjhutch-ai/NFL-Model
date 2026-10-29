@@ -124,8 +124,10 @@ def _broadcast_header(away, home, off, deff, extras, row) -> None:
                               None, None, "accent"), unsafe_allow_html=True)
         k[1].markdown(kit.kpi("Proj. total", f"{sim['total_mean']:.1f}", None, None, "sharp"),
                       unsafe_allow_html=True)
-        win = max(sim["home_win"], 1 - sim["home_win"])
-        wteam = home if sim["home_win"] >= 0.5 else away
+        from data import calibration as _cal
+        ph = _cal.apply(sim["home_win"], config.CALIB_A, config.CALIB_B)
+        win = max(ph, 1 - ph)
+        wteam = home if ph >= 0.5 else away
         k[2].markdown(kit.kpi(f"{wteam} win", f"{win*100:.0f}%", None, None, "edge"),
                       unsafe_allow_html=True)
         if row is not None and pd.notna(row.get("spread_line")):
@@ -488,9 +490,14 @@ def _simulation(away, home, off, deff, extras, row) -> dict | None:
     st.markdown("### Simulation "
                 f"<span style='color:var(--ink-faint);font-size:0.9rem'>({sim['n']:,} runs)</span>",
                 unsafe_allow_html=True)
+    # calibrate the headline win probability so it matches how often such calls hit
+    import numpy as _np
+    from data import calibration as _cal
+    import config as _cfg
+    p_home = _cal.apply(sim["home_win"], _cfg.CALIB_A, _cfg.CALIB_B)
     k = st.columns(4)
-    k[0].metric(f"{home} win", f"{sim['home_win']*100:.0f}%")
-    k[1].metric(f"{away} win", f"{(1-sim['home_win'])*100:.0f}%")
+    k[0].metric(f"{home} win", f"{p_home*100:.0f}%")
+    k[1].metric(f"{away} win", f"{(1-p_home)*100:.0f}%")
     if "home_cover" in sim:
         cover_team = home if sim["home_cover"] >= 0.5 else away
         cover_pct = sim["home_cover"] if cover_team == home else 1 - sim["home_cover"]
@@ -500,6 +507,20 @@ def _simulation(away, home, off, deff, extras, row) -> dict | None:
         k[3].metric("Over hits", f"{sim['over']*100:.0f}%", help=f"vs market total {sim['mkt_total']}")
     st.caption(f"**Projected score:** {away} {sim['proj_away']:.0f} — {home} {sim['proj_home']:.0f} "
                f"· {simulation.game_script(sim['margin_mean'])}")
+    # a plain read of where the game could go, from the simulated distribution
+    m = sim["margins"]
+    lo, hi = _np.percentile(m, 25), _np.percentile(m, 75)
+    fav = home if sim["margin_mean"] >= 0 else away
+    one_score = float((_np.abs(m) <= 8).mean())
+    blowout = float((_np.abs(m) >= 17).mean())
+
+    def _band(x):
+        a = abs(x)
+        return f"{home} by {a:.0f}" if x >= 0 else f"{away} by {a:.0f}"
+    st.caption(f"**Where it's headed:** {fav} favored; the middle-50% of outcomes run "
+               f"{_band(lo)} to {_band(hi)}. One-score game **{one_score*100:.0f}%**, "
+               f"two-score-plus blowout **{blowout*100:.0f}%**. "
+               f"Total lands near **{sim['total_mean']:.0f}**.")
     cH, cK = st.columns([3, 2])
     with cH:
         _margin_hist(sim)
