@@ -68,12 +68,17 @@ def walk_forward(pbp_all: pd.DataFrame, schedule: pd.DataFrame, season: int,
                 continue
             actual = r["result"]                       # home margin
             mkt = a["mkt_spread"]
+            # the blended number is what we actually bet (model regressed toward the
+            # market by MODEL_TRUST); grade ATS/SU on it, not the raw model margin.
+            blended = a.get("blended_margin")
+            if blended is None or pd.isna(blended):
+                blended = a["model_margin"]
             rows.append({
                 "week": wk, "game": f"{a['away']}@{a['home']}",
-                "model": a["model_margin"], "market": mkt, "actual": actual,
+                "model": a["model_margin"], "blended": blended, "market": mkt, "actual": actual,
                 "p_home": a["model_p_home"], "home_win": int(actual > 0),
-                "ats_hit": int((a["model_margin"] > mkt) == (actual > mkt)) if pd.notna(mkt) else np.nan,
-                "su_hit": int((a["model_margin"] > 0) == (actual > 0)),
+                "ats_hit": int((blended > mkt) == (actual > mkt)) if pd.notna(mkt) else np.nan,
+                "su_hit": int((blended > 0) == (actual > 0)),
             })
     return pd.DataFrame(rows)
 
@@ -84,6 +89,10 @@ def summary(res: pd.DataFrame) -> dict:
     out = {
         "games": len(res),
         "model_mae": float((res["model"] - res["actual"]).abs().mean()),
+        # blended = the number we bet (raw model regressed toward the market); this is
+        # the accuracy the MODEL_TRUST tuner minimizes.
+        "blended_mae": float((res["blended"] - res["actual"]).abs().mean())
+        if "blended" in res.columns else None,
         "market_mae": float((res["market"] - res["actual"]).abs().mean())
         if res["market"].notna().any() else None,
         "ats_pct": float(res["ats_hit"].mean() * 100) if res["ats_hit"].notna().any() else None,

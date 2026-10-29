@@ -241,7 +241,8 @@ def _apply_tuning() -> dict:
     if isinstance(t.get("points_weight"), (int, float)):
         POINTS_WEIGHT = float(min(max(t["points_weight"], 0.0), 0.85))
     if isinstance(t.get("model_trust"), (int, float)):
-        MODEL_TRUST = float(min(max(t["model_trust"], 0.2), 0.9))
+        # floor 0.15 keeps some model alive even when the market is winning
+        MODEL_TRUST = float(min(max(t["model_trust"], 0.15), 0.9))
     if isinstance(t.get("market_weight"), (int, float)):
         MARKET_WEIGHT = float(min(max(t["market_weight"], 0.0), 0.6))
     if isinstance(t.get("prop_model_trust"), (int, float)):

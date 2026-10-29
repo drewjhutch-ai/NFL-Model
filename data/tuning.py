@@ -42,6 +42,10 @@ LEARNING_RATE = 0.25
 MIN_GAMES = 24
 _POINTS_GRID = [0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70]
 _MARKET_GRID = [0.0, 0.10, 0.18, 0.22, 0.28, 0.35, 0.45]
+# How far our number leans off the market. The backtest shows the model is worse
+# than the close, so the honest optimum is usually low — but we keep a floor in the
+# config overlay so the model never fully disappears.
+_TRUST_GRID = [0.15, 0.22, 0.30, 0.38, 0.46, 0.55, 0.65]
 # Weeks of banked prop-line snapshots before PROP_MODEL_TRUST can be graded.
 MIN_PROP_WEEKS = 4
 
@@ -89,6 +93,32 @@ def best_market_weight(pbp, schedule, season) -> tuple[float, dict]:
     finally:
         config.MARKET_WEIGHT = original
     return best_w, best_metrics
+
+
+def best_model_trust(pbp, schedule, season) -> tuple[float, dict]:
+    """Grid-search MODEL_TRUST on the backtest; minimize the BLENDED margin error.
+
+    MODEL_TRUST is how far our bet number leans off the market. Since the closing
+    line beats our raw margin, the honest optimum minimizes the error of the number
+    we actually bet (model regressed toward the market) — not the raw model. Lower
+    MAE, tie-break higher ATS. This is the dial that most directly governs whether we
+    over-bet sides, and it was never tuned before.
+    """
+    original = config.MODEL_TRUST
+    best_t, best_key, best_metrics = original, None, {}
+    try:
+        for t in _TRUST_GRID:
+            config.MODEL_TRUST = t
+            _, s = _score(pbp, schedule, season)
+            if not s or s.get("blended_mae") is None:
+                continue
+            # minimize blended MAE, then prefer higher ATS
+            key = (-round(s["blended_mae"], 3), round(s.get("ats_pct") or 0, 2))
+            if best_key is None or key > best_key:
+                best_key, best_t, best_metrics = key, t, s
+    finally:
+        config.MODEL_TRUST = original
+    return best_t, best_metrics
 
 
 def recommend_edge_weights(pbp, schedule, season) -> dict:
@@ -153,6 +183,9 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
     rec_mkt, mkt_metrics = best_market_weight(pbp, schedule, season)
     new_market = _blend(config.MARKET_WEIGHT, rec_mkt)
 
+    rec_trust, trust_metrics = best_model_trust(pbp, schedule, season)
+    new_trust = _blend(config.MODEL_TRUST, rec_trust)
+
     rec_weights = recommend_edge_weights(pbp, schedule, season)
     new_weights = dict(config.EDGE_WEIGHTS)
     for k, target in rec_weights.items():
@@ -163,13 +196,16 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
     payload = {
         "points_weight": new_points,
         "market_weight": new_market,
+        "model_trust": new_trust,
         "edge_weights": {k: round(v, 3) for k, v in new_weights.items()},
         "as_of": _dt.date.today().isoformat(),
         "season": season, "graded_games": n,
         "metrics": {k: (round(v, 3) if isinstance(v, (int, float)) else None)
-                    for k, v in metrics.items() if k in ("model_mae", "market_mae", "ats_pct", "su_pct")},
+                    for k, v in metrics.items()
+                    if k in ("model_mae", "blended_mae", "market_mae", "ats_pct", "su_pct")},
         "recommended_points_weight": rec_w,
         "recommended_market_weight": rec_mkt,
+        "recommended_model_trust": rec_trust,
         "prop_tuning": prop_tuning_status(),
     }
     if recon.get("status") == "ok":
@@ -182,7 +218,8 @@ def tune(pbp, schedule, season, weekly=None) -> dict:
     else:
         payload["reconcile_status"] = recon
     return {"status": "tuned", "payload": payload,
-            "prev_points": config.POINTS_WEIGHT, "prev_market": config.MARKET_WEIGHT}
+            "prev_points": config.POINTS_WEIGHT, "prev_market": config.MARKET_WEIGHT,
+            "prev_trust": config.MODEL_TRUST}
 
 
 def write(payload: dict) -> Path:
@@ -205,7 +242,9 @@ def append_log(payload: dict) -> None:
            "graded_games": payload.get("graded_games"),
            "points_weight": payload.get("points_weight"),
            "market_weight": payload.get("market_weight"),
-           "model_mae": m.get("model_mae"), "market_mae": m.get("market_mae"),
+           "model_trust": payload.get("model_trust"),
+           "model_mae": m.get("model_mae"), "blended_mae": m.get("blended_mae"),
+           "market_mae": m.get("market_mae"),
            "ats_pct": m.get("ats_pct"), "su_pct": m.get("su_pct")}
     df = pd.DataFrame([row])
     if _LOG_FILE.exists():

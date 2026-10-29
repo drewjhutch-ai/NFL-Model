@@ -51,8 +51,10 @@ def main() -> int:
           f"(best-fit {payload['recommended_points_weight']:.2f})")
     print(f"       MARKET_WEIGHT {result['prev_market']:.3f} -> {payload['market_weight']:.3f} "
           f"(best-fit {payload['recommended_market_weight']:.2f})")
-    print(f"       out-of-sample: MAE {m.get('model_mae')} (mkt {m.get('market_mae')}) · "
-          f"ATS {m.get('ats_pct')}% · SU {m.get('su_pct')}%")
+    print(f"       MODEL_TRUST {result.get('prev_trust', float('nan')):.3f} -> {payload['model_trust']:.3f} "
+          f"(best-fit {payload['recommended_model_trust']:.2f})")
+    print(f"       out-of-sample: model MAE {m.get('model_mae')} · blended {m.get('blended_mae')} "
+          f"(mkt {m.get('market_mae')}) · ATS {m.get('ats_pct')}% · SU {m.get('su_pct')}%")
     ps = payload.get("prop_tuning", {})
     print(f"       prop-side: {ps.get('status')} ({ps.get('weeks', 0)} wk banked; "
           f"need {tuning.MIN_PROP_WEEKS}) — PROP_MODEL_TRUST held at {config.PROP_MODEL_TRUST}")
