@@ -45,3 +45,37 @@ season,week,player,stat,side,line,model_p,market_p,proj
 2026,9,Michael Penix Jr.,Pass yds,Over,220.5,0.519,0.5005,223.1
 2026,9,Bijan Robinson,Rush yds,Over,94.5,0.5127,0.5005,96.4
 2026,9,Rhamondre Stevenson,Rush yds,Over,54.5,0.5007,0.5,54.6
+2026,10,Chase Brown,Rec,Under,4.5,0.3782,0.9827,5.5
+2026,10,Corey Kiner,Rush yds,Under,54.5,0.8333,0.5,31.9
+2026,10,Jaylen Warren,Rec yds,Over,25.5,0.7675,0.5022,42.8
+2026,10,Ja'Marr Chase,Rec,Under,8.5,0.7234,0.5513,6.9
+2026,10,Germie Bernard,Rec,Under,4.0,0.3596,0.6792,5.6
+2026,10,Amon-Ra St. Brown,Rec,Over,7.5,0.6577,0.4468,9.4
+2026,10,Jaylen Warren,Rush yds,Over,61.5,0.6803,0.5,82.9
+2026,10,Jameson Williams,Rec yds,Over,55.5,0.6588,0.5016,73.4
+2026,10,Amon-Ra St. Brown,Rec yds,Over,78.0,0.6524,0.5016,101.9
+2026,10,Jahmyr Gibbs,Rec yds,Over,30.5,0.6377,0.5,38.8
+2026,10,Tee Higgins,Rec yds,Over,76.0,0.6344,0.4989,96.0
+2026,10,Rico Dowdle,Rec,Under,2.5,0.417,0.5747,3.1
+2026,10,Jaylen Warren,Rec,Over,2.5,0.6814,0.6033,3.6
+2026,10,Sam LaPorta,Rec,Over,4.0,0.4673,0.5962,4.5
+2026,10,Chase Brown,Rush yds,Over,44.5,0.607,0.4967,52.7
+2026,10,Sam LaPorta,Rec yds,Over,43.5,0.6023,0.5,51.8
+2026,10,Stefon Diggs,Rec,Under,4.5,0.6548,0.5963,3.9
+2026,10,Chase Brown,Rec yds,Over,25.0,0.5954,0.5033,29.4
+2026,10,DK Metcalf,Rec,Under,4.5,0.4733,0.572,4.9
+2026,10,Jared Goff,Pass yds,Over,269.0,0.5916,0.5016,284.7
+2026,10,Jameson Williams,Rec,Over,3.5,0.6094,0.5339,4.3
+2026,10,Aaron Rodgers,Pass yds,Under,237.0,0.5835,0.4994,225.3
+2026,10,Rachaad White,Rec,Under,2.5,0.5162,0.5838,2.7
+2026,10,Jahmyr Gibbs,Rush yds,Over,98.5,0.5747,0.5016,110.7
+2026,10,DK Metcalf,Rec yds,Over,49.5,0.5742,0.5027,56.1
+2026,10,Drake Maye,Pass yds,Over,260.0,0.5638,0.5016,270.4
+2026,10,Jahmyr Gibbs,Rec,Under,4.5,0.5131,0.5677,4.6
+2026,10,Tee Higgins,Rec,Over,5.5,0.5629,0.5153,6.1
+2026,10,Rico Dowdle,Rush yds,Over,31.5,0.5412,0.4978,33.6
+2026,10,Ja'Marr Chase,Rec yds,Under,92.0,0.54,0.4989,86.2
+2026,10,Joe Burrow,Pass yds,Under,288.0,0.5389,0.5,281.3
+2026,10,Stefon Diggs,Rec yds,Under,41.5,0.5316,0.5,39.4
+2026,10,Germie Bernard,Rec yds,Under,51.0,0.5213,0.5022,49.3
+2026,10,Rachaad White,Rush yds,Under,39.5,0.5065,0.5087,39.1
